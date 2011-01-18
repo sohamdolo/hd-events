@@ -182,6 +182,8 @@ class Event(db.Model):
     def to_ical(self):
         event = CalendarEvent()
         event.add('summary', self.name if self.status == 'approved' else self.name + ' (%s)' % self.status.upper())
+        if self.details:
+          event.add('description', self.details)
         if self.url:
           event.add('url', self.url)
         if self.start_time:
