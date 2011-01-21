@@ -16,6 +16,7 @@ from notices import *
 
 import PyRSS2Gen
 import re
+import pytz
 
 webapp.template.register_template_library('templatefilters')
 
@@ -69,7 +70,6 @@ class ExpireReminderCron(webapp.RequestHandler):
         for event in events:
             notify_owner_expiring(event)
 
-
 class ExportHandler(webapp.RequestHandler):
     def get(self, format):
         events = Event.all().filter('status IN', ['approved', 'canceled']).order('start_time')
@@ -80,7 +80,6 @@ class ExportHandler(webapp.RequestHandler):
             self.response.out.write(simplejson.dumps(events))
         elif format == 'ics':
                 cal = Calendar()
-                #tzinfo=pytz.timezone('US/Pacific') # FIXME -- ummm, what's up with doing all this start/end_time.replace(tzinfo) nonsense?
                 for event in events:
                     iev = CalendarEvent()
                     iev.add('summary', event.name if event.status == 'approved' else event.name + ' (%s)' % event.status.upper())
@@ -103,9 +102,9 @@ class ExportHandler(webapp.RequestHandler):
                     iev.add('description', ev_desc)
                     iev.add('url', url_base + event_path(event))
                     if event.start_time:
-                      iev.add('dtstart', event.start_time)
+                      iev.add('dtstart', event.start_time.replace(tzinfo=pytz.timezone('US/Pacific')))
                     if event.end_time:
-                      iev.add('dtend', event.end_time)
+                      iev.add('dtend', event.end_time.replace(tzinfo=pytz.timezone('US/Pacific')))
                     cal.add_component(iev)
                 self.response.headers['content-type'] = 'text/calendar'
                 self.response.out.write(cal.as_string())
