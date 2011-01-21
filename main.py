@@ -5,7 +5,7 @@ from google.appengine.api import urlfetch, memcache, users, mail
 
 from django.utils import simplejson
 from django.template.defaultfilters import slugify
-from icalendar import Calendar
+from icalendar import Calendar, Event as CalendarEvent
 import logging, urllib, os
 from pprint import pprint
 from datetime import datetime, timedelta
@@ -15,6 +15,7 @@ from utils import username, human_username, set_cookie, local_today, is_phone_va
 from notices import *
 
 import PyRSS2Gen
+import re
 
 webapp.template.register_template_library('templatefilters')
 
@@ -69,19 +70,45 @@ class ExpireReminderCron(webapp.RequestHandler):
             notify_owner_expiring(event)
 
 
-class EventsHandler(webapp.RequestHandler):
+class ExportHandler(webapp.RequestHandler):
     def get(self, format):
         events = Event.all().filter('status IN', ['approved', 'canceled']).order('start_time')
-        if format == 'ics':
-            cal = Calendar()
-            for event in events:
-                cal.add_component(event.to_ical())
-            self.response.headers['content-type'] = 'text/calendar'
-            self.response.out.write(cal.as_string())
-        elif format == 'json':
+        url_base = 'http://' + self.request.headers.get('host', 'events.hackerdojo.com')
+        if format == 'json':
             self.response.headers['content-type'] = 'application/json'
             events = map(lambda x: x.to_dict(summarize=True), Event.get_approved_list())
             self.response.out.write(simplejson.dumps(events))
+        elif format == 'ics':
+                cal = Calendar()
+                #tzinfo=pytz.timezone('US/Pacific') # FIXME -- ummm, what's up with doing all this start/end_time.replace(tzinfo) nonsense?
+                for event in events:
+                    iev = CalendarEvent()
+                    iev.add('summary', event.name if event.status == 'approved' else event.name + ' (%s)' % event.status.upper())
+                    # make verbose description with empty fields where information is missing
+                    ev_desc = '__Status: %s\n__Member: %s\n__Type: %s\n__Estimated size: %s\n__Info URL: %s\n__Fee: %s\n__Contact: %s, %s\n__Rooms: %s\n\n__Details: %s\n\n__Notes: %s' % (
+                        event.status, 
+                        event.owner(), 
+                        event.type, 
+                        event.estimated_size, 
+                        event.url, 
+                        event.fee, 
+                        event.contact_name, 
+                        event.contact_phone, 
+                        event.roomlist(), 
+                        event.details, 
+                        event.notes)
+                    # then delete the empty fields with a regex
+                    ev_desc = re.sub(re.compile(r'^__.*?:[ ,]*$\n*',re.M),'',ev_desc)
+                    ev_desc = re.sub(re.compile(r'^__',re.M),'',ev_desc)
+                    iev.add('description', ev_desc)
+                    iev.add('url', url_base + event_path(event))
+                    if event.start_time:
+                      iev.add('dtstart', event.start_time)
+                    if event.end_time:
+                      iev.add('dtend', event.end_time)
+                    cal.add_component(iev)
+                self.response.headers['content-type'] = 'text/calendar'
+                self.response.out.write(cal.as_string())
         elif format =='rss':
             url_base = 'http://' + self.request.headers.get('host', 'events.hackerdojo.com')
             rss = PyRSS2Gen.RSS2(
@@ -95,9 +122,8 @@ class EventsHandler(webapp.RequestHandler):
                             description = event.details,
                             guid = url_base + event_path(event),
                             pubDate = event.updated,
-                         ) for event in events]
+                            ) for event in events]
             )
-
             self.response.headers['content-type'] = 'application/xml'
             self.response.out.write(rss.to_xml())
 
@@ -436,20 +462,25 @@ class FeedbackHandler(webapp.RequestHandler):
 def main():
     application = webapp.WSGIApplication([
         ('/', ApprovedHandler),
-        ('/events\.(.+)', EventsHandler),
         ('/all_future', AllFutureHandler),
-        ('/past', PastHandler),
         ('/pending', PendingHandler),
+        ('/past', PastHandler),
         ('/cronbugowners', CronBugOwnersHandler),
         ('/myevents', MyEventsHandler),
         ('/new', NewHandler),
         ('/edit/(\d+).*', EditHandler),
+        # single event views
         ('/event/(\d+).*', EventHandler),
         ('/event/(\d+)\.json', EventHandler),
+        # various export methods -- events.{json,rss,ics}
+        ('/events\.(.+)', ExportHandler),
+        #
+        # CRON tasks
         ('/expire', ExpireCron),
         ('/expiring', ExpireReminderCron),
         ('/domaincache', DomainCacheCron),        
         ('/reminder', ReminderCron),
+        #
         ('/check_conflict', CheckConflict),
         ('/logs', LogsHandler),
         ('/feedback/new/(\d+).*', FeedbackHandler) ],debug=True)

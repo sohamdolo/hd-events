@@ -1,7 +1,6 @@
 from google.appengine.ext import db
 from google.appengine.api import urlfetch, memcache, users, mail
 from datetime import datetime, timedelta
-from icalendar import Calendar, Event as CalendarEvent
 from utils import human_username, local_today, to_sentence_list
 import logging
 import pytz
@@ -178,19 +177,6 @@ class Event(db.Model):
             self.status = 'understaffed'
         self.put()
         logging.info('%s staffed %s' % (user.nickname, self.name))
-
-    def to_ical(self):
-        event = CalendarEvent()
-        event.add('summary', self.name if self.status == 'approved' else self.name + ' (%s)' % self.status.upper())
-        if self.details:
-          event.add('description', self.details)
-        if self.url:
-          event.add('url', self.url)
-        if self.start_time:
-          event.add('dtstart', self.start_time.replace(tzinfo=pytz.timezone('US/Pacific')))
-        if self.end_time:
-          event.add('dtend', self.end_time.replace(tzinfo=pytz.timezone('US/Pacific')))
-        return event
 
     def to_dict(self, summarize=False):
         d = dict()
