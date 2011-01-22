@@ -99,8 +99,9 @@ class ExportHandler(webapp.RequestHandler):
                     # then delete the empty fields with a regex
                     ev_desc = re.sub(re.compile(r'^__.*?:[ ,]*$\n*',re.M),'',ev_desc)
                     ev_desc = re.sub(re.compile(r'^__',re.M),'',ev_desc)
-                    iev.add('description', ev_desc)
-                    iev.add('url', url_base + event_path(event))
+                    ev_url = url_base + event_path(event)
+                    iev.add('description', ev_desc + '\n--\n' + ev_url)
+                    iev.add('url', ev_url)
                     if event.start_time:
                       iev.add('dtstart', event.start_time.replace(tzinfo=pytz.timezone('US/Pacific')))
                     if event.end_time:
