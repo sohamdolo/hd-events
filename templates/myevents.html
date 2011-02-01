@@ -10,7 +10,7 @@
     <h4>{% ifequal events.grouper today.date %}<span style="text-decoration:underline;">Today</span> - {% endifequal %}{% ifequal events.grouper tomorrow.date %}<span style="text-decoration:underline;">Tomorrow</span> - {% endifequal %}{{events.grouper|date:"l, F j"}}</h4>
     <table>
       {% for event in events.list %}
-				{% include 'list_event.html' %}
+        {% include 'list_event.html' %}
       {% endfor %}
     </table>
     {% endfor %}

@@ -4,29 +4,29 @@
 <div id="primary">
     <h3>{{event.name|title}}</h3>
     {% if not event.is_past %}<p>
-        <form method="post" style="display: inline;">
-        {% if event.is_deleted %}
-          {% if access_rights.is_admin %}<input type="submit" name="state" value="Undelete" />{% endif %}
-          (This will return the event to the &ldquo;pending&rdquo; status.)
-        {% else %}
-          {% if access_rights.can_approve %}<input type="submit" name="state" value="Approve" />{% endif %}
-          {% if access_rights.can_cancel and not event.is_onhold %}<input type="submit" name="state" value="OnHold" />{% endif %}
-          {% if access_rights.can_cancel and not event.is_canceled %}<input type="submit" name="state" value="Cancel" />{% endif %}
-          {% if access_rights.is_admin %}<input type="submit" name="state" value="Delete" />{% endif %}
-          {% if access_rights.can_edit %}<input type="button" value="Edit" onclick="document.location.href='/edit/{{event.key.id}}';" />{% endif %}
-          <!--{% if access_rights.can_staff %}<input type="submit" name="state" value="Staff" />{% endif %}
-          {% if access_rights.can_unstaff %}<input type="submit" name="state" value="Unstaff" />{% endif %}-->
-        {% endif %}
+  <form method="post" style="display: inline;">
+  {% if event.is_deleted %}
+    {% if access_rights.is_admin %}<input type="submit" name="state" value="Undelete" />{% endif %}
+    (This will return the event to the &ldquo;pending&rdquo; status.)
+  {% else %}
+    {% if access_rights.can_approve %}<input type="submit" name="state" value="Approve" />{% endif %}
+    {% if access_rights.can_cancel and not event.is_onhold %}<input type="submit" name="state" value="OnHold" />{% endif %}
+    {% if access_rights.can_cancel and not event.is_canceled %}<input type="submit" name="state" value="Cancel" />{% endif %}
+    {% if access_rights.is_admin %}<input type="submit" name="state" value="Delete" />{% endif %}
+    {% if access_rights.can_edit %}<input type="button" value="Edit" onclick="document.location.href='/edit/{{event.key.id}}';" />{% endif %}
+    <!--{% if access_rights.can_staff %}<input type="submit" name="state" value="Staff" />{% endif %}
+    {% if access_rights.can_unstaff %}<input type="submit" name="state" value="Unstaff" />{% endif %}-->
+  {% endif %}
       </form>
     </p>{% endif %}
 
     {% if not event.is_staffed %}<p>
-        <span style="color: red; font-weight: bold">This event is currently understaffed.</span><br/>
-        Due to this size of the event, at least {{ event.staff_needed }} more Dojo member{{ event.staff_needed|pluralize }} must volunteer to staff it.  It will not appear on the public calendar until {% if not event.is_approved %}it has been approved and {% endif %}enough people volunteer.
+  <span style="color: red; font-weight: bold">This event is currently understaffed.</span><br/>
+  Due to this size of the event, at least {{ event.staff_needed }} more Dojo member{{ event.staff_needed|pluralize }} must volunteer to staff it.  It will not appear on the public calendar until {% if not event.is_approved %}it has been approved and {% endif %}enough people volunteer.
     </p>{% else %}{% if not event.is_approved %}<p>
-        <span style="color: red; font-weight: bold">This event is not yet visible.</span><br/>
-        This event will not appear on the public calendar until it has been approved. If this does not happen soon, contact <a href="email:events@hackerdojo.com">events@hackerdojo.com</a> for assistance.
-        </p>{% endif %}{% endif %}
+  <span style="color: red; font-weight: bold">This event is not yet visible.</span><br/>
+  This event will not appear on the public calendar until it has been approved. If this does not happen soon, contact <a href="email:events@hackerdojo.com">events@hackerdojo.com</a> for assistance.
+  </p>{% endif %}{% endif %}
     
     <div class='b-block'><div class='b-label'>Status:</div><div class='b-data'>{{event.status|title}}</div></div>
     <div class='b-block'><div class='b-label'>Date:</div><div class='b-data'>{{event.start_time|date:"l, F j Y"}}</div></div>
