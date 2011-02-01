@@ -44,6 +44,22 @@ class Event(db.Model):
     updated = db.DateTimeProperty(auto_now=True)
 
     @classmethod
+    def check_conflict(cls,proposed_start_time,proposed_end_time,proposed_rooms,optional_existing_event_id = 0):
+      possible_conflicts = cls.all() \
+            .filter('start_time <', proposed_end_time) \
+            .filter('status IN', ['approved', 'pending', 'onhold'])
+      conflicts = []
+      for e in possible_conflicts:
+        if e.key().id() != optional_existing_event_id:
+          if e.end_time > proposed_start_time:
+            for r in e.rooms:
+              if r in proposed_rooms:
+                if e not in conflicts:
+                  conflicts.append(e)
+      return conflicts
+
+
+    @classmethod
     def get_all_future_list(cls):
         return cls.all() \
             .filter('start_time >', local_today()) \

@@ -23,6 +23,13 @@ indexes:
 
 - kind: Event
   properties:
+  - name: start_time
+  - name: status
+  - name: status
+  - name: start_time
+
+- kind: Event
+  properties:
   - name: status
   - name: expired
 

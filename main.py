@@ -11,7 +11,7 @@ from pprint import pprint
 from datetime import datetime, timedelta
 
 from models import Event, Feedback, HDLog, ROOM_OPTIONS, PENDING_LIFETIME
-from utils import username, human_username, set_cookie, local_today, is_phone_valid, UserRights, dojo, is_event_dup
+from utils import username, human_username, set_cookie, local_today, is_phone_valid, UserRights, dojo
 from notices import *
 
 import PyRSS2Gen
@@ -163,6 +163,9 @@ class EditHandler(webapp.RequestHandler):
                         self.request.get('end_time_hour'),
                         self.request.get('end_time_minute'),
                         self.request.get('end_time_ampm')), '%Y-%m-%d %I:%M %p')
+                conflicts = Event.check_conflict(start_time,end_time,self.request.get_all('rooms'), id)
+                if conflicts:
+                  raise ValueError('Room conflict detected')
                 if not self.request.get('estimated_size').isdigit():
                     raise ValueError('Estimated number of people must be a number')
                 if not int(self.request.get('estimated_size')) > 0:
@@ -357,6 +360,9 @@ class NewHandler(webapp.RequestHandler):
                 self.request.get('end_time_hour'),
                 self.request.get('end_time_minute'),
                 self.request.get('end_time_ampm')), '%m/%d/%Y %I:%M %p')
+            conflicts = Event.check_conflict(start_time,end_time,self.request.get_all('rooms'))
+            if conflicts:
+              raise ValueError('Room conflict detected')
             if not self.request.get('estimated_size').isdigit():
               raise ValueError('Estimated number of people must be a number')
             if not int(self.request.get('estimated_size')) > 0:
@@ -401,22 +407,6 @@ class NewHandler(webapp.RequestHandler):
             error = message
             self.response.out.write(template.render('templates/error.html', locals()))
             
-class CheckConflict(webapp.RequestHandler):            
-    def post(self, id):
-        start_time = datetime.strptime('%s %s:%s %s' % (
-            self.request.get('date'),
-            self.request.get('start_time_hour'),
-            self.request.get('start_time_minute'),
-            self.request.get('start_time_ampm')), '%m/%d/%Y %I:%M %p')
-        end_time = datetime.strptime('%s %s:%s %s' % (
-            self.request.get('date'),
-            self.request.get('end_time_hour'),
-            self.request.get('end_time_minute'),
-            self.request.get('end_time_ampm')), '%m/%d/%Y %I:%M %p')
-        rooms = self.request.get_all('rooms')
-        message = is_event_dup(start_date, end_date, rooms)
-        self.response.out.write(message)
-
 class LogsHandler(webapp.RequestHandler):
     @util.login_required
     def get(self):
@@ -481,7 +471,6 @@ def main():
         ('/domaincache', DomainCacheCron),        
         ('/reminder', ReminderCron),
         #
-        ('/check_conflict', CheckConflict),
         ('/logs', LogsHandler),
         ('/feedback/new/(\d+).*', FeedbackHandler) ],debug=True)
     util.run_wsgi_app(application)

@@ -4,8 +4,17 @@
 <h1>Error</h1>
 
 <div style="margin:4px; margin-bottom:1.5em; padding:8px; color: black; border:1px solid red; background:#fee;" id="error">
-{{error}}
+  {{error}}
 </div>
+
+{% if conflicts %}
+  <h3>Conflict Detail</h3>
+  <ul>
+    {% for event in conflicts %}
+      <li>{% include 'list_event.html' %}
+    {% endfor %}
+  </ul>
+{% endif %}
 
 <p><input type=button value="Back" onclick="javascript:history.back(1);"> </p>
 
