@@ -1,0 +1,4 @@
+#menu {display:none;}
+#primary, #wrapper, #menu, #content, body {margin:0; width:100%; overflow:hidden;}
+#content {padding:0; border-top:none;}
+#primary {padding:0 margin:1em;}
