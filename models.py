@@ -46,12 +46,12 @@ class Event(db.Model):
     @classmethod
     def check_conflict(cls,proposed_start_time,proposed_end_time,proposed_rooms,optional_existing_event_id = 0):
       possible_conflicts = cls.all() \
-            .filter('start_time <', proposed_end_time) \
+            .filter('end_time >', proposed_start_time) \
             .filter('status IN', ['approved', 'pending', 'onhold'])
       conflicts = []
       for e in possible_conflicts:
         if e.key().id() != optional_existing_event_id:
-          if e.end_time > proposed_start_time:
+          if e.start_time < proposed_end_time:
             for r in e.rooms:
               if r in proposed_rooms:
                 if e not in conflicts:
