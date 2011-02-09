@@ -31,6 +31,11 @@ indexes:
 - kind: Event
   properties:
   - name: status
+  - name: end_time
+
+- kind: Event
+  properties:
+  - name: status
   - name: expired
 
 - kind: Event

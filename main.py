@@ -163,7 +163,7 @@ class EditHandler(webapp.RequestHandler):
                         self.request.get('end_time_hour'),
                         self.request.get('end_time_minute'),
                         self.request.get('end_time_ampm')), '%Y-%m-%d %I:%M %p')
-                conflicts = Event.check_conflict(start_time,end_time,self.request.get_all('rooms'), id)
+                conflicts = Event.check_conflict(start_time,end_time,self.request.get_all('rooms'), int(id))
                 if conflicts:
                   raise ValueError('Room conflict detected')
                 if not self.request.get('estimated_size').isdigit():
