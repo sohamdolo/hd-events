@@ -72,67 +72,71 @@ class ExpireReminderCron(webapp.RequestHandler):
 
 class ExportHandler(webapp.RequestHandler):
     def get(self, format):
+        content_type, body = getattr(self, 'export_%s' % format)()
+        self.response.headers['content-type'] = content_type
+        self.response.out.write(body)
+        
+    def export_json(self):
+        events = Event.get_approved_list()
+        for k in self.request.GET:
+            if self.request.GET[k] and k in ['member']:
+                value = users.User(urllib.unquote(self.request.GET[k]))
+            else:
+                value = urllib.unquote(self.request.GET[k])
+            events = events.filter('%s =' % k, value)
+        events = map(lambda x: x.to_dict(summarize=True), events)
+        return 'application/json', simplejson.dumps(events)
+    
+    def export_ics(self):
         events = Event.all().filter('status IN', ['approved', 'canceled']).order('start_time')
         url_base = 'http://' + self.request.headers.get('host', 'events.hackerdojo.com')
-        if format == 'json':
-            self.response.headers['content-type'] = 'application/json'
-            events = Event.get_approved_list()
-            for k in self.request.GET:
-                if self.request.GET[k] and k in ['member']:
-                    value = users.User(urllib.unquote(self.request.GET[k]))
-                else:
-                    value = urllib.unquote(self.request.GET[k])
-                events = events.filter('%s =' % k, value)
-            events = map(lambda x: x.to_dict(summarize=True), events)
-            self.response.out.write(simplejson.dumps(events))
-        elif format == 'ics':
-                cal = Calendar()
-                for event in events:
-                    iev = CalendarEvent()
-                    iev.add('summary', event.name if event.status == 'approved' else event.name + ' (%s)' % event.status.upper())
-                    # make verbose description with empty fields where information is missing
-                    ev_desc = '__Status: %s\n__Member: %s\n__Type: %s\n__Estimated size: %s\n__Info URL: %s\n__Fee: %s\n__Contact: %s, %s\n__Rooms: %s\n\n__Details: %s\n\n__Notes: %s' % (
-                        event.status, 
-                        event.owner(), 
-                        event.type, 
-                        event.estimated_size, 
-                        event.url, 
-                        event.fee, 
-                        event.contact_name, 
-                        event.contact_phone, 
-                        event.roomlist(), 
-                        event.details, 
-                        event.notes)
-                    # then delete the empty fields with a regex
-                    ev_desc = re.sub(re.compile(r'^__.*?:[ ,]*$\n*',re.M),'',ev_desc)
-                    ev_desc = re.sub(re.compile(r'^__',re.M),'',ev_desc)
-                    ev_url = url_base + event_path(event)
-                    iev.add('description', ev_desc + '\n--\n' + ev_url)
-                    iev.add('url', ev_url)
-                    if event.start_time:
-                      iev.add('dtstart', event.start_time.replace(tzinfo=pytz.timezone('US/Pacific')))
-                    if event.end_time:
-                      iev.add('dtend', event.end_time.replace(tzinfo=pytz.timezone('US/Pacific')))
-                    cal.add_component(iev)
-                self.response.headers['content-type'] = 'text/calendar'
-                self.response.out.write(cal.as_string())
-        elif format =='rss':
-            url_base = 'http://' + self.request.headers.get('host', 'events.hackerdojo.com')
-            rss = PyRSS2Gen.RSS2(
-                title = "Hacker Dojo Events Feed",
-                link = url_base,
-                description = "Upcoming events at the Hacker Dojo in Mountain View, CA",
-                lastBuildDate = datetime.now(),
-                items = [PyRSS2Gen.RSSItem(
-                            title = event.name,
-                            link = url_base + event_path(event),
-                            description = event.details,
-                            guid = url_base + event_path(event),
-                            pubDate = event.updated,
-                            ) for event in events]
-            )
-            self.response.headers['content-type'] = 'application/xml'
-            self.response.out.write(rss.to_xml())
+        cal = Calendar()
+        for event in events:
+            iev = CalendarEvent()
+            iev.add('summary', event.name if event.status == 'approved' else event.name + ' (%s)' % event.status.upper())
+            # make verbose description with empty fields where information is missing
+            ev_desc = '__Status: %s\n__Member: %s\n__Type: %s\n__Estimated size: %s\n__Info URL: %s\n__Fee: %s\n__Contact: %s, %s\n__Rooms: %s\n\n__Details: %s\n\n__Notes: %s' % (
+                event.status, 
+                event.owner(), 
+                event.type, 
+                event.estimated_size, 
+                event.url, 
+                event.fee, 
+                event.contact_name, 
+                event.contact_phone, 
+                event.roomlist(), 
+                event.details, 
+                event.notes)
+            # then delete the empty fields with a regex
+            ev_desc = re.sub(re.compile(r'^__.*?:[ ,]*$\n*',re.M),'',ev_desc)
+            ev_desc = re.sub(re.compile(r'^__',re.M),'',ev_desc)
+            ev_url = url_base + event_path(event)
+            iev.add('description', ev_desc + '\n--\n' + ev_url)
+            iev.add('url', ev_url)
+            if event.start_time:
+              iev.add('dtstart', event.start_time.replace(tzinfo=pytz.timezone('US/Pacific')))
+            if event.end_time:
+              iev.add('dtend', event.end_time.replace(tzinfo=pytz.timezone('US/Pacific')))
+            cal.add_component(iev)
+        return 'text/calendar', cal.as_string()
+    
+    def export_rss(self):
+        url_base = 'http://' + self.request.headers.get('host', 'events.hackerdojo.com')
+        events = Event.all().filter('status IN', ['approved', 'canceled']).order('start_time')
+        rss = PyRSS2Gen.RSS2(
+            title = "Hacker Dojo Events Feed",
+            link = url_base,
+            description = "Upcoming events at the Hacker Dojo in Mountain View, CA",
+            lastBuildDate = datetime.now(),
+            items = [PyRSS2Gen.RSSItem(
+                        title = event.name,
+                        link = url_base + event_path(event),
+                        description = event.details,
+                        guid = url_base + event_path(event),
+                        pubDate = event.updated,
+                        ) for event in events]
+        )
+        return 'application/xml', rss.to_xml()
 
 
 class EditHandler(webapp.RequestHandler):
