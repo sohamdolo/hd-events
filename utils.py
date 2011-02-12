@@ -4,23 +4,12 @@ from datetime import datetime
 import re
 import pytz
 
+from shared.api import domain
+
 LOCAL_TZ = 'America/Los_Angeles'
 
-# Hacker Dojo Domain API helper with caching
-def dojo(path,force):
-    base_url = 'http://domain.hackerdojo.com'
-    cache_ttl = 3600
-    resp = memcache.get(path)
-    if force or not resp:
-        resp = urlfetch.fetch(base_url + path, deadline=10)
-        try:
-            resp = simplejson.loads(resp.content)
-        except Exception, e:
-            resp = []
-            cache_ttl = 10
-        memcache.set(path, resp, cache_ttl)
-    return resp
-
+# TODO: replace use of dojo function with directly using domain from shared lib
+dojo = domain
 
 def to_sentence_list(lst):
     lst = map(str, lst)
