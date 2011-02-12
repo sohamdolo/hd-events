@@ -76,7 +76,14 @@ class ExportHandler(webapp.RequestHandler):
         url_base = 'http://' + self.request.headers.get('host', 'events.hackerdojo.com')
         if format == 'json':
             self.response.headers['content-type'] = 'application/json'
-            events = map(lambda x: x.to_dict(summarize=True), Event.get_approved_list())
+            events = Event.get_approved_list()
+            for k in self.request.GET:
+                if self.request.GET[k] and k in ['member']:
+                    value = users.User(urllib.unquote(self.request.GET[k]))
+                else:
+                    value = urllib.unquote(self.request.GET[k])
+                events = events.filter('%s =' % k, value)
+            events = map(lambda x: x.to_dict(summarize=True), events)
             self.response.out.write(simplejson.dumps(events))
         elif format == 'ics':
                 cal = Calendar()

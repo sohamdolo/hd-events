@@ -17,6 +17,19 @@ indexes:
 
 - kind: Event
   properties:
+  - name: member
+  - name: status
+  - name: start_time
+
+- kind: Event
+  properties:
+  - name: member
+  - name: status
+  - name: type
+  - name: start_time
+
+- kind: Event
+  properties:
   - name: reminded
   - name: status
   - name: start_time
@@ -41,4 +54,10 @@ indexes:
 - kind: Event
   properties:
   - name: status
+  - name: start_time
+
+- kind: Event
+  properties:
+  - name: status
+  - name: type
   - name: start_time
