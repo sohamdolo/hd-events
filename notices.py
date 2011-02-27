@@ -4,7 +4,7 @@ from google.appengine.ext import deferred
 import random
 import os
 
-FROM_ADDRESS = 'Dojo Events <no-reply@hackerdojo-events.appspotmail.com>'
+FROM_ADDRESS = 'Dojo Events <robot@hackerdojo.com>'
 NEW_EVENT_ADDRESS = 'events@hackerdojo.com'
 STAFF_ADDRESS = 'staff@hackerdojo.com'
 
