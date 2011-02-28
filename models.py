@@ -224,7 +224,7 @@ class HDLog(db.Model):
     event       = db.ReferenceProperty(Event)
     created     = db.DateTimeProperty(auto_now_add=True)
     user        = db.UserProperty(auto_current_user_add=True)
-    description = db.StringProperty(multiline=True)
+    description = db.TextProperty
 
     @classmethod
     def get_logs_list(cls):

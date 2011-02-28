@@ -159,21 +159,16 @@ class EditHandler(webapp.RequestHandler):
         access_rights = UserRights(user, event)
         if access_rights.can_edit:
             try:
-                srg_date = self.request.get('date')
-                if event.start_time == srg_date:
-                    start_time = start_time
-                else:
-                    st_date = srg_date[0:len(srg_date)-9]
-                    start_time = datetime.strptime('%s %s:%s %s' % (
-                        st_date,
-                        self.request.get('start_time_hour'),
-                        self.request.get('start_time_minute'),
-                        self.request.get('start_time_ampm')), '%Y-%m-%d %I:%M %p')
-                    end_time = datetime.strptime('%s %s:%s %s' % (
-                        st_date,
-                        self.request.get('end_time_hour'),
-                        self.request.get('end_time_minute'),
-                        self.request.get('end_time_ampm')), '%Y-%m-%d %I:%M %p')
+                start_time = datetime.strptime('%s %s:%s %s' % (
+                    self.request.get('date'),
+                    self.request.get('start_time_hour'),
+                    self.request.get('start_time_minute'),
+                    self.request.get('start_time_ampm')), '%m/%d/%Y %I:%M %p')
+                end_time = datetime.strptime('%s %s:%s %s' % (
+                    self.request.get('date'),
+                    self.request.get('end_time_hour'),
+                    self.request.get('end_time_minute'),
+                    self.request.get('end_time_ampm')), '%m/%d/%Y %I:%M %p')
                 conflicts = Event.check_conflict(start_time,end_time,self.request.get_all('rooms'), int(id))
                 if conflicts:
                   raise ValueError('Room conflict detected')
@@ -184,19 +179,49 @@ class EditHandler(webapp.RequestHandler):
                 if (  self.request.get( 'contact_phone' ) and not is_phone_valid( self.request.get( 'contact_phone' ) ) ):
                     raise ValueError( 'Phone number does not appear to be valid' )
                 else:
+                    log_desc = "Event edited\n"
+                    previous_object = Event.get_by_id(int(id))
                     event.name = self.request.get('name')
+                    if (previous_object.name != event.name):
+                      log_desc = log_desc + "Title: " + previous_object.name + " to " + event.name + "\n"
                     event.start_time = start_time
+                    if (previous_object.start_time != event.start_time):
+                      log_desc = log_desc + "Start time: " + str(previous_object.start_time) + " to " + str(event.start_time) + "\n"
                     event.end_time = end_time
+                    if (previous_object.end_time != event.end_time):
+                      log_desc = log_desc + "End time: " + str(previous_object.end_time) + " to " + str(event.end_time) + "\n"
                     event.estimated_size = cgi.escape(self.request.get('estimated_size'))
+                    if (previous_object.estimated_size != event.estimated_size):
+                      log_desc = log_desc + "Est. size: " + previous_object.estimated_size + " to " + event.estimated_size + "\n"
                     event.contact_name = cgi.escape(self.request.get('contact_name'))
+                    if (previous_object.contact_name != event.contact_name):
+                      log_desc = log_desc + "Contact: " + previous_object.contact_name + " to " + event.contact_name + "\n"
                     event.contact_phone = cgi.escape(self.request.get('contact_phone'))
+                    if (previous_object.contact_phone != event.contact_phone):
+                      log_desc = log_desc + "Contact phone: " + previous_object.contact_phone + " to " + event.contact_phone + "\n"
                     event.details = cgi.escape(self.request.get('details'))
+                    if (previous_object.details != event.details):
+                      log_desc = log_desc + "Details: " + previous_object.details + " to " + event.details + "\n"
                     event.url = cgi.escape(self.request.get('url'))
+                    if (previous_object.url != event.url):
+                      log_desc = log_desc + "Url: " + previous_object.url + " to " + event.url + "\n"
                     event.fee = cgi.escape(self.request.get('fee'))
+                    if (previous_object.fee != event.fee):
+                      log_desc = log_desc + "Fee: " + previous_object.fee + " to " + event.fee + "\n"
                     event.notes = cgi.escape(self.request.get('notes'))
+                    if (previous_object.notes != event.notes):
+                      log_desc = log_desc + "Notes: " + previous_object.notes + " to " + event.notes + "\n"
                     event.rooms = self.request.get_all('rooms')
+                    if (previous_object.rooms != event.rooms):
+                      log_desc = log_desc + "Rooms changed" + "\n"
+                      log_desc = log_desc + "Old room " + "\n"
+                      for room in previous_object.rooms:
+                        log_desc = log_desc + room + ' '
+                      log_desc = log_desc + "New room(s) " + "\n"
+                      for room in event.rooms:
+                        log_desc = log_desc + room + ' '
                     event.put()
-                    log = HDLog(event=event,description="Edited event")
+                    log = HDLog(event=event,description=log_desc)
                     log.put()
                     self.redirect(event_path(event))
             except ValueError, e:
