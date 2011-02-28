@@ -2,6 +2,10 @@ from google.appengine.ext import webapp
 register = webapp.template.create_template_register()
 
 @register.filter
+def american_date(element):
+    return element.strftime('%m/%d/%Y')
+
+@register.filter
 def check_filter(the_list, item):
     if item in the_list:
         cb = "checked='checked'"

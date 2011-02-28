@@ -5,8 +5,8 @@
 
 <form method=POST>
 <div id="primary">
-  <h3>Edit: {{event.name}}</h3>
-  <div class='b-block'><div class='b-label'>Title:</div><div class='b-data'><input type="text" name="name" value="{{event.name}}"/></div></div>
+  <h3>Edit: {{event.name|title}}</h3>
+  <div class='b-block'><div class='b-label'>Title:</div><div class='b-data'><input type="text" name="name" value="{{event.name|title}}"/></div></div>
   <div class='b-block' id="message">
   </div>
   <div class='b-block'>
@@ -14,7 +14,7 @@
     <table style="margin: 0px;" class='b-data'>
       <tr>
       <td class="first"><label for="date">Date:</label>
-        <input name="date" id="datepicker" value="{{event.start_time}}" readonly="readonly"/></td>
+        <input name="date" id="datepicker" value="{{event.start_time|american_date}}" readonly="readonly"/></td>
       <td><label for="start_time">Start Time:</label>
         <select name="start_time_hour" id="start_time_hour">
         {% for hour in hours %}
@@ -67,7 +67,7 @@
   <div class='b-block'><div class='b-label'>More Info:</div><div class='b-data'><textarea rows=4 name="details">{{event.details}}</textarea></div></div>
   <div class='b-block'><div class='b-label'>Notes:</div><div class='b-data'><textarea rows=3 name="notes">{{event.notes}}</textarea></div></div>
   <div class='b-block'><div class='b-label'>Estimated Size:</div><div class='b-data'><input type="text" name="estimated_size" value="{{event.estimated_size}}"/></div></div>
-  <div class='b-block'><div class='b-label'>Contact Name:</div><div class='b-data'><input type="text" name="contact_name" value="{{event.contact_name}}"/></div></div>
+  <div class='b-block'><div class='b-label'>Contact Name:</div><div class='b-data'><input type="text" name="contact_name" value="{{event.contact_name|title}}"/></div></div>
   <div class='b-block'><div class='b-label'>Contact Phone:</div><div class='b-data'><input type="text" name="contact_phone" value="{{event.contact_phone}}"/></div></div>
   <div class='b-block'><div class='b-label'>URL:</div><div class='b-data'><input type="text" name="url" value="{{event.url}}"/></div></div>
   <div class='b-block'><div class='b-label'>Fee:</div><div class='b-data'><input type="text" name="fee" value="{{event.fee}}"/></div></div>
