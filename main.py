@@ -179,45 +179,45 @@ class EditHandler(webapp.RequestHandler):
                 if (  self.request.get( 'contact_phone' ) and not is_phone_valid( self.request.get( 'contact_phone' ) ) ):
                     raise ValueError( 'Phone number does not appear to be valid' )
                 else:
-                    log_desc = "Event edited\n"
+                    log_desc = "Event edited<br />"
                     previous_object = Event.get_by_id(int(id))
                     event.name = self.request.get('name')
                     if (previous_object.name != event.name):
-                      log_desc = log_desc + "Title: " + previous_object.name + " to " + event.name + "\n"
+                      log_desc = log_desc + "<strong>Title:</strong> <i>" + previous_object.name + "</i> to <i>" + event.name + "<br />"
                     event.start_time = start_time
                     if (previous_object.start_time != event.start_time):
-                      log_desc = log_desc + "Start time: " + str(previous_object.start_time) + " to " + str(event.start_time) + "\n"
+                      log_desc = log_desc + "<strong>Start time:</strong> <i>" + str(previous_object.start_time) + "</i> to <i>" + str(event.start_time) + "</i><br />"
                     event.end_time = end_time
                     if (previous_object.end_time != event.end_time):
-                      log_desc = log_desc + "End time: " + str(previous_object.end_time) + " to " + str(event.end_time) + "\n"
+                      log_desc = log_desc + "<strong>End time:</strong> <i>" + str(previous_object.end_time) + "</i> to <i>" + str(event.end_time) + "</i><br />"
                     event.estimated_size = cgi.escape(self.request.get('estimated_size'))
                     if (previous_object.estimated_size != event.estimated_size):
-                      log_desc = log_desc + "Est. size: " + previous_object.estimated_size + " to " + event.estimated_size + "\n"
+                      log_desc = log_desc + "<strong>Est. size:</strong> <i>" + previous_object.estimated_size + "</i> to <i>" + event.estimated_size + "</i><br />"
                     event.contact_name = cgi.escape(self.request.get('contact_name'))
                     if (previous_object.contact_name != event.contact_name):
-                      log_desc = log_desc + "Contact: " + previous_object.contact_name + " to " + event.contact_name + "\n"
+                      log_desc = log_desc + "<strong>Contact:</strong> <i>" + previous_object.contact_name + "</i> to <i>" + event.contact_name + "</i><br />"
                     event.contact_phone = cgi.escape(self.request.get('contact_phone'))
                     if (previous_object.contact_phone != event.contact_phone):
-                      log_desc = log_desc + "Contact phone: " + previous_object.contact_phone + " to " + event.contact_phone + "\n"
+                      log_desc = log_desc + "<strong>Contact phone:</strong> <i>" + previous_object.contact_phone + "</i> to <i>" + event.contact_phone + "</i><br />"
                     event.details = cgi.escape(self.request.get('details'))
                     if (previous_object.details != event.details):
-                      log_desc = log_desc + "Details: " + previous_object.details + " to " + event.details + "\n"
+                      log_desc = log_desc + "<strong>Details:</strong> <i>" + previous_object.details + "</i> to <i>" + event.details + "</i><br />"
                     event.url = cgi.escape(self.request.get('url'))
                     if (previous_object.url != event.url):
-                      log_desc = log_desc + "Url: " + previous_object.url + " to " + event.url + "\n"
+                      log_desc = log_desc + "<strong>Url:</strong> <i>" + previous_object.url + "</i> to <i>" + event.url + "</i><br />"
                     event.fee = cgi.escape(self.request.get('fee'))
                     if (previous_object.fee != event.fee):
-                      log_desc = log_desc + "Fee: " + previous_object.fee + " to " + event.fee + "\n"
+                      log_desc = log_desc + "<strong>Fee:</strong> <i>" + previous_object.fee + "</i> to <i>" + event.fee + "</i><br />"
                     event.notes = cgi.escape(self.request.get('notes'))
                     if (previous_object.notes != event.notes):
-                      log_desc = log_desc + "Notes: " + previous_object.notes + " to " + event.notes + "\n"
+                      log_desc = log_desc + "<strong>Notes:</strong> <i>" + previous_object.notes + "</i> to <i>" + event.notes + "</i><br />"
                     event.rooms = self.request.get_all('rooms')
                     if (previous_object.rooms != event.rooms):
-                      log_desc = log_desc + "Rooms changed" + "\n"
-                      log_desc = log_desc + "Old room " + "\n"
+                      log_desc = log_desc + "<strong>Rooms changed</strong>" + "<br />"
+                      log_desc = log_desc + "<strong>Old room</strong>" + "<br />"
                       for room in previous_object.rooms:
                         log_desc = log_desc + room + ' '
-                      log_desc = log_desc + "New room(s) " + "\n"
+                      log_desc = log_desc + "<br /><strong>New room(s)</strong><br />"
                       for room in event.rooms:
                         log_desc = log_desc + room + ' '
                     event.put()
