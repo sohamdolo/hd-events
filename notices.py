@@ -101,22 +101,34 @@ events@hackerdojo.com
 def notify_new_event(event):
     mail.send_mail(sender=FROM_ADDRESS, to=NEW_EVENT_ADDRESS,
         subject='[New Event] %s on %s' % (event.name, event.start_time.strftime('%a %b %d')),
-        body="""Member: %s
+        body="""Event: %s
+Member: %s
 When: %s to %s
 Type: %s
 Size: %s
+Rooms: %s
 Contact: %s (%s)
+URL: %s
+Fee: %s
+
+Details: %s
+
 Notes: %s
 
 http://events.hackerdojo.com/event/%s-%s
 """ % (
+    event.name, 
     event.member.email(), 
     event.start_time.strftime('%I:%M%p'), 
     event.end_time.strftime('%I:%M%p'),
     event.type,
     event.estimated_size,
+    event.roomlist(),
     event.contact_name,
     event.contact_phone,
+    event.url,
+    event.fee,
+    event.details,
     event.notes,
     event.key().id(),
     slugify(event.name),))
