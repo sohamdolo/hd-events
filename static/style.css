@@ -87,3 +87,12 @@ input.dp-applied {
 #menu {float: right; margin: 10px; font-size: smaller;}
 .emph {font-weight: bold;}
 #menu .current {text-decoration: none; color: #000; cursor: tex;}
+
+#edit-approve-btns, #cancel-delete-btns {
+  display: inline;
+  
+}
+
+#edit-approve-btns {
+  padding-right: 50px;
+}
