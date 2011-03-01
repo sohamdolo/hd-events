@@ -429,7 +429,9 @@ class NewHandler(webapp.RequestHandler):
                 notify_owner_confirmation(event)
                 notify_new_event(event)
                 set_cookie(self.response.headers, 'formvalues', None)
-                self.redirect('/event/%s-%s' % (event.key().id(), slugify(event.name)))
+                #self.redirect('/event/%s-%s' % (event.key().id(), slugify(event.name)))
+                self.redirect('/confirm/%s-%s' % (event.key().id(), slugify(event.name)))
+                
         except Exception, e:
             message = str(e)
             if 'match format' in message:
@@ -442,7 +444,12 @@ class NewHandler(webapp.RequestHandler):
             #self.redirect('/new')
             error = message
             self.response.out.write(template.render('templates/error.html', locals()))
-            
+
+class ConfirmationHandler(webapp.RequestHandler):
+    def get(self, id):
+      event = Event.get_by_id(int(id))
+      self.response.out.write(template.render('templates/confirmation.html', locals()))
+
 class LogsHandler(webapp.RequestHandler):
     @util.login_required
     def get(self):
@@ -494,6 +501,7 @@ def main():
         ('/cronbugowners', CronBugOwnersHandler),
         ('/myevents', MyEventsHandler),
         ('/new', NewHandler),
+        ('/confirm/(\d+).*', ConfirmationHandler),
         ('/edit/(\d+).*', EditHandler),
         # single event views
         ('/event/(\d+).*', EventHandler),
