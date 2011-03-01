@@ -213,13 +213,9 @@ class EditHandler(webapp.RequestHandler):
                       log_desc = log_desc + "<strong>Notes:</strong> " + previous_object.notes + " to " + event.notes + "<br />"
                     event.rooms = self.request.get_all('rooms')
                     if (previous_object.rooms != event.rooms):
-                      log_desc = log_desc + "<strong>Rooms changed</strong>" + "<br />"
-                      log_desc = log_desc + "<strong>Old room</strong>" + "<br />"
-                      for room in previous_object.rooms:
-                        log_desc = log_desc + room + ' '
-                      log_desc = log_desc + "<br /><strong>New room(s)</strong><br />"
-                      for room in event.rooms:
-                        log_desc = log_desc + room + ' '
+                      log_desc = log_desc + "<strong>Rooms changed</strong><br />"
+                      log_desc = log_desc + "<strong>Old room:</strong> " + previous_object.roomlist + "<br />"
+                      log_desc = log_desc + "<strong>New room:</strong> " + event.roomlist + "<br />"
                     event.put()
                     log = HDLog(event=event,description=log_desc)
                     log.put()
