@@ -213,13 +213,9 @@ class EditHandler(webapp.RequestHandler):
                       log_desc = log_desc + "<strong>Notes:</strong> " + previous_object.notes + " to " + event.notes + "<br />"
                     event.rooms = self.request.get_all('rooms')
                     if (previous_object.rooms != event.rooms):
-                      log_desc = log_desc + "<strong>Rooms changed</strong>" + "<br />"
-                      log_desc = log_desc + "<strong>Old room</strong>" + "<br />"
-                      for room in previous_object.rooms:
-                        log_desc = log_desc + room + ' '
-                      log_desc = log_desc + "<br /><strong>New room(s)</strong><br />"
-                      for room in event.rooms:
-                        log_desc = log_desc + room + ' '
+                      log_desc = log_desc + "<strong>Rooms changed</strong><br />"
+                      log_desc = log_desc + "<strong>Old room:</strong> " + previous_object.roomlist + "<br />"
+                      log_desc = log_desc + "<strong>New room:</strong> " + event.roomlist + "<br />"
                     event.put()
                     log = HDLog(event=event,description=log_desc)
                     log.put()
@@ -429,7 +425,9 @@ class NewHandler(webapp.RequestHandler):
                 notify_owner_confirmation(event)
                 notify_new_event(event)
                 set_cookie(self.response.headers, 'formvalues', None)
-                self.redirect('/event/%s-%s' % (event.key().id(), slugify(event.name)))
+                #self.redirect('/event/%s-%s' % (event.key().id(), slugify(event.name)))
+                self.redirect('/confirm/%s-%s' % (event.key().id(), slugify(event.name)))
+                
         except Exception, e:
             message = str(e)
             if 'match format' in message:
@@ -442,7 +440,12 @@ class NewHandler(webapp.RequestHandler):
             #self.redirect('/new')
             error = message
             self.response.out.write(template.render('templates/error.html', locals()))
-            
+
+class ConfirmationHandler(webapp.RequestHandler):
+    def get(self, id):
+      event = Event.get_by_id(int(id))
+      self.response.out.write(template.render('templates/confirmation.html', locals()))
+
 class LogsHandler(webapp.RequestHandler):
     @util.login_required
     def get(self):
@@ -494,6 +497,7 @@ def main():
         ('/cronbugowners', CronBugOwnersHandler),
         ('/myevents', MyEventsHandler),
         ('/new', NewHandler),
+        ('/confirm/(\d+).*', ConfirmationHandler),
         ('/edit/(\d+).*', EditHandler),
         # single event views
         ('/event/(\d+).*', EventHandler),
