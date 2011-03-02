@@ -376,6 +376,10 @@ class NewHandler(webapp.RequestHandler):
         else:
             login_url = users.create_login_url('/')
         rooms = ROOM_OPTIONS
+        rules = memcache.get("rules")
+        if(rules is None):
+          rules = urlfetch.fetch("http://wiki.hackerdojo.com/api_v2/op/GetPage/page/Event+Rules+Summary/_type/html", "GET").content      
+          memcache.add("rules", rules, 86400)
         self.response.out.write(template.render('templates/new.html', locals()))
 
 
@@ -444,6 +448,10 @@ class NewHandler(webapp.RequestHandler):
 class ConfirmationHandler(webapp.RequestHandler):
     def get(self, id):
       event = Event.get_by_id(int(id))
+      rules = memcache.get("rules")
+      if(rules is None):
+        rules = urlfetch.fetch("http://wiki.hackerdojo.com/api_v2/op/GetPage/page/Event+Rules+Summary/_type/html", "GET").content      
+        memcache.add("rules", rules, 86400)
       self.response.out.write(template.render('templates/confirmation.html', locals()))
 
 class LogsHandler(webapp.RequestHandler):
