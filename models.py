@@ -12,7 +12,6 @@ ROOM_OPTIONS = (
     ('140b', 129),
     ('Cubby 1', 2),
     ('Cubby 2', 2),
-    ('Cubby 3', 2),
     ('Upstairs Office', 2),
     ('Front Area', 20))
 # GUESTS_PER_STAFF = 25
