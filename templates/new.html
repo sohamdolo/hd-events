@@ -116,7 +116,7 @@
         <tr><td><label for="details">Requested Rooms:</label>
         <span style="font-size:10;">(Capacity in parentheses)</span><br />
           {% for room in rooms %}
-          <nobr><input type="checkbox" id="room-{{room.0}}" name="rooms" value="{{room.0}}" /><label for="room-{{room.0}}">{{room.0|title}} ({{room.1}})</label></nobr>{% endfor %}
+          <nobr><input type="checkbox" id="room-{{room.0|strip_spaces}}" name="rooms" value="{{room.0}}" /><label for="room-{{room.0}}">{{room.0|title}} ({{room.1}})</label></nobr>{% endfor %}
         </td></tr>
         <tr><td style="padding-top: 8px;"><label for="details">Special notes:</label>
           <textarea rows="3" style="width: 300px;" name="notes"></textarea></td></tr>
@@ -128,5 +128,17 @@
   </form>
 
 </div>
+
+<script>
+$('#room-FrontArea').click(function() {
+var answer = confirm("The front lobby can only be reserved for events related to Hacker Dojo, such as official meetings, Happy Hour, and such. Please confirm this event is for Official Hacker Dojo Business only.");
+if(answer){
+$('#room-FrontArea').attr('checked', true);
+} else {
+$('#room-FrontArea').removeAttr('checked');
+}
+});
+</script>
+
 
 {% endblock %}

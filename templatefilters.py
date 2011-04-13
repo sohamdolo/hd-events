@@ -2,6 +2,10 @@ from google.appengine.ext import webapp
 register = webapp.template.create_template_register()
 
 @register.filter
+def strip_spaces(string):
+    return string.replace(" ", "")
+
+@register.filter
 def american_date(element):
     return element.strftime('%m/%d/%Y')
 
