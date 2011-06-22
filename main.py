@@ -378,7 +378,7 @@ class NewHandler(webapp.RequestHandler):
         rooms = ROOM_OPTIONS
         rules = memcache.get("rules")
         if(rules is None):
-          rules = urlfetch.fetch("http://wiki.hackerdojo.com/api_v2/op/GetPage/page/Event+Rules+Summary/_type/html", "GET").content      
+          rules = urlfetch.fetch("http://wiki.hackerdojo.com/api_v2/op/GetPage/page/Event+Policies/_type/html", "GET").content      
           memcache.add("rules", rules, 86400)
         self.response.out.write(template.render('templates/new.html', locals()))
 
@@ -450,7 +450,7 @@ class ConfirmationHandler(webapp.RequestHandler):
       event = Event.get_by_id(int(id))
       rules = memcache.get("rules")
       if(rules is None):
-        rules = urlfetch.fetch("http://wiki.hackerdojo.com/api_v2/op/GetPage/page/Event+Rules+Summary/_type/html", "GET").content      
+        rules = urlfetch.fetch("http://wiki.hackerdojo.com/api_v2/op/GetPage/page/Event+Policies/_type/html", "GET").content      
         memcache.add("rules", rules, 86400)
       self.response.out.write(template.render('templates/confirmation.html', locals()))
 
