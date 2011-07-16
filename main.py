@@ -229,6 +229,7 @@ class EditHandler(webapp.RequestHandler):
 
 class EventHandler(webapp.RequestHandler):
     def get(self, id):
+        
         event = Event.get_by_id(int(id))
         if self.request.path.endswith('json'):
             self.response.headers['content-type'] = 'application/json'
@@ -257,6 +258,8 @@ class EventHandler(webapp.RequestHandler):
             if state.lower() == 'approve' and access_rights.can_approve:
                 event.approve()
                 desc = 'Approved event'
+            if state.lower() == 'rsvp' and user:
+                event.rsvp()
             if state.lower() == 'staff' and access_rights.can_staff:
                 event.add_staff(user)
                 desc = 'Added self as staff'

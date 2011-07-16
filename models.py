@@ -136,6 +136,29 @@ class Event(db.Model):
             logging.info('%s approved %s but it is still understaffed' % (user.nickname, self.name))
         self.put()
 
+    def rsvp(self):
+        user = users.get_current_user()
+        if user and not self.has_rsvped():
+          rsvp = Rsvp(event=self)
+          rsvp.put()
+
+    def has_rsvped(self):
+        user = users.get_current_user()
+        if not user:
+          return False
+        for existing_rsvp in self.rsvps:
+          if existing_rsvp.user == user:
+             return True
+        return False
+
+    # Works even for logged out users
+    def can_rsvp(self):
+        if self.has_rsvped():
+          return False
+        time_till_event = self.start_time.replace(tzinfo=pytz.timezone('US/Pacific')) - datetime.now(pytz.timezone('US/Pacific')) 
+        hours = time_till_event.seconds/3600+time_till_event.days*24
+        return (hours > 48)
+                
     def cancel(self):
         user = users.get_current_user()
         self.status = 'canceled'
@@ -219,6 +242,11 @@ class Feedback(db.Model):
     comment = db.StringProperty(multiline=True)
     created = db.DateTimeProperty(auto_now_add=True)
 
+class Rsvp(db.Model):
+    user    = db.UserProperty(auto_current_user_add=True)
+    event   = db.ReferenceProperty(Event, collection_name='rsvps')
+    created = db.DateTimeProperty(auto_now_add=True)
+
 class HDLog(db.Model):
     event       = db.ReferenceProperty(Event)
     created     = db.DateTimeProperty(auto_now_add=True)
@@ -229,3 +257,4 @@ class HDLog(db.Model):
     def get_logs_list(cls):
         return cls.all() \
             .order('-created')
+

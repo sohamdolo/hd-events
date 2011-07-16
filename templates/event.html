@@ -8,7 +8,7 @@
     {% if event.is_deleted %}
       {% if access_rights.is_admin %}<input type="submit" name="state" value="Undelete" />{% endif %}
       (This will return the event to the &ldquo;pending&rdquo; status.)
-    {% else %}
+    {% else %}  
       <div id="edit-approve-btns">
       {% if access_rights.can_cancel and not event.is_onhold %}<input type="submit" name="state" value="OnHold" />{% endif %}
       {% if access_rights.can_approve %}<input type="submit" name="state" value="Approve" />{% endif %}
@@ -45,7 +45,7 @@
   <div class='b-block'><div class='b-label'>Fee:</div><div class='b-data'>{{event.fee}}</div></div>
   <div class='b-block'><div class='b-label'>Rooms:</div><div class='b-data'>{{event.roomlist}}</div></div>
   <!--<div class='b-block'><div class='b-label'>Staff:</div><div class='b-data'>{{event.stafflist}}</div></div>-->
-  <div class='thin-border'></div>
+  <br />
   <div class='b-block'><div class='b-label'>Details:</div><div class='b-data'>{{event.details}}</div></div>
   <br />
   <div class='b-block'><div class='b-label'>Notes:</div><div class='b-data'>{{event.notes}}</div></div>
@@ -61,6 +61,35 @@
     {% endfor %}
     </div>
   {% endif %}
+  {% ifequal event.status 'approved' %}
+  {% if user %}
+    <br/>
+    <div class='thin-border'></div>  
+    <form method="post" style="display: inline;">
+      <h4 style="margin-top:0; margin-bottom:1em">Member RSVP</h4>
+      {% if event.can_rsvp %}
+        <input type="submit" name="state" value="RSVP" />
+      {% endif %}
+            
+    </form>
+  {% endif %}
+  
+  {% if event.can_rsvp or event.has_rsvped %}
+    <p>Hacker Dojo members may {% if not user %} <a href="{{login_url}}">login</a> to {% endif %} reserve space in the event room up to 48 hours before the event.</p>
+    <p>Member RSVP does not imply event registration if applicable.</p>
+  {% endif %}
+  
+  {% if user and event.rsvps.count %}
+    <hr size=1>
+    <p>The following members have RSVPed:</p>
+    <ol>
+      {% for rsvp in event.rsvps %}
+        <li>{{ rsvp.user }}</li>
+      {% endfor %}  
+    </ol>
+  {% endif %}  
+      
+  {% endifequal %}
 </div>
 
 {% endblock %}
