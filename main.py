@@ -119,6 +119,39 @@ class ExportHandler(webapp.RequestHandler):
               iev.add('dtend', event.end_time.replace(tzinfo=pytz.timezone('US/Pacific')))
             cal.add_component(iev)
         return 'text/calendar', cal.as_string()
+
+    def export_large_ics(self):
+        events = Event.get_large_list()
+        url_base = 'http://' + self.request.headers.get('host', 'events.hackerdojo.com')
+        cal = Calendar()
+        for event in events:
+            iev = CalendarEvent()
+            iev.add('summary', event.name + ' (%s)' % event.estimated_size)
+            # make verbose description with empty fields where information is missing
+            ev_desc = '__Status: %s\n__Member: %s\n__Type: %s\n__Estimated size: %s\n__Info URL: %s\n__Fee: %s\n__Contact: %s, %s\n__Rooms: %s\n\n__Details: %s\n\n__Notes: %s' % (
+                event.status, 
+                event.owner(), 
+                event.type, 
+                event.estimated_size, 
+                event.url, 
+                event.fee, 
+                event.contact_name, 
+                event.contact_phone, 
+                event.roomlist(), 
+                event.details, 
+                event.notes)
+            # then delete the empty fields with a regex
+            ev_desc = re.sub(re.compile(r'^__.*?:[ ,]*$\n*',re.M),'',ev_desc)
+            ev_desc = re.sub(re.compile(r'^__',re.M),'',ev_desc)
+            ev_url = url_base + event_path(event)
+            iev.add('description', ev_desc + '\n--\n' + ev_url)
+            iev.add('url', ev_url)
+            if event.start_time:
+              iev.add('dtstart', event.start_time.replace(tzinfo=pytz.timezone('US/Pacific')))
+            if event.end_time:
+              iev.add('dtend', event.end_time.replace(tzinfo=pytz.timezone('US/Pacific')))
+            cal.add_component(iev)
+        return 'text/calendar', cal.as_string()
     
     def export_rss(self):
         url_base = 'http://' + self.request.headers.get('host', 'events.hackerdojo.com')
@@ -354,6 +387,19 @@ class AllFutureHandler(webapp.RequestHandler):
         tomorrow = today + timedelta(days=1)
         self.response.out.write(template.render('templates/all_future.html', locals()))
 
+class LargeHandler(webapp.RequestHandler):
+    def get(self):
+        user = users.get_current_user()
+        if user:
+            logout_url = users.create_logout_url('/')
+        else:
+            login_url = users.create_login_url('/')
+        show_all_nav = user
+        events = Event.get_large_list()
+        today = local_today()
+        tomorrow = today + timedelta(days=1)
+        self.response.out.write(template.render('templates/large.html', locals()))
+
 
 class PendingHandler(webapp.RequestHandler):
     def get(self):
@@ -503,6 +549,7 @@ def main():
     application = webapp.WSGIApplication([
         ('/', ApprovedHandler),
         ('/all_future', AllFutureHandler),
+        ('/large', LargeHandler),
         ('/pending', PendingHandler),
         ('/past', PastHandler),
         ('/cronbugowners', CronBugOwnersHandler),

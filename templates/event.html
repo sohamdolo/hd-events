@@ -62,22 +62,18 @@
     </div>
   {% endif %}
   {% ifequal event.status 'approved' %}
-  {% if user %}
     <br/>
     <div class='thin-border'></div>  
     <form method="post" style="display: inline;">
       <h4 style="margin-top:0; margin-bottom:1em">Member RSVP</h4>
-      {% if event.can_rsvp %}
+      {% if user and event.can_rsvp %}
         <input type="submit" name="state" value="RSVP" />
       {% endif %}
             
     </form>
-  {% endif %}
   
-  {% if event.can_rsvp or event.has_rsvped %}
-    <p>Hacker Dojo members may {% if not user %} <a href="{{login_url}}">login</a> to {% endif %} reserve space in the event room up to 48 hours before the event.</p>
-    <p>Member RSVP does not imply event registration if applicable.</p>
-  {% endif %}
+  <p>Hacker Dojo members may {% if not user %} <a href="{{login_url}}">login</a> to {% endif %} reserve space in the event room up to 48 hours before the event.</p>
+  <p>Member RSVP does not imply event registration if applicable.</p>
   
   {% if user and event.rsvps.count %}
     <hr size=1>

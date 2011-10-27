@@ -66,6 +66,15 @@ class Event(db.Model):
             .order('start_time')
 
     @classmethod
+    def get_large_list(cls):
+        future_list = Event.get_approved_list()
+        large_list = []
+        for e in future_list:
+          if int(e.estimated_size) >= 50:
+             large_list.append(e)
+        return large_list
+        
+    @classmethod
     def get_approved_list(cls):
         return cls.all() \
             .filter('start_time >', local_today()) \
