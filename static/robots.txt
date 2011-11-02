@@ -1,2 +1,9 @@
 User-agent: *
 Allow: /
+Disallow: /pending
+Disallow: /all_future
+Disallow: /past
+Disallow: /logs
+Disallow: /events.ics
+Disallow: /events.rss
+Disallow: /events.json

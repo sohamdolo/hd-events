@@ -1,7 +1,7 @@
 <tr>
   <td width="75">{{event.start_time|date:"g:iA"|lower}}</td>
   <td>
-    <a {% if event.is_canceled %}style="text-decoration: line-through;"{% endif %} href="/event/{{event.key.id}}-{{event.name|slugify}}">
+    <a {% if event.is_canceled %}style="text-decoration: line-through;"{% endif %} {% ifnotequal event.status "approved" %}rel="nofollow"{% endifnotequal %} href="/event/{{event.key.id}}-{{event.name|slugify}}">
       {{event.name}}
     </a> 
     {% ifnotequal event.status "approved" %}<span style="color: white; font-size: x-small; padding: 2px; background: gray">{{event.status}}</span>{% endifnotequal %}
