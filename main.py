@@ -204,7 +204,10 @@ class EditHandler(webapp.RequestHandler):
                     self.request.get('end_time_ampm')), '%m/%d/%Y %I:%M %p')
                 conflicts = Event.check_conflict(start_time,end_time,self.request.get_all('rooms'), int(id))
                 if conflicts:
-                  raise ValueError('Room conflict detected')
+                    if "Deck" in self.request.get_all('rooms') or "Savanna" in self.request.get_all('rooms'):
+                        raise ValueError('Room conflict detected <small>(Note: Deck &amp; Savanna share the same area, two events cannot take place at the same time in these rooms.)</small>')
+                    else:
+                        raise ValueError('Room conflict detected')
                 if not self.request.get('estimated_size').isdigit():
                     raise ValueError('Estimated number of people must be a number')
                 if not int(self.request.get('estimated_size')) > 0:
@@ -447,7 +450,10 @@ class NewHandler(webapp.RequestHandler):
                 self.request.get('end_time_ampm')), '%m/%d/%Y %I:%M %p')
             conflicts = Event.check_conflict(start_time,end_time,self.request.get_all('rooms'))
             if conflicts:
-              raise ValueError('Room conflict detected')
+                if "Deck" in self.request.get_all('rooms') or "Savanna" in self.request.get_all('rooms'):
+                    raise ValueError('Room conflict detected <small>(Note: Deck &amp; Savanna share the same area, two events cannot take place at the same time in these rooms.)</small>')
+                else:
+                    raise ValueError('Room conflict detected')
             if not self.request.get('estimated_size').isdigit():
               raise ValueError('Estimated number of people must be a number')
             if not int(self.request.get('estimated_size')) > 0:
