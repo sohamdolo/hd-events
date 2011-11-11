@@ -77,7 +77,7 @@ class ExportHandler(webapp.RequestHandler):
         self.response.out.write(body)
         
     def export_json(self):
-        events = Event.get_approved_list()
+        events = Event.get_recent_past_and_future()
         for k in self.request.GET:
             if self.request.GET[k] and k in ['member']:
                 value = users.User(urllib.unquote(self.request.GET[k]))
@@ -88,7 +88,7 @@ class ExportHandler(webapp.RequestHandler):
         return 'application/json', simplejson.dumps(events)
     
     def export_ics(self):
-        events = Event.all().filter('status IN', ['approved', 'canceled']).order('start_time')
+        events = Event.get_recent_past_and_future()
         url_base = 'http://' + self.request.headers.get('host', 'events.hackerdojo.com')
         cal = Calendar()
         for event in events:
@@ -121,7 +121,7 @@ class ExportHandler(webapp.RequestHandler):
         return 'text/calendar', cal.as_string()
 
     def export_large_ics(self):
-        events = Event.get_large_list()
+        events = Event.get_recent_past_and_future()
         url_base = 'http://' + self.request.headers.get('host', 'events.hackerdojo.com')
         cal = Calendar()
         for event in events:
@@ -155,7 +155,7 @@ class ExportHandler(webapp.RequestHandler):
     
     def export_rss(self):
         url_base = 'http://' + self.request.headers.get('host', 'events.hackerdojo.com')
-        events = Event.all().filter('status IN', ['approved', 'canceled']).order('start_time')
+        events = Event.get_recent_past_and_future()
         rss = PyRSS2Gen.RSS2(
             title = "Hacker Dojo Events Feed",
             link = url_base,
