@@ -82,7 +82,6 @@ class Event(db.Model):
     def get_approved_list(cls):
         return cls.all() \
             .filter('start_time >', local_today()) \
-            # .filter('start_time <', local_today() +  timedelta(days=60)) \
             .filter('status IN', ['approved', 'canceled']) \
             .order('start_time')
 

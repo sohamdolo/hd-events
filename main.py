@@ -296,6 +296,7 @@ class EventHandler(webapp.RequestHandler):
                 desc = 'Approved event'
             if state.lower() == 'rsvp' and user:
                 event.rsvp()
+                notify_owner_rsvp(event,user)
             if state.lower() == 'staff' and access_rights.can_staff:
                 event.add_staff(user)
                 desc = 'Added self as staff'
@@ -317,7 +318,7 @@ class EventHandler(webapp.RequestHandler):
             if state.lower() == 'expire' and access_rights.is_admin:
                 event.expire()
                 desc = 'Expired event'
-            if event.status == 'approved':
+            if event.status == 'approved' and state.lower() == 'approve':
                 notify_owner_approved(event)
             if desc != '':
                 log = HDLog(event=event,description=desc)

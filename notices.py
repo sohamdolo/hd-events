@@ -151,6 +151,23 @@ events@hackerdojo.com
 
 """ % (event.key().id(), slugify(event.name)))
 
+def notify_owner_rsvp(event,user):
+    mail.send_mail(sender=FROM_ADDRESS, to=event.member.email(),
+        subject="[Event RSVP] %s" % event.name,
+        body="""Good news!  %s <%s> has RSVPd to your event.
+        
+Friendly Reminder: As per policy, all members are welcome to sit in on any event at Hacker Dojo.
+
+As a courtesy, the Event RSVP system was built such that event hosts won't be surprised by the number of members attending their event.  Members can RSVP up to 48 hours before the event, after that the RSVP list is locked.
+
+http://events.hackerdojo.com/event/%s-%s
+
+Cheers,
+Hacker Dojo Events Team
+events@hackerdojo.com
+
+""" % (user.nickname(),user.email(),event.key().id(), slugify(event.name)))
+
 
 def notify_owner_expiring(event):
     pass
