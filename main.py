@@ -162,7 +162,10 @@ class ExportHandler(webapp.RequestHandler):
             description = "Upcoming events at the Hacker Dojo in Mountain View, CA",
             lastBuildDate = datetime.now(),
             items = [PyRSS2Gen.RSSItem(
-                        title = event.name,
+                        title = "%s @ %s: %s" % (
+                            event.start_time.strftime("%A, %B %d"),
+                            event.start_time.strftime("%I:%M%p").lstrip("0"), 
+                            event.name),
                         link = url_base + event_path(event),
                         description = event.details,
                         guid = url_base + event_path(event),
