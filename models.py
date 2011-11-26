@@ -19,7 +19,7 @@ PENDING_LIFETIME = 30 # days
 
 class Event(db.Model):
     status  = db.StringProperty(required=True, default='pending', choices=set(
-                ['pending', 'understaffed', 'approved', 'canceled', 'onhold', 'expired', 'deleted']))
+                ['pending', 'understaffed', 'approved', 'not_approved', 'canceled', 'onhold', 'expired', 'deleted']))
     member  = db.UserProperty(auto_current_user_add=True)
     name        = db.StringProperty(required=True)
     start_time  = db.DateTimeProperty(required=True)
@@ -66,7 +66,7 @@ class Event(db.Model):
     def get_all_future_list(cls):
         return cls.all() \
             .filter('start_time >', local_today()) \
-            .filter('status IN', ['approved', 'canceled', 'pending', 'onhold']) \
+            .filter('status IN', ['approved', 'not_approved', 'canceled', 'pending', 'onhold']) \
             .order('start_time')
 
     @classmethod
@@ -77,7 +77,7 @@ class Event(db.Model):
           if int(e.estimated_size) >= 50:
              large_list.append(e)
         return large_list
-        
+
     @classmethod
     def get_approved_list(cls):
         return cls.all() \
@@ -99,9 +99,17 @@ class Event(db.Model):
             .filter('status IN', ['pending', 'understaffed', 'onhold', 'expired']) \
             .order('start_time')
 
+    @classmethod
+    # show last 60 days and all future not approved events
+    def get_recent_not_approved_list(cls):
+        return cls.all() \
+            .filter('start_time >', local_today()  - timedelta(days=60)) \
+            .filter('status IN', ['not_approved']) \
+            .order('start_time')
+
     def owner(self):
         return human_username(self.member)
-        
+
     def stafflist(self):
         return to_sentence_list(map(human_username, self.staff))
 
@@ -113,7 +121,7 @@ class Event(db.Model):
             return "in " + self.roomlist()
         else:
             return ""
-        
+
     def is_staffed(self):
         return len(self.staff) >= self.staff_needed()
 
@@ -141,6 +149,9 @@ class Event(db.Model):
 
     def is_past(self):
         return self.end_time < local_today()
+
+    def is_not_approved(self):
+      return self.status == 'not_approved'
 
     def start_date(self):
         return self.start_time.date()
@@ -175,10 +186,10 @@ class Event(db.Model):
     def can_rsvp(self):
         if self.has_rsvped():
           return False
-        time_till_event = self.start_time.replace(tzinfo=pytz.timezone('US/Pacific')) - datetime.now(pytz.timezone('US/Pacific')) 
+        time_till_event = self.start_time.replace(tzinfo=pytz.timezone('US/Pacific')) - datetime.now(pytz.timezone('US/Pacific'))
         hours = time_till_event.seconds/3600+time_till_event.days*24
         return (hours > 48)
-                
+
     def cancel(self):
         user = users.get_current_user()
         self.status = 'canceled'
@@ -190,6 +201,12 @@ class Event(db.Model):
         self.status = 'onhold'
         self.put()
         logging.info('%s put %s on hold' % (user.nickname, self.name))
+
+    def not_approved(self):
+        user = users.get_current_user()
+        self.status = 'not_approved'
+        self.put()
+        logging.info('%s not_approved %s' % (user.nickname, self.name))
 
     def delete(self):
         user = users.get_current_user()

@@ -24,12 +24,12 @@ def event_path(event):
     return '/event/%s-%s' % (event.key().id(), slugify(event.name))
 
 class DomainCacheCron(webapp.RequestHandler):
-    def post(self):        
+    def post(self):
         noop = dojo('/groups/events',force=True)
 
 
 class ReminderCron(webapp.RequestHandler):
-    def post(self):        
+    def post(self):
         self.response.out.write("REMINDERS")
         today = local_today()
         # remind everyone 3 days in advance they need to show up
@@ -37,7 +37,7 @@ class ReminderCron(webapp.RequestHandler):
             .filter('status IN', ['approved']) \
             .filter('reminded =', False) \
             .filter('start_time <', today + timedelta(days=3))
-        for event in events:   
+        for event in events:
             self.response.out.write(event.name)
             # only mail them if they created the event 2+ days ago
             if event.created < today - timedelta(days=2):
@@ -57,7 +57,7 @@ class ExpireCron(webapp.RequestHandler):
         for event in events:
             event.expire()
             notify_owner_expired(event)
-            
+
 
 class ExpireReminderCron(webapp.RequestHandler):
     def post(self):
@@ -75,7 +75,7 @@ class ExportHandler(webapp.RequestHandler):
         content_type, body = getattr(self, 'export_%s' % format)()
         self.response.headers['content-type'] = content_type
         self.response.out.write(body)
-        
+
     def export_json(self):
         events = Event.get_recent_past_and_future()
         for k in self.request.GET:
@@ -86,7 +86,7 @@ class ExportHandler(webapp.RequestHandler):
             events = events.filter('%s =' % k, value)
         events = map(lambda x: x.to_dict(summarize=True), events)
         return 'application/json', simplejson.dumps(events)
-    
+
     def export_ics(self):
         events = Event.get_recent_past_and_future()
         url_base = 'http://' + self.request.headers.get('host', 'events.hackerdojo.com')
@@ -96,16 +96,16 @@ class ExportHandler(webapp.RequestHandler):
             iev.add('summary', event.name if event.status == 'approved' else event.name + ' (%s)' % event.status.upper())
             # make verbose description with empty fields where information is missing
             ev_desc = '__Status: %s\n__Member: %s\n__Type: %s\n__Estimated size: %s\n__Info URL: %s\n__Fee: %s\n__Contact: %s, %s\n__Rooms: %s\n\n__Details: %s\n\n__Notes: %s' % (
-                event.status, 
-                event.owner(), 
-                event.type, 
-                event.estimated_size, 
-                event.url, 
-                event.fee, 
-                event.contact_name, 
-                event.contact_phone, 
-                event.roomlist(), 
-                event.details, 
+                event.status,
+                event.owner(),
+                event.type,
+                event.estimated_size,
+                event.url,
+                event.fee,
+                event.contact_name,
+                event.contact_phone,
+                event.roomlist(),
+                event.details,
                 event.notes)
             # then delete the empty fields with a regex
             ev_desc = re.sub(re.compile(r'^__.*?:[ ,]*$\n*',re.M),'',ev_desc)
@@ -129,16 +129,16 @@ class ExportHandler(webapp.RequestHandler):
             iev.add('summary', event.name + ' (%s)' % event.estimated_size)
             # make verbose description with empty fields where information is missing
             ev_desc = '__Status: %s\n__Member: %s\n__Type: %s\n__Estimated size: %s\n__Info URL: %s\n__Fee: %s\n__Contact: %s, %s\n__Rooms: %s\n\n__Details: %s\n\n__Notes: %s' % (
-                event.status, 
-                event.owner(), 
-                event.type, 
-                event.estimated_size, 
-                event.url, 
-                event.fee, 
-                event.contact_name, 
-                event.contact_phone, 
-                event.roomlist(), 
-                event.details, 
+                event.status,
+                event.owner(),
+                event.type,
+                event.estimated_size,
+                event.url,
+                event.fee,
+                event.contact_name,
+                event.contact_phone,
+                event.roomlist(),
+                event.details,
                 event.notes)
             # then delete the empty fields with a regex
             ev_desc = re.sub(re.compile(r'^__.*?:[ ,]*$\n*',re.M),'',ev_desc)
@@ -152,7 +152,7 @@ class ExportHandler(webapp.RequestHandler):
               iev.add('dtend', event.end_time.replace(tzinfo=pytz.timezone('US/Pacific')))
             cal.add_component(iev)
         return 'text/calendar', cal.as_string()
-    
+
     def export_rss(self):
         url_base = 'http://' + self.request.headers.get('host', 'events.hackerdojo.com')
         events = Event.get_recent_past_and_future()
@@ -179,7 +179,7 @@ class EditHandler(webapp.RequestHandler):
         show_all_nav = user
         access_rights = UserRights(user, event)
         if access_rights.can_edit:
-            logout_url = users.create_logout_url('/')            
+            logout_url = users.create_logout_url('/')
             rooms = ROOM_OPTIONS
             hours = [1,2,3,4,5,6,7,8,9,10,11,12]
             self.response.out.write(template.render('templates/edit.html', locals()))
@@ -265,7 +265,7 @@ class EditHandler(webapp.RequestHandler):
 
 class EventHandler(webapp.RequestHandler):
     def get(self, id):
-        
+
         event = Event.get_by_id(int(id))
         if self.request.path.endswith('json'):
             self.response.headers['content-type'] = 'application/json'
@@ -275,7 +275,7 @@ class EventHandler(webapp.RequestHandler):
             if user:
                 access_rights = UserRights(user, event)
                 logout_url = users.create_logout_url('/')
-                
+
             else:
                 login_url = users.create_login_url('/')
             event.details = db.Text(event.details.replace('\n','<br/>'))
@@ -294,6 +294,9 @@ class EventHandler(webapp.RequestHandler):
             if state.lower() == 'approve' and access_rights.can_approve:
                 event.approve()
                 desc = 'Approved event'
+            if state.lower() == 'notapproved' and access_rights.can_not_approve:
+                event.not_approved()
+                desc = 'Event marked not approved'
             if state.lower() == 'rsvp' and user:
                 event.rsvp()
                 notify_owner_rsvp(event,user)
@@ -371,6 +374,19 @@ class PastHandler(webapp.RequestHandler):
         self.response.out.write(template.render('templates/past.html', locals()))
 
 
+class NotApprovedHandler(webapp.RequestHandler):
+    def get(self):
+        user = users.get_current_user()
+        if user:
+            logout_url = users.create_logout_url('/')
+        else:
+            login_url = users.create_login_url('/')
+        today = local_today()
+        show_all_nav = user
+        events = Event.get_recent_not_approved_list()
+        self.response.out.write(template.render('templates/not_approved.html', locals()))
+
+
 class CronBugOwnersHandler(webapp.RequestHandler):
     def get(self):
         events = Event.get_pending_list()
@@ -431,7 +447,7 @@ class NewHandler(webapp.RequestHandler):
         rooms = ROOM_OPTIONS
         rules = memcache.get("rules")
         if(rules is None):
-          rules = urlfetch.fetch("http://wiki.hackerdojo.com/api_v2/op/GetPage/page/Event+Policies/_type/html", "GET").content      
+          rules = urlfetch.fetch("http://wiki.hackerdojo.com/api_v2/op/GetPage/page/Event+Policies/_type/html", "GET").content
           memcache.add("rules", rules, 86400)
         self.response.out.write(template.render('templates/new.html', locals()))
 
@@ -487,7 +503,7 @@ class NewHandler(webapp.RequestHandler):
                 set_cookie(self.response.headers, 'formvalues', None)
                 #self.redirect('/event/%s-%s' % (event.key().id(), slugify(event.name)))
                 self.redirect('/confirm/%s-%s' % (event.key().id(), slugify(event.name)))
-                
+
         except Exception, e:
             message = str(e)
             if 'match format' in message:
@@ -506,7 +522,7 @@ class ConfirmationHandler(webapp.RequestHandler):
       event = Event.get_by_id(int(id))
       rules = memcache.get("rules")
       if(rules is None):
-        rules = urlfetch.fetch("http://wiki.hackerdojo.com/api_v2/op/GetPage/page/Event+Policies/_type/html", "GET").content      
+        rules = urlfetch.fetch("http://wiki.hackerdojo.com/api_v2/op/GetPage/page/Event+Policies/_type/html", "GET").content
         memcache.add("rules", rules, 86400)
       self.response.out.write(template.render('templates/confirmation.html', locals()))
 
@@ -561,6 +577,7 @@ def main():
         ('/past', PastHandler),
         ('/cronbugowners', CronBugOwnersHandler),
         ('/myevents', MyEventsHandler),
+        ('/not_approved', NotApprovedHandler),
         ('/new', NewHandler),
         ('/confirm/(\d+).*', ConfirmationHandler),
         ('/edit/(\d+).*', EditHandler),
@@ -573,7 +590,7 @@ def main():
         # CRON tasks
         ('/expire', ExpireCron),
         ('/expiring', ExpireReminderCron),
-        ('/domaincache', DomainCacheCron),        
+        ('/domaincache', DomainCacheCron),
         ('/reminder', ReminderCron),
         #
         ('/logs', LogsHandler),
