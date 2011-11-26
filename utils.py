@@ -16,7 +16,7 @@ def to_sentence_list(lst):
     count = len(lst)
     if count == 0:
         return ''
-    elif count == 1: 
+    elif count == 1:
         return lst[0]
     else:
         if count > 2:
@@ -97,16 +97,17 @@ class UserRights(object):
         self.can_edit = False
         self.can_staff = False
         self.can_unstaff = False
-        
+
         if self.user:
             self.is_admin = username(self.user) in dojo('/groups/events',force=False)
         if self.event:
             self.is_owner = (self.user == self.event.member)
-            self.can_approve = ((self.event.status in ['pending'] or self.event.status in ['onhold']) and self.is_admin
+            self.can_approve = ((self.event.status in ['pending'] or self.event.status in ['onhold'] or self.event.status in ['not_approved'] ) and self.is_admin
                                 and not self.is_owner)
+            self.can_not_approve = self.event.status not in ['not_approved'] and self.is_admin
             self.can_cancel = self.is_admin or self.is_owner
             self.can_edit = self.is_admin or self.is_owner
             self.can_staff = (self.event.status in ['pending', 'understaffed', 'approved']
                               and self.user not in self.event.staff)
-            self.can_unstaff = (self.event.status not in ['canceled', 'deleted'] 
+            self.can_unstaff = (self.event.status not in ['canceled', 'deleted']
                                 and self.user in self.event.staff)
