@@ -508,6 +508,8 @@ class ConfirmationHandler(webapp.RequestHandler):
       if(rules is None):
         rules = urlfetch.fetch("http://wiki.hackerdojo.com/api_v2/op/GetPage/page/Event+Policies/_type/html", "GET").content      
         memcache.add("rules", rules, 86400)
+      user = users.get_current_user()
+      logout_url = users.create_logout_url('/')
       self.response.out.write(template.render('templates/confirmation.html', locals()))
 
 class LogsHandler(webapp.RequestHandler):
