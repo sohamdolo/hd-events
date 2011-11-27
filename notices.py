@@ -73,7 +73,7 @@ events@hackerdojo.com
    body=body, _queue="emailthrottle")
              
 def notify_owner_confirmation(event):
-    mail.send_mail(sender=FROM_ADDRESS, to=event.member.email(),
+    deferred.defer(mail.send_mail ,sender=FROM_ADDRESS, to=event.member.email(),
         subject="[New Event] Submitted but **not yet approved**",
         body="""This is a confirmation that your event:
 
@@ -99,7 +99,7 @@ events@hackerdojo.com
 
 
 def notify_new_event(event):
-    mail.send_mail(sender=FROM_ADDRESS, to=NEW_EVENT_ADDRESS,
+    deferred.defer(mail.send_mail, sender=FROM_ADDRESS, to=NEW_EVENT_ADDRESS,
         subject='[New Event] %s on %s' % (event.name, event.start_time.strftime('%a %b %d')),
         body="""Event: %s
 Member: %s
@@ -135,7 +135,7 @@ http://events.hackerdojo.com/event/%s-%s
 
 
 def notify_owner_approved(event):
-    mail.send_mail(sender=FROM_ADDRESS, to=event.member.email(),
+    deferred.defer(mail.send_mail,sender=FROM_ADDRESS, to=event.member.email(),
         subject="[Event Approved] %s" % event.name,
         body="""Your event is approved and on the calendar!
 
@@ -152,7 +152,7 @@ events@hackerdojo.com
 """ % (event.key().id(), slugify(event.name)))
 
 def notify_owner_rsvp(event,user):
-    mail.send_mail(sender=FROM_ADDRESS, to=event.member.email(),
+    deferred.defer(mail.send_mail,sender=FROM_ADDRESS, to=event.member.email(),
         subject="[Event RSVP] %s" % event.name,
         body="""Good news!  %s <%s> has RSVPd to your event.
         
