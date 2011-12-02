@@ -196,12 +196,12 @@ class EditHandler(webapp.RequestHandler):
         if access_rights.can_edit:
             try:
                 start_time = datetime.strptime('%s %s:%s %s' % (
-                    self.request.get('date'),
+                    self.request.get('start_date'),
                     self.request.get('start_time_hour'),
                     self.request.get('start_time_minute'),
                     self.request.get('start_time_ampm')), '%m/%d/%Y %I:%M %p')
                 end_time = datetime.strptime('%s %s:%s %s' % (
-                    self.request.get('date'),
+                    self.request.get('end_date'),
                     self.request.get('end_time_hour'),
                     self.request.get('end_time_minute'),
                     self.request.get('end_time_ampm')), '%m/%d/%Y %I:%M %p')
@@ -459,12 +459,12 @@ class NewHandler(webapp.RequestHandler):
         user = users.get_current_user()
         try:
             start_time = datetime.strptime('%s %s:%s %s' % (
-                self.request.get('date'),
+                self.request.get('start_date'),
                 self.request.get('start_time_hour'),
                 self.request.get('start_time_minute'),
                 self.request.get('start_time_ampm')), '%m/%d/%Y %I:%M %p')
             end_time = datetime.strptime('%s %s:%s %s' % (
-                self.request.get('date'),
+                self.request.get('end_date'),
                 self.request.get('end_time_hour'),
                 self.request.get('end_time_minute'),
                 self.request.get('end_time_ampm')), '%m/%d/%Y %I:%M %p')

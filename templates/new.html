@@ -18,8 +18,8 @@
     <h4>When</h4>
     <table style="margin: 0px;">
       <tr>
-        <td class="first"><label for="date">Date:</label>
-          <input name="date" id="datepicker" readonly="readonly"/></td>
+        <td class="first"><label for="start_date">Start Date:</label>
+          <input name="start_date" class="datepicker" readonly="readonly"/></td>
         <td><label for="start_time">Start Time:</label>
           <select name="start_time_hour">
             <option>1</option>
@@ -48,7 +48,8 @@
         </td>
       </tr>
       <tr>
-        <td> </td>
+        <td class="first"><label for="end_date">End Date:</label>
+          <input name="end_date" class="datepicker" readonly="readonly"/></td>
         <td><label for="end_time">End Time:</label>
         <select name="end_time_hour">
           <option>1</option>

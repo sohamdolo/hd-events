@@ -119,8 +119,8 @@ http://events.hackerdojo.com/event/%s-%s
 """ % (
     event.name, 
     event.member.email(), 
-    event.start_time.strftime('%I:%M%p'), 
-    event.end_time.strftime('%I:%M%p'),
+    event.start_time.strftime('%l, %F %j %Y %I:%M%p'),
+    event.end_time.strftime('%l, %F %j %Y %I:%M%p'),
     event.type,
     event.estimated_size,
     event.roomlist(),

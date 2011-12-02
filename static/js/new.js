@@ -1,5 +1,5 @@
 $(function() {
-  $("#datepicker").datepicker({minDate: 0});
+  $(".datepicker").datepicker({minDate: 0});
 
   try {
     var formvalues = $.cookie('formvalues');

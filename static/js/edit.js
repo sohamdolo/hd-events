@@ -1,6 +1,6 @@
 $(function() {
-  $("#datepicker").datepicker();
-  $('#datepicker, #roomlist input, #start_time_hour, #start_time_minute, #start_time_ampm, #end_time_hour, #end_time_minute, #end_time_ampm').blur(checkDup);
+  $(".datepicker").datepicker();
+  $('.datepicker, #roomlist input, #start_time_hour, #start_time_minute, #start_time_ampm, #end_time_hour, #end_time_minute, #end_time_ampm').blur(checkDup);
 });
   
 function checkDup() {

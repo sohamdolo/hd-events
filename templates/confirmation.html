@@ -12,8 +12,8 @@ Please contact <a href="mailto:events@hackerdojo.com">events@hackerdojo.com</a> 
 
 <h3>{{event.name}}</h3>
 
-<div class='b-block'><div class='b-label'>Date:</div><div class='b-data'>{{event.start_time|date:"l, F j Y"}}</div></div>
-<div class='b-block'><div class='b-label'>Time:</div><div class='b-data'>{{event.start_time|date:"g:iA"|lower}} to {{event.end_time|date:"g:iA"|lower}}</div></div>
+<div class='b-block'><div class='b-label'>Start:</div><div class='b-data'>{{event.start_time|date:"l, F j Y"}} at {{event.start_time|date:"g:iA"|lower}}</div></div>
+<div class='b-block'><div class='b-label'>End:</div><div class='b-data'>{{event.end_time|date:"l, F j Y"}} at {{event.end_time|date:"g:iA"|lower}}</div></div>
 <div class='b-block'><div class='b-label'>Rooms:</div><div class='b-data'>{{event.roomlist}}</div></div>
 
 <div id="rules">{{rules}}</div>
