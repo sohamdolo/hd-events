@@ -341,7 +341,7 @@ class ApprovedHandler(webapp.RequestHandler):
             login_url = users.create_login_url('/')
         today = local_today()
         show_all_nav = user
-        events = Event.get_approved_list()
+        events = Event.get_approved_list_with_multiday()
         tomorrow = today + timedelta(days=1)
         whichbase = 'base.html'
         if self.request.get('base'):

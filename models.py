@@ -1,6 +1,7 @@
 from google.appengine.ext import db
 from google.appengine.api import urlfetch, memcache, users, mail
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
+from copy import copy
 from utils import human_username, local_today, to_sentence_list
 import logging
 import pytz
@@ -84,6 +85,29 @@ class Event(db.Model):
             .filter('start_time >', local_today()) \
             .filter('status IN', ['approved', 'canceled']) \
             .order('start_time')
+    
+    @classmethod
+    def get_approved_list_with_multiday(cls):
+        events = list(cls.all() \
+            .filter('end_time >', local_today()) \
+            .filter('status IN', ['approved', 'canceled']))
+        
+        # create dupe event objects for each day of multiday events
+        for event in list(events):
+            if event.start_time < local_today():
+                # remove original if it started before today
+                events.remove(event)
+            for day in range(1, event.num_days):
+                if event.start_time + timedelta(days=day) >= local_today():
+                    clone = copy(event)
+                    clone.start_time = datetime.combine(event.start_date(), time()) + timedelta(days=day)
+                    clone.is_continued = True
+                    events.append(clone)
+
+
+        events.sort(key = lambda event: event.start_time)
+
+        return events
 
     @classmethod
     def get_recent_past_and_future(cls):
@@ -155,6 +179,17 @@ class Event(db.Model):
 
     def start_date(self):
         return self.start_time.date()
+
+    def end_date(self):
+        return self.end_time.date()
+
+    @property
+    def num_days(self):
+        num_days = (self.end_date() - self.start_date()).days + 1
+        if num_days > 1 and self.end_time.timetuple()[3] < 8:
+            # only count that day if the event runs past 8am
+            num_days -= 1
+        return num_days
 
     def approve(self):
         user = users.get_current_user()
