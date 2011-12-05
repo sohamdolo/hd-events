@@ -1,5 +1,13 @@
 $(function() {
   $(".datepicker").datepicker({minDate: 0});
+  $("#start_date").datepicker({
+      minDate: 0,
+      onSelect: function(dateText, inst){
+          if($("#end_date").val() == ""){
+              $("#end_date").val(dateText)
+          }
+      }
+  });
 
   try {
     var formvalues = $.cookie('formvalues');
