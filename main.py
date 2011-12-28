@@ -17,7 +17,7 @@ from notices import *
 import PyRSS2Gen
 import re
 import pytz
-
+    
 webapp.template.register_template_library('templatefilters')
 
 def event_path(event):
@@ -450,8 +450,11 @@ class NewHandler(webapp.RequestHandler):
         rooms = ROOM_OPTIONS
         rules = memcache.get("rules")
         if(rules is None):
-          rules = urlfetch.fetch("http://wiki.hackerdojo.com/api_v2/op/GetPage/page/Event+Policies/_type/html", "GET").content
-          memcache.add("rules", rules, 86400)
+          try:
+            rules = urlfetch.fetch("http://wiki.hackerdojo.com/api_v2/op/GetPage/page/Event+Policies/_type/html", "GET").content
+            memcache.add("rules", rules, 86400)
+          except Exception, e:
+            rules = "Error fetching rules.  Please report this error to internal-dev@hackerdojo.com."
         self.response.out.write(template.render('templates/new.html', locals()))
 
 
@@ -525,8 +528,11 @@ class ConfirmationHandler(webapp.RequestHandler):
       event = Event.get_by_id(int(id))
       rules = memcache.get("rules")
       if(rules is None):
-        rules = urlfetch.fetch("http://wiki.hackerdojo.com/api_v2/op/GetPage/page/Event+Policies/_type/html", "GET").content
-        memcache.add("rules", rules, 86400)
+          try:
+              rules = urlfetch.fetch("http://wiki.hackerdojo.com/api_v2/op/GetPage/page/Event+Policies/_type/html", "GET").content
+              memcache.add("rules", rules, 86400)
+          except Exception, e:
+              rules = "Error fetching rules.  Please report this error to internal-dev@hackerdojo.com."
       user = users.get_current_user()
       logout_url = users.create_logout_url('/')
       self.response.out.write(template.render('templates/confirmation.html', locals()))
