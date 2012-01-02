@@ -9,9 +9,9 @@ NEW_EVENT_ADDRESS = 'events@hackerdojo.com'
 STAFF_ADDRESS = 'staff@hackerdojo.com'
 
 if os.environ['SERVER_SOFTWARE'].startswith('Dev'):
-    MAIL_OVERIDE = "nowhere@nowhere.com"
+    MAIL_OVERRIDE = "nowhere@nowhere.com"
 else:
-    MAIL_OVERIDE = False
+    MAIL_OVERRIDE = False
         
 def bug_owner_pending(e):
   body = """
@@ -40,7 +40,7 @@ Hacker Dojo Events Team
 events@hackerdojo.com
 """
  
-  deferred.defer(mail.send_mail, sender=FROM_ADDRESS, to=possibly_overide_to_address(e.member.email()),
+  deferred.defer(mail.send_mail, sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(e.member.email()),
    subject="[Pending Event] Your event is still pending: " + e.name,
    body=body, _queue="emailthrottle")
 
@@ -73,12 +73,12 @@ events@hackerdojo.com
 
 """
  
-  deferred.defer(mail.send_mail, sender=FROM_ADDRESS, to=possibly_overide_to_address(e.member.email()),
+  deferred.defer(mail.send_mail, sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(e.member.email()),
    subject="[Event Reminder] " + e.name,
    body=body, _queue="emailthrottle")
              
 def notify_owner_confirmation(event):
-    deferred.defer(mail.send_mail ,sender=FROM_ADDRESS, to=possibly_overide_to_address(event.member.email()),
+    deferred.defer(mail.send_mail ,sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(event.member.email()),
         subject="[New Event] Submitted but **not yet approved**",
         body="""This is a confirmation that your event:
 
@@ -104,7 +104,7 @@ events@hackerdojo.com
 
 
 def notify_new_event(event):
-    deferred.defer(mail.send_mail, sender=FROM_ADDRESS, to=possibly_overide_to_address(NEW_EVENT_ADDRESS),
+    deferred.defer(mail.send_mail, sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(NEW_EVENT_ADDRESS),
         subject='[New Event] %s on %s' % (event.name, event.start_time.strftime('%a %b %d')),
         body="""Event: %s
 Member: %s
@@ -140,7 +140,7 @@ http://events.hackerdojo.com/event/%s-%s
 
 
 def notify_owner_approved(event):
-    deferred.defer(mail.send_mail,sender=FROM_ADDRESS, to=possibly_overide_to_address(event.member.email()),
+    deferred.defer(mail.send_mail,sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(event.member.email()),
         subject="[Event Approved] %s" % event.name,
         body="""Your event is approved and on the calendar!
 
@@ -157,7 +157,7 @@ events@hackerdojo.com
 """ % (event.key().id(), slugify(event.name)))
 
 def notify_owner_rsvp(event,user):
-    deferred.defer(mail.send_mail,sender=FROM_ADDRESS, to=possibly_overide_to_address(event.member.email()),
+    deferred.defer(mail.send_mail,sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(event.member.email()),
         subject="[Event RSVP] %s" % event.name,
         body="""Good news!  %s <%s> has RSVPd to your event.
         
@@ -173,9 +173,9 @@ events@hackerdojo.com
 
 """ % (user.nickname(),user.email(),event.key().id(), slugify(event.name)))
 
-def possibly_overide_to_address(default):
-    if MAIL_OVERIDE:
-        return MAIL_OVERIDE
+def possibly_OVERRIDE_to_address(default):
+    if MAIL_OVERRIDE:
+        return MAIL_OVERRIDE
     else:
         return default
 
