@@ -6,7 +6,7 @@ from utils import human_username, local_today, to_sentence_list
 import logging
 import pytz
 
-ROOM_OPTIONS = (
+OLD_ROOM_OPTIONS = (
     ('Cave', 15),
     ('Deck', 30),
     ('Savanna', 120),
@@ -15,6 +15,17 @@ ROOM_OPTIONS = (
     ('Cubby 2', 2),
     ('Upstairs Office', 2),
     ('Front Area', 20))
+    
+ROOM_OPTIONS = (
+    ('Cave', 15),
+    ('Deck', 30),
+    ('Savanna', 45),
+    ('140b', 45),
+    ('Cubby 1', 2),
+    ('Cubby 2', 2),
+    ('Upstairs Office', 2),
+    ('Front Area', 20))    
+    
 # GUESTS_PER_STAFF = 25
 PENDING_LIFETIME = 30 # days
 

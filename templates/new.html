@@ -94,7 +94,7 @@
             <option>Other...</option>
          </select>
          <input type="text" id="type-text" onblur="$('#type-select').append('<option>'+this.value+'</option>');$('#type-select').val(this.value);hideOther();" style="display: none;" size="15"></td>
-        <td><label for="estimated_size">Expected Size:</label>
+        <td><label for="estimated_size" title="This will become a HARD LIMIT on your event.">Max persons:</label>
           <input type="text" name="estimated_size" size="4" style="text-align: right;" /> <span>people</span></td>
       </tr></table>
 
