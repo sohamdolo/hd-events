@@ -17,7 +17,7 @@ OLD_ROOM_OPTIONS = (
     ('Front Area', 20))
     
 ROOM_OPTIONS = (
-    ('Cave', 15),
+    ('Electronics Lab', 15),
     ('Deck', 30),
     ('Savanna', 45),
     ('140b', 45),
