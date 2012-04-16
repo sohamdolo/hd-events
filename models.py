@@ -123,7 +123,7 @@ class Event(db.Model):
     @classmethod
     def get_recent_past_and_future(cls):
         return cls.all() \
-            .filter('start_time >', local_today()  - timedelta(days=2)) \
+            .filter('start_time >', local_today()  - timedelta(days=1)) \
             .filter('status IN', ['approved', 'canceled']) \
             .order('start_time').fetch(200)
 
