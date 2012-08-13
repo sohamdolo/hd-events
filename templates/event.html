@@ -37,7 +37,7 @@
   <div class='b-block'><div class='b-label'>Status:</div><div class='b-data'>{{event.status|title}}</div></div>
   <div class='b-block'><div class='b-label'>Start:</div><div class='b-data'>{{event.start_time|date:"l, F j Y"}} at {{event.start_time|date:"g:iA"|lower}}</div></div>
   <div class='b-block'><div class='b-label'>End:</div><div class='b-data'>{{event.end_time|date:"l, F j Y"}} at {{event.end_time|date:"g:iA"|lower}}</div></div>
-  <div class='b-block'><div class='b-label'>Member:</div><div class='b-data'>{{event.member}}</div></div>
+  <div class='b-block'><div class='b-label'>Member:</div><div class='b-data'><a href="mailto:{{event.member}}@hackerdojo.com">{{event.member}}@</a></div></div>
   <div class='b-block'><div class='b-label'>Type:</div><div class='b-data'>{{event.type}}</div></div>
   <div class='b-block'><div class='b-label'>Estimated size:</div><div class='b-data'>{{event.estimated_size}}</div></div>
   {% if event.contact_name %}
