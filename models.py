@@ -17,14 +17,12 @@ OLD_ROOM_OPTIONS = (
     ('Front Area', 20))
     
 ROOM_OPTIONS = (
-    ('Electronics Lab', 15),
-    ('Deck', 30),
-    ('Savanna', 45),
-    ('140b', 45),
-    ('Cubby 1', 2),
-    ('Cubby 2', 2),
-    ('Upstairs Office', 2),
-    ('Front Area', 20))    
+    ('Maker Space', 12),
+    ('Classroom', 20),
+    ('Conference Room', 10),
+    ('Large Event Room', 98),
+    ('Loungey', 30)
+  ) 
     
 # GUESTS_PER_STAFF = 25
 PENDING_LIFETIME = 30 # days
