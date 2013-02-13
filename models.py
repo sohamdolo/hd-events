@@ -337,5 +337,5 @@ class HDLog(db.Model):
     @classmethod
     def get_logs_list(cls):
         return cls.all() \
-            .order('-created')
+            .order('-created').fetch(500)
 
