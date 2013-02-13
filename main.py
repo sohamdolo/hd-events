@@ -215,8 +215,6 @@ class EditHandler(webapp.RequestHandler):
                     raise ValueError('Estimated number of people must be a number')
                 if not int(self.request.get('estimated_size')) > 0:
                     raise ValueError('Estimated number of people must be greater then zero')
-                if int(self.request.get('estimated_size')) > 47:
-                    raise ValueError('Hacker Dojo temporarily is under order of the City of Mountain View to not allow assemblies larger than 49 persons.  Sorry, your event exceeds this size.  <p>NOTE: Lying about the event size to get around this restriction will result in membership ban plus possible legal action.  We will be fined $1500 for each violation, which will be passed on to the event host.')
                 if (  self.request.get( 'contact_phone' ) and not is_phone_valid( self.request.get( 'contact_phone' ) ) ):
                     raise ValueError( 'Phone number does not appear to be valid' )
                 else:
@@ -483,8 +481,6 @@ class NewHandler(webapp.RequestHandler):
               raise ValueError('Estimated number of people must be a number')
             if not int(self.request.get('estimated_size')) > 0:
               raise ValueError('Estimated number of people must be greater then zero')
-            if int(self.request.get('estimated_size')) > 47:
-                raise ValueError('Hacker Dojo temporarily is under order of the City of Mountain View to not allow assemblies larger than 49 persons.  Sorry, your event exceeds this size.  <p>NOTE: Lying about the event size to get around this restriction will result in membership ban plus possible legal action.  We will be fined $1500 for each violation, which will be passed on to the event host.')              
             if (end_time-start_time).days < 0:
                 raise ValueError('End time must be after start time')
             if (  self.request.get( 'contact_phone' ) and not is_phone_valid( self.request.get( 'contact_phone' ) ) ):
