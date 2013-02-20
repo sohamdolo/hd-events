@@ -17,6 +17,7 @@ from notices import *
 import PyRSS2Gen
 import re
 import pytz
+import keymaster
     
 webapp.template.register_template_library('templatefilters')
 
@@ -579,6 +580,28 @@ class FeedbackHandler(webapp.RequestHandler):
             set_cookie(self.response.headers, 'formvalues', dict(self.request.POST))
             self.redirect('/feedback/new/' + id)
 
+class TempHandler(webapp.RequestHandler):
+    def get(self):
+        units = ["EDD9A758","B65D8121","0BA20EDC","47718E38"]
+        master = units[2]
+        key = keymaster.get('thermkey')
+        url = "https://api.bayweb.com/v2/?id="+master+"&key="+key+"&action=data"
+        result = urlfetch.fetch(url)
+        if result.status_code == 200:
+          thdata = simplejson.loads(result.content)
+          inside_air_temp = thdata['iat']
+          if inside_air_temp <= 66: 
+              for thermostat in units:
+                  url = "https://api.bayweb.com/v2/?id="+thermostat+"&key="+key+"&action=set&heat_sp=69&mode=1&hold=1&fan=1"
+                  result = urlfetch.fetch(url)
+              notify_hvac_change(inside_air_temp,"Heat")
+          if inside_air_temp >= 75: 
+              for thermostat in units:
+                  url = "https://api.bayweb.com/v2/?id="+thermostat+"&key="+key+"&action=set&heat_sp=72&mode=2&hold=1&fan=1"
+                  result = urlfetch.fetch(url)
+              notify_hvac_change(inside_air_temp,"Cold")
+        self.response.out.write("200 OK")
+
 def main():
     application = webapp.WSGIApplication([
         ('/', ApprovedHandler),
@@ -586,6 +609,7 @@ def main():
         ('/large', LargeHandler),
         ('/pending', PendingHandler),
         ('/past', PastHandler),
+        ('/temperature', TempHandler),
         ('/cronbugowners', CronBugOwnersHandler),
         ('/myevents', MyEventsHandler),
         ('/not_approved', NotApprovedHandler),

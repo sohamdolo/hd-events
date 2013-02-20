@@ -30,6 +30,9 @@ handlers:
 - url: /_ah/queue/deferred
   script: $PYTHON_LIB/google/appengine/ext/deferred/handler.py
   login: admin  
+- url: /_km/.*
+  script: keymaster.py
+  login: admin
 - url: .*
   script: main.py  
   

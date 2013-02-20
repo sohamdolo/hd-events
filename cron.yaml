@@ -11,3 +11,6 @@ cron:
 - description: cache dojo domain stuff
   url: /domaincache
   schedule: every 1 hours
+- description: change HVAC mode as neccessary
+  url: /temperature
+  schedule: every 90 minutes
