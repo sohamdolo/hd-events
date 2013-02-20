@@ -582,25 +582,31 @@ class FeedbackHandler(webapp.RequestHandler):
 
 class TempHandler(webapp.RequestHandler):
     def get(self):
-        units = ["EDD9A758","B65D8121","0BA20EDC","47718E38"]
-        master = units[2]
+        units = {"AC1":"EDD9A758", "AC2":"B65D8121", "AC3":"0BA20EDC", "AC5":"47718E38"} 
+        modes = ["Off","Heat","Cool"]
+        master = units["AC3"]
         key = keymaster.get('thermkey')
         url = "https://api.bayweb.com/v2/?id="+master+"&key="+key+"&action=data"
         result = urlfetch.fetch(url)
         if result.status_code == 200:
-          thdata = simplejson.loads(result.content)
-          inside_air_temp = thdata['iat']
-          if inside_air_temp <= 66: 
-              for thermostat in units:
-                  url = "https://api.bayweb.com/v2/?id="+thermostat+"&key="+key+"&action=set&heat_sp=69&mode=1&hold=1&fan=1"
-                  result = urlfetch.fetch(url)
-              notify_hvac_change(inside_air_temp,"Heat")
-          if inside_air_temp >= 75: 
-              for thermostat in units:
-                  url = "https://api.bayweb.com/v2/?id="+thermostat+"&key="+key+"&action=set&heat_sp=72&mode=2&hold=1&fan=1"
-                  result = urlfetch.fetch(url)
-              notify_hvac_change(inside_air_temp,"Cold")
-        self.response.out.write("200 OK")
+            thdata = simplejson.loads(result.content)
+            inside_air_temp = thdata['iat']
+            mode = thdata['mode']
+            if inside_air_temp <= 66 and modes[mode] == "Cool":
+                for thermostat in units:
+                    url = "https://api.bayweb.com/v2/?id="+units[thermostat]+"&key="+key+"&action=set&heat_sp=69&mode="+str(modes.index("Heat"))
+                    result = urlfetch.fetch(url)
+                notify_hvac_change(inside_air_temp,"Heat")
+            if inside_air_temp >= 75 and modes[mode] == "Heat":
+                for thermostat in units:
+                    url = "https://api.bayweb.com/v2/?id="+units[thermostat]+"&key="+key+"&action=set&cool_sp=71&mode="+str(modes.index("Cool"))
+                    result = urlfetch.fetch(url)
+                notify_hvac_change(inside_air_temp,"Cold")
+            self.response.out.write("200 OK")
+        else:
+            notify_hvac_change(result.status_code,"ERROR connecting to BayWeb API")
+            self.response.out.write("500 Internal Server Error")
+        
 
 def main():
     application = webapp.WSGIApplication([
