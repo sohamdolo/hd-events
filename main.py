@@ -212,6 +212,8 @@ class EditHandler(webapp.RequestHandler):
                         raise ValueError('Room conflict detected <small>(Note: Deck &amp; Savanna share the same area, two events cannot take place at the same time in these rooms.)</small>')
                     else:
                         raise ValueError('Room conflict detected')
+                if not self.request.get('details'):
+                    raise ValueError('You must provide a description of the event')
                 if not self.request.get('estimated_size').isdigit():
                     raise ValueError('Estimated number of people must be a number')
                 if not int(self.request.get('estimated_size')) > 0:
@@ -478,6 +480,8 @@ class NewHandler(webapp.RequestHandler):
                     raise ValueError('Room conflict detected <small>(Note: Deck &amp; Savanna share the same area, two events cannot take place at the same time in these rooms.)</small>')
                 else:
                     raise ValueError('Room conflict detected')
+            if not self.request.get('details'):
+              raise ValueError('You must provide a description of the event')
             if not self.request.get('estimated_size').isdigit():
               raise ValueError('Estimated number of people must be a number')
             if not int(self.request.get('estimated_size')) > 0:
