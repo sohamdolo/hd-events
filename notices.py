@@ -192,6 +192,6 @@ The inside air temperature was %d.  HVAC is now set to %s.
 
 """ % (iat,mode)
  
-  deferred.defer(mail.send_mail, sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address("operations@hackerdojo.com"),
+  deferred.defer(mail.send_mail, sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address("hvac-operations@hackerdojo.com"),
    subject="[HVAC auto-pilot] " + mode,
    body=body, _queue="emailthrottle")
