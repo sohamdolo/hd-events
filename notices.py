@@ -1,12 +1,17 @@
 from google.appengine.api import mail
-from django.template.defaultfilters import slugify
 from google.appengine.ext import deferred
 import random
 import os
+import unicodedata
+import re
 
 FROM_ADDRESS = 'Dojo Events <robot@hackerdojo.com>'
 NEW_EVENT_ADDRESS = 'events@hackerdojo.com'
 STAFF_ADDRESS = 'staff@hackerdojo.com'
+
+def slugify(str):
+    str = unicodedata.normalize('NFKD', str.lower()).encode('ascii','ignore')
+    return re.sub(r'\W+','-',str)
 
 if os.environ['SERVER_SOFTWARE'].startswith('Dev'):
     MAIL_OVERRIDE = "nowhere@nowhere.com"
@@ -64,7 +69,7 @@ URL: http://%s/event/%s-%s
 
 Hello!  Friendly reminder that your event is scheduled to happen at Hacker Dojo.
 
- * The person named above must be physically present
+ * The person named above must be physically present for the duration of the event
  * If the event has been cancelled, resecheduled or moved, you must login and cancel the event on our system
 
 Cheers,

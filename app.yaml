@@ -1,7 +1,12 @@
-application: hackerdojo-events
+application: hd-events-hrd
 version: 1
-runtime: python
 api_version: 1
+runtime: python27
+threadsafe: true
+
+builtins:
+- deferred: on
+- remote_api: on
 
 handlers:
 - url: /favicon.ico
@@ -13,26 +18,26 @@ handlers:
 - url: /static
   static_dir: static
 - url: /remote_api
-  script: $PYTHON_LIB/google/appengine/ext/remote_api/handler.py
+  script: google.appengine.ext.remote_api.handler.app
   login: admin
 - url: /expire
   login: admin
-  script: main.py
+  script: main.app
 - url: /expiring
   login: admin
-  script: main.py
+  script: main.app
 - url: /cronbugowners
   login: admin
-  script: main.py
+  script: main.app
 - url: /test.*
   login: admin
-  script: gaeunit.py
+  script: gaeunit.app
 - url: /_ah/queue/deferred
-  script: $PYTHON_LIB/google/appengine/ext/deferred/handler.py
+  script: google.appengine.ext.deferred.handler.app
   login: admin  
 - url: /_km/.*
-  script: keymaster.py
+  script: keymaster.app
   login: admin
 - url: .*
-  script: main.py  
+  script: main.app
   

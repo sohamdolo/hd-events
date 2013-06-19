@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div id="primary">
+
+<h1>Saving...</h1>
+
+
+<style type="text/css">
+
+/* Full Width Progress Bar */
+
+#scontent { 
+	width:90%; 
+	height:5px; 
+	margin:50px 5px; 
+}
+
+.fullwidth .expand { 
+	width:90%; 
+	height:1px; 
+	margin:2px 0; 
+	background:#2187e7; 
+	position:absolute;
+	box-shadow:0px 0px 10px 1px rgba(0,198,255,0.7);
+    -moz-animation:fullexpand 7s ease-out;
+	-webkit-animation:fullexpand 7s ease-out;
+}
+
+@-moz-keyframes fullexpand {
+	0%  { width:0px;}
+	100%{ width:90%;}	
+}
+@-webkit-keyframes fullexpand {
+	0%  { width:0px;}
+	100%{ width:90%;}	
+}
+
+</style>
+
+
+<div id="scontent" class="fullwidth">
+<span class="expand"></span>
+</div>
+
+<meta http-equiv="refresh" content="7; url=/{{target}}">
+
+
+
+
+</div>
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+

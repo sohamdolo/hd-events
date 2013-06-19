@@ -3,8 +3,8 @@ from google.appengine.ext import webapp, db
 from google.appengine.ext.webapp import util, template
 from google.appengine.api import urlfetch, memcache, users, mail
 
-from django.utils import simplejson
-from django.template.defaultfilters import slugify
+import json
+import unicodedata
 from icalendar import Calendar, Event as CalendarEvent
 import logging, urllib, os
 from pprint import pprint
@@ -19,18 +19,22 @@ import re
 import pytz
 import keymaster
     
-webapp.template.register_template_library('templatefilters')
+webapp.template.register_template_library('templatefilters.templatefilters')
+
+def slugify(str):
+    str = unicodedata.normalize('NFKD', str.lower()).encode('ascii','ignore')
+    return re.sub(r'\W+','-',str)
 
 def event_path(event):
     return '/event/%s-%s' % (event.key().id(), slugify(event.name))
 
 class DomainCacheCron(webapp.RequestHandler):
-    def post(self):
+    def get(self):
         noop = dojo('/groups/events',force=True)
 
 
 class ReminderCron(webapp.RequestHandler):
-    def post(self):
+    def get(self):
         self.response.out.write("REMINDERS")
         today = local_today()
         # remind everyone 3 days in advance they need to show up
@@ -86,7 +90,7 @@ class ExportHandler(webapp.RequestHandler):
                 value = urllib.unquote(self.request.GET[k])
             events = events.filter('%s =' % k, value)
         events = map(lambda x: x.to_dict(summarize=True), events)
-        return 'application/json', simplejson.dumps(events)
+        return 'application/json', json.dumps(events)
 
     def export_ics(self):
         events = Event.get_recent_past_and_future()
@@ -221,7 +225,7 @@ class EditHandler(webapp.RequestHandler):
                 if (  self.request.get( 'contact_phone' ) and not is_phone_valid( self.request.get( 'contact_phone' ) ) ):
                     raise ValueError( 'Phone number does not appear to be valid' )
                 else:
-                    log_desc = "Event edited<br />"
+                    log_desc = ""
                     previous_object = Event.get_by_id(int(id))
                     event.name = self.request.get('name')
                     if (previous_object.name != event.name):
@@ -259,9 +263,20 @@ class EditHandler(webapp.RequestHandler):
                       log_desc = log_desc + "<strong>Old room:</strong> " + previous_object.roomlist() + "<br />"
                       log_desc = log_desc + "<strong>New room:</strong> " + event.roomlist() + "<br />"
                     event.put()
-                    log = HDLog(event=event,description=log_desc)
+                    log = HDLog(event=event,description="Event edited<br />"+log_desc)
                     log.put()
-                    self.redirect(event_path(event))
+                    show_all_nav = user
+                    access_rights = UserRights(user, event)
+                    if access_rights.can_edit:
+                        logout_url = users.create_logout_url('/')
+                        rooms = ROOM_OPTIONS
+                        hours = [1,2,3,4,5,6,7,8,9,10,11,12]
+                        if log_desc:
+                          edited = "<u>Saved changes:</u><br>"+log_desc
+                        self.response.out.write(template.render('templates/edit.html', locals()))
+                    else:
+                        self.response.out.write("Access denied")
+
             except ValueError, e:
                 error = str(e)
                 self.response.out.write(template.render('templates/error.html', locals()))
@@ -275,7 +290,7 @@ class EventHandler(webapp.RequestHandler):
         event = Event.get_by_id(int(id))
         if self.request.path.endswith('json'):
             self.response.headers['content-type'] = 'application/json'
-            self.response.out.write(simplejson.dumps(event.to_dict()))
+            self.response.out.write(json.dumps(event.to_dict()))
         else:
             user = users.get_current_user()
             if user:
@@ -332,8 +347,10 @@ class EventHandler(webapp.RequestHandler):
             if desc != '':
                 log = HDLog(event=event,description=desc)
                 log.put()
-        self.redirect(event_path(event))
-
+        event.details = db.Text(event.details.replace('\n','<br/>'))
+        show_all_nav = user
+        event.notes = db.Text(event.notes.replace('\n','<br/>'))
+        self.response.out.write(template.render('templates/event.html', locals()))
 
 class ApprovedHandler(webapp.RequestHandler):
     def get(self):
@@ -512,8 +529,16 @@ class NewHandler(webapp.RequestHandler):
                 notify_owner_confirmation(event)
                 notify_new_event(event)
                 set_cookie(self.response.headers, 'formvalues', None)
-                #self.redirect('/event/%s-%s' % (event.key().id(), slugify(event.name)))
-                self.redirect('/confirm/%s-%s' % (event.key().id(), slugify(event.name)))
+
+                rules = memcache.get("rules")
+                if(rules is None):
+                    try:
+                        rules = urlfetch.fetch("http://wiki.hackerdojo.com/api_v2/op/GetPage/page/Event+Policies/_type/html", "GET").content
+                        memcache.add("rules", rules, 86400)
+                    except Exception, e:
+                        rules = "Error fetching rules.  Please report this error to internal-dev@hackerdojo.com."
+                self.response.out.write(template.render('templates/confirmation.html', locals()))
+
 
         except Exception, e:
             message = str(e)
@@ -527,6 +552,10 @@ class NewHandler(webapp.RequestHandler):
             #self.redirect('/new')
             error = message
             self.response.out.write(template.render('templates/error.html', locals()))
+
+class SavingHandler(webapp.RequestHandler):
+    def get(self, target):
+      self.response.out.write(template.render('templates/saving.html', locals()))
 
 class ConfirmationHandler(webapp.RequestHandler):
     def get(self, id):
@@ -593,7 +622,7 @@ class TempHandler(webapp.RequestHandler):
         url = "https://api.bayweb.com/v2/?id="+master+"&key="+key+"&action=data"
         result = urlfetch.fetch(url)
         if result.status_code == 200:
-            thdata = simplejson.loads(result.content)
+            thdata = json.loads(result.content)
             inside_air_temp = thdata['iat']
             mode = thdata['mode']
             if inside_air_temp <= 66 and modes[mode] == "Cool":
@@ -612,18 +641,18 @@ class TempHandler(webapp.RequestHandler):
             self.response.out.write("500 Internal Server Error")
         
 
-def main():
-    application = webapp.WSGIApplication([
+app = webapp.WSGIApplication([
         ('/', ApprovedHandler),
         ('/all_future', AllFutureHandler),
         ('/large', LargeHandler),
         ('/pending', PendingHandler),
         ('/past', PastHandler),
         ('/temperature', TempHandler),
-        ('/cronbugowners', CronBugOwnersHandler),
+        #('/cronbugowners', CronBugOwnersHandler),
         ('/myevents', MyEventsHandler),
         ('/not_approved', NotApprovedHandler),
         ('/new', NewHandler),
+        ('/saving/(.*)', SavingHandler),
         ('/confirm/(\d+).*', ConfirmationHandler),
         ('/edit/(\d+).*', EditHandler),
         # single event views
@@ -633,15 +662,11 @@ def main():
         ('/events\.(.+)', ExportHandler),
         #
         # CRON tasks
-        ('/expire', ExpireCron),
-        ('/expiring', ExpireReminderCron),
+        #('/expire', ExpireCron),
+        #('/expiring', ExpireReminderCron),
         ('/domaincache', DomainCacheCron),
         ('/reminder', ReminderCron),
         #
         ('/logs', LogsHandler),
         ('/feedback/new/(\d+).*', FeedbackHandler) ],debug=True)
-    util.run_wsgi_app(application)
 
-
-if __name__ == '__main__':
-    main()

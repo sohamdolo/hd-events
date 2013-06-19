@@ -52,12 +52,6 @@ class KeymasterHandler(webapp.RequestHandler):
         else:
             self.redirect('/')
 
-def main():
-    application = webapp.WSGIApplication([
+app = webapp.WSGIApplication([
         ('/_km/key', KeymasterHandler),
         ],debug=True)
-    util.run_wsgi_app(application)
-
-if __name__ == '__main__':
-    main()
-

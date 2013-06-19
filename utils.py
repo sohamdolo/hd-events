@@ -1,10 +1,10 @@
 from google.appengine.api import urlfetch, memcache
-from django.utils import simplejson
 from datetime import datetime
 import re
 import pytz
 
 from shared.api import domain
+import json
 
 LOCAL_TZ = 'America/Los_Angeles'
 
@@ -39,7 +39,7 @@ def human_username(user):
 
 
 def set_cookie(headers, name, value):
-    headers.add_header('Set-Cookie', '%s=%s;' % (name, simplejson.dumps(value)))
+    headers.add_header('Set-Cookie', '%s=%s;' % (name, json.dumps(value)))
 
 
 def local_today():

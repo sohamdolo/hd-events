@@ -1,10 +1,10 @@
 cron:
-- description: expire old pending events
-  url: /expire
-  schedule: every 24 hours
-- description: reminder of expiring events in 10 days
-  url: /expiring
-  schedule: every 24 hours
+#- description: expire old pending events
+#  url: /expire
+#  schedule: every 100 hours
+#- description: reminder of expiring events in 10 days
+#  url: /expiring
+#  schedule: every 24 hours
 - description: remind people about their event
   url: /reminder
   schedule: every 20 minutes

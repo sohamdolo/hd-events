@@ -6,6 +6,9 @@
 <form method=POST>
 <div id="primary">
   <h3>Edit: {{event.name}}</h3>
+  {% if edited %} 
+    <div style="width:80%; background:#fdff3b; -webkit-border-radius: 4px; -moz-border-radius: 8px; border-radius: 8px; margin: 0 auto; padding:8px;">{{edited|safe}}</div>
+  {% endif %}
   <div class='b-block'><div class='b-label'>Title:</div><div class='b-data'><input type="text" name="name" value="{{event.name}}"/></div></div>
   <div class='b-block' id="message">
   </div>
