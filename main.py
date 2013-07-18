@@ -665,7 +665,7 @@ app = webapp.WSGIApplication([
         #('/expire', ExpireCron),
         #('/expiring', ExpireReminderCron),
         ('/domaincache', DomainCacheCron),
-        ('/reminder', ReminderCron),
+        #('/reminder', ReminderCron),
         #
         ('/logs', LogsHandler),
         ('/feedback/new/(\d+).*', FeedbackHandler) ],debug=True)

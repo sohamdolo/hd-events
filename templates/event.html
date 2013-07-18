@@ -48,9 +48,9 @@
   <div class='b-block'><div class='b-label'>Rooms:</div><div class='b-data'>{{event.roomlist}}</div></div>
   <!--<div class='b-block'><div class='b-label'>Staff:</div><div class='b-data'>{{event.stafflist}}</div></div>-->
   <br />
-  <div class='b-block'><div class='b-label'>Details:</div><div class='b-data'>{{event.details}}</div></div>
+  <div class='b-block'><div class='b-label'>Details:</div><div class='b-data'>{{event.details|safe}}</div></div>
   <br />
-  <div class='b-block'><div class='b-label'>Notes:</div><div class='b-data'>{{event.notes}}</div></div>
+  <div class='b-block'><div class='b-label'>Notes:</div><div class='b-data'>{{event.notes|safe}}</div></div>
   {% if event.feedback_set.count %}
     <div class='thin-border'></div>
     <div id='secondary'>
