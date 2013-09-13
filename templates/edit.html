@@ -5,11 +5,11 @@
 
 <form method=POST>
 <div id="primary">
-  <h3>Edit: {{event.name}}</h3>
+  <h3>Edit: {{event.name|safe}}</h3>
   {% if edited %} 
     <div style="width:80%; background:#fdff3b; -webkit-border-radius: 4px; -moz-border-radius: 8px; border-radius: 8px; margin: 0 auto; padding:8px;">{{edited|safe}}</div>
   {% endif %}
-  <div class='b-block'><div class='b-label'>Title:</div><div class='b-data'><input type="text" name="name" value="{{event.name}}"/></div></div>
+  <div class='b-block'><div class='b-label'>Title:</div><div class='b-data'><input type="text" name="name" value="{{event.name|safe}}"/></div></div>
   <div class='b-block' id="message">
   </div>
   <div class='b-block'>
@@ -68,8 +68,8 @@
     {% endfor %}
     </div>
   </div>
-  <div class='b-block'><div class='b-label'>More Info:</div><div class='b-data'><textarea rows=4 name="details">{{event.details}}</textarea></div></div>
-  <div class='b-block'><div class='b-label'>Notes:</div><div class='b-data'><textarea rows=3 name="notes">{{event.notes}}</textarea></div></div>
+  <div class='b-block'><div class='b-label'>More Info:</div><div class='b-data'><textarea rows=4 name="details">{{event.details|safe}}</textarea></div></div>
+  <div class='b-block'><div class='b-label'>Notes:</div><div class='b-data'><textarea rows=3 name="notes">{{event.notes|safe}}</textarea></div></div>
   <div class='b-block'><div class='b-label'>Estimated Size:</div><div class='b-data'><input type="text" name="estimated_size" value="{{event.estimated_size}}"/></div></div>
   <div class='b-block'><div class='b-label'>Contact Name:</div><div class='b-data'><input type="text" name="contact_name" value="{{event.contact_name|title}}"/></div></div>
   <div class='b-block'><div class='b-label'>Contact Phone:</div><div class='b-data'><input type="text" name="contact_phone" value="{{event.contact_phone}}"/></div></div>

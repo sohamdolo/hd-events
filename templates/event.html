@@ -3,7 +3,7 @@
 {% block content %}
 
 <div id="primary">
-  <h3>{{event.name|title}}</h3>
+  <h3>{{event.name|safe}}</h3>
   {% if not event.is_past %}<p>
     <form method="post" style="display: inline;">
     {% if event.is_deleted %}
