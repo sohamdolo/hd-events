@@ -21,7 +21,8 @@ ROOM_OPTIONS = (
     ('Classroom', 20),
     ('Conference Room', 10),
     ('Large Event Room', 98),
-    ('Loungey', 30)
+    ('Loungey', 30),
+    ('Patio', 30)
   ) 
     
 # GUESTS_PER_STAFF = 25
