@@ -113,6 +113,13 @@ class Event(db.Model):
             .order('start_time').fetch(200)
 
     @classmethod
+    def get_recent_past_and_future_approved(cls):
+        return cls.all() \
+            .filter('start_time >', local_today()  - timedelta(days=1)) \
+            .filter('status IN', ['approved']) \
+            .order('start_time').fetch(200)
+
+    @classmethod
     def get_pending_list(cls):
         return cls.all() \
             .filter('start_time >', local_today()) \

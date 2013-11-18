@@ -160,7 +160,7 @@ class ExportHandler(webapp.RequestHandler):
 
     def export_rss(self):
         url_base = 'http://' + self.request.headers.get('host', 'events.hackerdojo.com')
-        events = Event.get_recent_past_and_future()
+        events = Event.get_recent_past_and_future_approved()
         rss = PyRSS2Gen.RSS2(
             title = "Hacker Dojo Events Feed",
             link = url_base,
