@@ -113,12 +113,12 @@ def notify_event_change(event,modification=0):
       subject = "[Event Modified]"
     else:
       subject = "[New Event]"
-    subject  += ' %s on %s' % (event.name, event.start_time.strftime('%a %b %d'))
+    subject  += ' %s on %s' % (event.name, event.human_time())
     deferred.defer(mail.send_mail, sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(NEW_EVENT_ADDRESS),
         subject=subject,
         body="""Event: %s
 Member: %s
-When: %s to %s
+When: %s
 Type: %s
 Size: %s
 Rooms: %s
@@ -134,8 +134,7 @@ http://events.hackerdojo.com/event/%s-%s
 """ % (
     event.name, 
     event.member.email(), 
-    event.start_time.strftime('%l, %F %j %Y %I:%M%p'),
-    event.end_time.strftime('%l, %F %j %Y %I:%M%p'),
+    event.human_time(),
     event.type,
     event.estimated_size,
     event.roomlist(),

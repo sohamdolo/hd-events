@@ -194,6 +194,9 @@ class Event(db.Model):
             num_days -= 1
         return num_days
 
+    def multiday(self):
+        self.num_days > 1
+
     def approve(self):
         user = users.get_current_user()
         if self.is_staffed():
@@ -309,6 +312,18 @@ class Event(db.Model):
                 d[prop] = getattr(self, prop)
         d['id'] = self.key().id()
         return d
+
+    def human_time(self):
+        start = self.start_date().strftime("%m/%d/%y %I:%M%p")
+        if self.multiday():
+            end = self.end_date().strftime("%m/%d/%y %I:%M%p")
+        else:
+            end = self.end_date().strftime("%I:%M%p")
+        out  = "%s to %s" % (start, end)
+        if self.multiday():
+            out += " (multiday)"
+        return out
+
 
 class Feedback(db.Model):
     user    = db.UserProperty(auto_current_user_add=True)
