@@ -334,7 +334,7 @@ class EventHandler(webapp.RequestHandler):
             if state.lower() == 'cancel' and access_rights.can_cancel:
                 event.cancel()
                 desc = 'Cancelled event'
-            if state.lower() == 'delete' and access_rights.is_admin:
+            if state.lower() == 'delete' and access_rights.can_delete:
                 event.delete()
                 desc = 'Deleted event'
             if state.lower() == 'undelete' and access_rights.is_admin:

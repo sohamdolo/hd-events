@@ -6,8 +6,8 @@
   <h3>{{event.name|safe}}</h3>
   {% if not event.is_past %}<p>
     <form method="post" style="display: inline;">
-    {% if event.is_deleted %}
-      {% if access_rights.is_admin %}<input type="submit" name="state" value="Undelete" />{% endif %}
+    {% if event.is_deleted and access_rights.can_undelete %}
+      {% if access_rights.can_undelete %}<input type="submit" name="state" value="Undelete" />{% endif %}
       (This will return the event to the &ldquo;pending&rdquo; status.)
     {% else %}
       <div id="edit-approve-btns">
@@ -15,10 +15,11 @@
       {% if access_rights.can_approve %}<input type="submit" name="state" value="Approve" />{% endif %}
       {% if access_rights.can_not_approve %}<input type="submit" name="state" value="NotApproved" />{% endif %}
       {% if access_rights.can_edit %}<input type="button" value="Edit" onclick="document.location.href='/edit/{{event.key.id}}';" />{% endif %}
+
       </div>
       <div id="cancel-delete-btns">
       {% if access_rights.can_cancel and not event.is_canceled %}<input type="submit" name="state" value="Cancel" />{% endif %}
-      {% if access_rights.is_admin %}<input type="submit" name="state" value="Delete" />{% endif %}
+      {% if access_rights.can_delete %}<input type="submit" name="state" value="Delete" />{% endif %}
       </div>
       <!--{% if access_rights.can_staff %}<input type="submit" name="state" value="Staff" />{% endif %}
       {% if access_rights.can_unstaff %}<input type="submit" name="state" value="Unstaff" />{% endif %}-->

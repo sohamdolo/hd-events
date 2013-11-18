@@ -183,6 +183,20 @@ events@hackerdojo.com
 
 """ % (user.nickname(),user.email(),event.key().id(), slugify(event.name)))
 
+def notify_deletion(event,user):
+
+    deferred.defer(mail.send_mail,sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(event.member.email()),
+        subject="[Event Deleted] %s" % event.name,
+        body="""This event has been deleted.
+
+http://events.hackerdojo.com/event/%s-%s
+
+Cheers,
+Hacker Dojo Events Team
+events@hackerdojo.com
+
+""" % (event.key().id(), slugify(event.name)))
+
 def possibly_OVERRIDE_to_address(default):
     if MAIL_OVERRIDE:
         return MAIL_OVERRIDE
