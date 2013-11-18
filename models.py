@@ -5,16 +5,6 @@ from copy import copy
 from utils import human_username, local_today, to_sentence_list
 import logging
 import pytz
-
-OLD_ROOM_OPTIONS = (
-    ('Cave', 15),
-    ('Deck', 30),
-    ('Savanna', 120),
-    ('140b', 129),
-    ('Cubby 1', 2),
-    ('Cubby 2', 2),
-    ('Upstairs Office', 2),
-    ('Front Area', 20))
     
 ROOM_OPTIONS = (
     ('Maker Space', 12),
