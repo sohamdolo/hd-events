@@ -212,10 +212,7 @@ class EditHandler(webapp.RequestHandler):
                     self.request.get('end_time_ampm')), '%m/%d/%Y %I:%M %p')
                 conflicts = Event.check_conflict(start_time,end_time,self.request.get_all('rooms'), int(id))
                 if conflicts:
-                    if "Deck" in self.request.get_all('rooms') or "Savanna" in self.request.get_all('rooms'):
-                        raise ValueError('Room conflict detected <small>(Note: Deck &amp; Savanna share the same area, two events cannot take place at the same time in these rooms.)</small>')
-                    else:
-                        raise ValueError('Room conflict detected')
+                    raise ValueError('Room conflict detected')
                 if not self.request.get('details'):
                     raise ValueError('You must provide a description of the event')
                 if not self.request.get('estimated_size').isdigit():
@@ -224,6 +221,8 @@ class EditHandler(webapp.RequestHandler):
                     raise ValueError('Estimated number of people must be greater then zero')
                 if (  self.request.get( 'contact_phone' ) and not is_phone_valid( self.request.get( 'contact_phone' ) ) ):
                     raise ValueError( 'Phone number does not appear to be valid' )
+                if start_time == end_time:
+                    raise ValueError('End time for the event cannot be the same as the start time')
                 else:
                     log_desc = ""
                     previous_object = Event.get_by_id(int(id))
