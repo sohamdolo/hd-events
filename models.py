@@ -49,10 +49,6 @@ class Event(db.Model):
             .filter('end_time >', proposed_start_time) \
             .filter('status IN', ['approved', 'pending', 'onhold'])
       conflicts = []
-      if 'Deck' in proposed_rooms and 'Savanna' not in proposed_rooms:
-         proposed_rooms.append('Savanna')
-      if 'Savanna' in proposed_rooms and 'Deck' not in proposed_rooms:
-         proposed_rooms.append('Deck')
       for e in possible_conflicts:
         if e.key().id() != optional_existing_event_id:
           if e.start_time < proposed_end_time:
