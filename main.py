@@ -337,7 +337,8 @@ class EventHandler(webapp.RequestHandler):
             if state.lower() == 'delete' and access_rights.can_delete:
                 event.delete()
                 desc = 'Deleted event'
-            if state.lower() == 'undelete' and access_rights.is_admin:
+                notify_deletion(event,user)
+            if state.lower() == 'undelete' and access_rights.can_undelete:
                 event.undelete()
                 desc = 'Undeleted event'
             if state.lower() == 'expire' and access_rights.is_admin:
