@@ -108,9 +108,14 @@ events@hackerdojo.com
     slugify(event.name),))
 
 
-def notify_new_event(event):
+def notify_event_change(event,modification=0):
+    if (modification):
+      subject = "[Event Modified]"
+    else:
+      subject = "[New Event]"
+    subject  += ' %s on %s' % (event.name, event.start_time.strftime('%a %b %d'))
     deferred.defer(mail.send_mail, sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(NEW_EVENT_ADDRESS),
-        subject='[New Event] %s on %s' % (event.name, event.start_time.strftime('%a %b %d')),
+        subject=subject,
         body="""Event: %s
 Member: %s
 When: %s to %s

@@ -224,8 +224,10 @@ class EditHandler(webapp.RequestHandler):
                 if start_time == end_time:
                     raise ValueError('End time for the event cannot be the same as the start time')
                 else:
+                    notify_event_change(event=event,modification=1)
                     log_desc = ""
                     previous_object = Event.get_by_id(int(id))
+                    event.status = 'pending'
                     event.name = self.request.get('name')
                     if (previous_object.name != event.name):
                       log_desc = log_desc + "<strong>Title:</strong> " + previous_object.name + " to " + event.name + "<br />"
@@ -526,7 +528,7 @@ class NewHandler(webapp.RequestHandler):
                 log = HDLog(event=event,description="Created new event")
                 log.put()
                 notify_owner_confirmation(event)
-                notify_new_event(event)
+                notify_event_change(event)
                 set_cookie(self.response.headers, 'formvalues', None)
 
                 rules = memcache.get("rules")
