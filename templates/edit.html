@@ -61,6 +61,38 @@
   </div>
 
   <div class='b-block'>
+    <div class='b-label'>
+      Setup Time (minutes):
+    </div>
+    <div class='b-data'>
+      <select name="setup_time" id="setup_time">
+          <option {{event.setup_time|select:0}}>00</option>
+          <option {{event.setup_time|select:15}}>15</option>
+          <option {{event.setup_time|select:30}}>30</option>
+          <option {{event.setup_time|select:45}}>45</option>
+          <option {{event.setup_time|select:60}}>60</option>
+        </select>
+      </div>
+  </div>
+
+  <div class='b-block'>
+    <div class='b-label'>
+      Teardown Time (minutes):
+    </div>
+    <div class='b-data'>
+      <select name="setup_time" id="teardown_time">
+          <option {{event.teardown_time|select:0}}>00</option>
+          <option {{event.teardown_time|select:15}}>15</option>
+          <option {{event.teardown_time|select:30}}>30</option>
+          <option {{event.teardown_time|select:45}}>45</option>
+          <option {{event.teardown_time|select:60}}>60</option>
+        </select>
+      </div>
+  </div>
+
+  <div class='b-block'><div class='b-label'>Teardown Time (minutes):</div><div class='b-data'><input type="text" name="teardown_time" value="{{event.teardown_time}}"/></div></div>
+
+  <div class='b-block'>
     <div class='b-label'>Rooms:<br /><span style="font-size:10; font-weight: normal;">(Capacity in<br/>parentheses)</span></div>
     <div class='b-data checklist' id="roomlist">
     {% for room in rooms %}
