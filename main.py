@@ -280,7 +280,6 @@ class EditHandler(webapp.RequestHandler):
                         log_desc += "<strong>Teardown time changed</strong><br />"
                         log_desc += "<strong>Old time:</strong> %s minutes<br/>" % previous_object.teardown_time
                         log_desc += "<strong>New time:</strong> %s minutes<br/>" % event.teardown_time
-                    event.put()
                     log = HDLog(event=event,description="Event edited<br />"+log_desc)
                     log.put()
                     show_all_nav = user
@@ -293,6 +292,7 @@ class EditHandler(webapp.RequestHandler):
                           edited = "<u>Saved changes:</u><br>"+log_desc
                         notify_event_change(event=event,modification=1)
                         self.response.out.write(template.render('templates/edit.html', locals()))
+                        event.put()
                     else:
                         self.response.out.write("Access denied")
 
