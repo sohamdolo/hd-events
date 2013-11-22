@@ -160,7 +160,7 @@ class ExportHandler(webapp.RequestHandler):
 
     def export_rss(self):
         url_base = 'http://' + self.request.headers.get('host', 'events.hackerdojo.com')
-        events = Event.get_recent_past_and_future()
+        events = Event.get_recent_past_and_future_approved()
         rss = PyRSS2Gen.RSS2(
             title = "Hacker Dojo Events Feed",
             link = url_base,
@@ -210,12 +210,15 @@ class EditHandler(webapp.RequestHandler):
                     self.request.get('end_time_hour'),
                     self.request.get('end_time_minute'),
                     self.request.get('end_time_ampm')), '%m/%d/%Y %I:%M %p')
-                conflicts = Event.check_conflict(start_time,end_time,self.request.get_all('rooms'), int(id))
+                conflicts = Event.check_conflict(
+                    start_time,end_time,
+                    self.request.get('setup'),
+                    self.request.get('teardown'),
+                    self.request.get_all('rooms'),
+                    int(id)
+                )
                 if conflicts:
-                    if "Deck" in self.request.get_all('rooms') or "Savanna" in self.request.get_all('rooms'):
-                        raise ValueError('Room conflict detected <small>(Note: Deck &amp; Savanna share the same area, two events cannot take place at the same time in these rooms.)</small>')
-                    else:
-                        raise ValueError('Room conflict detected')
+                    raise ValueError('Room conflict detected')
                 if not self.request.get('details'):
                     raise ValueError('You must provide a description of the event')
                 if not self.request.get('estimated_size').isdigit():
@@ -224,45 +227,59 @@ class EditHandler(webapp.RequestHandler):
                     raise ValueError('Estimated number of people must be greater then zero')
                 if (  self.request.get( 'contact_phone' ) and not is_phone_valid( self.request.get( 'contact_phone' ) ) ):
                     raise ValueError( 'Phone number does not appear to be valid' )
+                if start_time == end_time:
+                    raise ValueError('End time for the event cannot be the same as the start time')
                 else:
                     log_desc = ""
                     previous_object = Event.get_by_id(int(id))
+                    event.status = 'pending'
                     event.name = self.request.get('name')
                     if (previous_object.name != event.name):
-                      log_desc = log_desc + "<strong>Title:</strong> " + previous_object.name + " to " + event.name + "<br />"
+                      log_desc += "<strong>Title:</strong> " + previous_object.name + " to " + event.name + "<br />"
                     event.start_time = start_time
                     if (previous_object.start_time != event.start_time):
-                      log_desc = log_desc + "<strong>Start time:</strong> " + str(previous_object.start_time) + " to " + str(event.start_time) + "<br />"
+                      log_desc += "<strong>Start time:</strong> " + str(previous_object.start_time) + " to " + str(event.start_time) + "<br />"
                     event.end_time = end_time
                     if (previous_object.end_time != event.end_time):
-                      log_desc = log_desc + "<strong>End time:</strong> " + str(previous_object.end_time) + " to " + str(event.end_time) + "<br />"
+                      log_desc += "<strong>End time:</strong> " + str(previous_object.end_time) + " to " + str(event.end_time) + "<br />"
                     event.estimated_size = cgi.escape(self.request.get('estimated_size'))
                     if (previous_object.estimated_size != event.estimated_size):
-                      log_desc = log_desc + "<strong>Est. size:</strong> " + previous_object.estimated_size + " to " + event.estimated_size + "<br />"
+                      log_desc += "<strong>Est. size:</strong> " + previous_object.estimated_size + " to " + event.estimated_size + "<br />"
                     event.contact_name = cgi.escape(self.request.get('contact_name'))
                     if (previous_object.contact_name != event.contact_name):
-                      log_desc = log_desc + "<strong>Contact:</strong> " + previous_object.contact_name + " to " + event.contact_name + "<br />"
+                      log_desc += "<strong>Contact:</strong> " + previous_object.contact_name + " to " + event.contact_name + "<br />"
                     event.contact_phone = cgi.escape(self.request.get('contact_phone'))
                     if (previous_object.contact_phone != event.contact_phone):
-                      log_desc = log_desc + "<strong>Contact phone:</strong> " + previous_object.contact_phone + " to " + event.contact_phone + "<br />"
+                      log_desc += "<strong>Contact phone:</strong> " + previous_object.contact_phone + " to " + event.contact_phone + "<br />"
                     event.details = cgi.escape(self.request.get('details'))
                     if (previous_object.details != event.details):
-                      log_desc = log_desc + "<strong>Details:</strong> " + previous_object.details + " to " + event.details + "<br />"
+                      log_desc += "<strong>Details:</strong> " + previous_object.details + " to " + event.details + "<br />"
                     event.url = cgi.escape(self.request.get('url'))
                     if (previous_object.url != event.url):
-                      log_desc = log_desc + "<strong>Url:</strong> " + previous_object.url + " to " + event.url + "<br />"
+                      log_desc += "<strong>Url:</strong> " + previous_object.url + " to " + event.url + "<br />"
                     event.fee = cgi.escape(self.request.get('fee'))
                     if (previous_object.fee != event.fee):
-                      log_desc = log_desc + "<strong>Fee:</strong> " + previous_object.fee + " to " + event.fee + "<br />"
+                      log_desc += "<strong>Fee:</strong> " + previous_object.fee + " to " + event.fee + "<br />"
                     event.notes = cgi.escape(self.request.get('notes'))
                     if (previous_object.notes != event.notes):
-                      log_desc = log_desc + "<strong>Notes:</strong> " + previous_object.notes + " to " + event.notes + "<br />"
+                      log_desc += "<strong>Notes:</strong> " + previous_object.notes + " to " + event.notes + "<br />"
                     event.rooms = self.request.get_all('rooms')
                     if (previous_object.rooms != event.rooms):
-                      log_desc = log_desc + "<strong>Rooms changed</strong><br />"
-                      log_desc = log_desc + "<strong>Old room:</strong> " + previous_object.roomlist() + "<br />"
-                      log_desc = log_desc + "<strong>New room:</strong> " + event.roomlist() + "<br />"
-                    event.put()
+                      log_desc += "<strong>Rooms changed</strong><br />"
+                      log_desc += "<strong>Old room:</strong> " + previous_object.roomlist() + "<br />"
+                      log_desc += "<strong>New room:</strong> " + event.roomlist() + "<br />"
+                    setup_time = cgi.escape(self.request.get('setup_time')) or 0
+                    event.setup_time = int(setup_time)
+                    if (previous_object.setup_time != event.setup_time):
+                        log_desc += "<strong>Setup time changed</strong><br />"
+                        log_desc += "<strong>Old time:</strong> %s minutes<br/>" % previous_object.setup_time
+                        log_desc += "<strong>New time:</strong> %s minutes<br/>" % event.setup_time
+                    teardown_time = cgi.escape(self.request.get('teardown_time')) or 0
+                    event.teardown_time = int(teardown_time)
+                    if (previous_object.setup_time != event.teardown_time):
+                        log_desc += "<strong>Teardown time changed</strong><br />"
+                        log_desc += "<strong>Old time:</strong> %s minutes<br/>" % previous_object.teardown_time
+                        log_desc += "<strong>New time:</strong> %s minutes<br/>" % event.teardown_time
                     log = HDLog(event=event,description="Event edited<br />"+log_desc)
                     log.put()
                     show_all_nav = user
@@ -273,6 +290,9 @@ class EditHandler(webapp.RequestHandler):
                         hours = [1,2,3,4,5,6,7,8,9,10,11,12]
                         if log_desc:
                           edited = "<u>Saved changes:</u><br>"+log_desc
+                        event.status = 'pending'
+                        notify_event_change(event=event,modification=1)
+                        event.put()
                         self.response.out.write(template.render('templates/edit.html', locals()))
                     else:
                         self.response.out.write("Access denied")
@@ -333,10 +353,11 @@ class EventHandler(webapp.RequestHandler):
             if state.lower() == 'cancel' and access_rights.can_cancel:
                 event.cancel()
                 desc = 'Cancelled event'
-            if state.lower() == 'delete' and access_rights.is_admin:
+            if state.lower() == 'delete' and access_rights.can_delete:
                 event.delete()
                 desc = 'Deleted event'
-            if state.lower() == 'undelete' and access_rights.is_admin:
+                notify_deletion(event,user)
+            if state.lower() == 'undelete' and access_rights.can_undelete:
                 event.undelete()
                 desc = 'Undeleted event'
             if state.lower() == 'expire' and access_rights.is_admin:
@@ -491,7 +512,13 @@ class NewHandler(webapp.RequestHandler):
                 self.request.get('end_time_hour'),
                 self.request.get('end_time_minute'),
                 self.request.get('end_time_ampm')), '%m/%d/%Y %I:%M %p')
-            conflicts = Event.check_conflict(start_time,end_time,self.request.get_all('rooms'))
+            conflicts = Event.check_conflict(
+                start_time,end_time,
+                self.request.get('setup'),
+                self.request.get('teardown'),
+                self.request.get_all('rooms'),
+                int(id)
+            )
             if conflicts:
                 if "Deck" in self.request.get_all('rooms') or "Savanna" in self.request.get_all('rooms'):
                     raise ValueError('Room conflict detected <small>(Note: Deck &amp; Savanna share the same area, two events cannot take place at the same time in these rooms.)</small>')
@@ -522,12 +549,14 @@ class NewHandler(webapp.RequestHandler):
                     notes = cgi.escape(self.request.get('notes')),
                     rooms = self.request.get_all('rooms'),
                     expired = local_today() + timedelta(days=PENDING_LIFETIME), # Set expected expiration date
-                    )
+                    setup_time = int(self.request.get('setup_time') or 0),
+                    teardown_time = int(self.request.get('setup_time') or 0)   
+                )
                 event.put()
                 log = HDLog(event=event,description="Created new event")
                 log.put()
                 notify_owner_confirmation(event)
-                notify_new_event(event)
+                notify_event_change(event)
                 set_cookie(self.response.headers, 'formvalues', None)
 
                 rules = memcache.get("rules")

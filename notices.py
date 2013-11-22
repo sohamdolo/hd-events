@@ -108,12 +108,17 @@ events@hackerdojo.com
     slugify(event.name),))
 
 
-def notify_new_event(event):
+def notify_event_change(event,modification=0):
+    if (modification):
+      subject = "[Event Modified]"
+    else:
+      subject = "[New Event]"
+    subject  += ' %s on %s' % (event.name, event.human_time())
     deferred.defer(mail.send_mail, sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(NEW_EVENT_ADDRESS),
-        subject='[New Event] %s on %s' % (event.name, event.start_time.strftime('%a %b %d')),
+        subject=subject,
         body="""Event: %s
 Member: %s
-When: %s to %s
+When: %s
 Type: %s
 Size: %s
 Rooms: %s
@@ -129,8 +134,7 @@ http://events.hackerdojo.com/event/%s-%s
 """ % (
     event.name, 
     event.member.email(), 
-    event.start_time.strftime('%l, %F %j %Y %I:%M%p'),
-    event.end_time.strftime('%l, %F %j %Y %I:%M%p'),
+    event.human_time(),
     event.type,
     event.estimated_size,
     event.roomlist(),
@@ -177,6 +181,20 @@ Hacker Dojo Events Team
 events@hackerdojo.com
 
 """ % (user.nickname(),user.email(),event.key().id(), slugify(event.name)))
+
+def notify_deletion(event,user):
+
+    deferred.defer(mail.send_mail,sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(event.member.email()),
+        subject="[Event Deleted] %s" % event.name,
+        body="""This event has been deleted.
+
+http://events.hackerdojo.com/event/%s-%s
+
+Cheers,
+Hacker Dojo Events Team
+events@hackerdojo.com
+
+""" % (event.key().id(), slugify(event.name)))
 
 def possibly_OVERRIDE_to_address(default):
     if MAIL_OVERRIDE:

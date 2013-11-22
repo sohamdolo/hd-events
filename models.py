@@ -5,23 +5,14 @@ from copy import copy
 from utils import human_username, local_today, to_sentence_list
 import logging
 import pytz
-
-OLD_ROOM_OPTIONS = (
-    ('Cave', 15),
-    ('Deck', 30),
-    ('Savanna', 120),
-    ('140b', 129),
-    ('Cubby 1', 2),
-    ('Cubby 2', 2),
-    ('Upstairs Office', 2),
-    ('Front Area', 20))
     
 ROOM_OPTIONS = (
     ('Maker Space', 12),
     ('Classroom', 20),
     ('Conference Room', 10),
     ('Large Event Room', 98),
-    ('Loungey', 30)
+    ('Loungey', 30),
+    ('Patio', 30)
   ) 
     
 # GUESTS_PER_STAFF = 25
@@ -52,16 +43,20 @@ class Event(db.Model):
     created = db.DateTimeProperty(auto_now_add=True)
     updated = db.DateTimeProperty(auto_now=True)
 
+    # Teardown / setup to avoid double-bookings
+    setup_time    = db.IntegerProperty()
+    teardown_time = db.IntegerProperty()
+
     @classmethod
-    def check_conflict(cls,proposed_start_time,proposed_end_time,proposed_rooms,optional_existing_event_id = 0):
+    def check_conflict(cls,proposed_start_time,proposed_end_time,setup,teardown,proposed_rooms,optional_existing_event_id = 0):
+      if setup:
+        proposed_start_time -= timedelta(minutes=setup)
+      if teardown:
+        proposed_end_time   += timedelta(minutes=teardown)
       possible_conflicts = cls.all() \
             .filter('end_time >', proposed_start_time) \
             .filter('status IN', ['approved', 'pending', 'onhold'])
       conflicts = []
-      if 'Deck' in proposed_rooms and 'Savanna' not in proposed_rooms:
-         proposed_rooms.append('Savanna')
-      if 'Savanna' in proposed_rooms and 'Deck' not in proposed_rooms:
-         proposed_rooms.append('Deck')
       for e in possible_conflicts:
         if e.key().id() != optional_existing_event_id:
           if e.start_time < proposed_end_time:
@@ -123,6 +118,13 @@ class Event(db.Model):
         return cls.all() \
             .filter('start_time >', local_today()  - timedelta(days=1)) \
             .filter('status IN', ['approved', 'canceled']) \
+            .order('start_time').fetch(200)
+
+    @classmethod
+    def get_recent_past_and_future_approved(cls):
+        return cls.all() \
+            .filter('start_time >', local_today()  - timedelta(days=1)) \
+            .filter('status IN', ['approved']) \
             .order('start_time').fetch(200)
 
     @classmethod
@@ -199,6 +201,9 @@ class Event(db.Model):
             # only count that day if the event runs past 8am
             num_days -= 1
         return num_days
+
+    def multiday(self):
+        self.num_days > 1
 
     def approve(self):
         user = users.get_current_user()
@@ -315,6 +320,18 @@ class Event(db.Model):
                 d[prop] = getattr(self, prop)
         d['id'] = self.key().id()
         return d
+
+    def human_time(self):
+        start = self.start_date().strftime("%m/%d/%y %I:%M%p")
+        if self.multiday():
+            end = self.end_date().strftime("%m/%d/%y %I:%M%p")
+        else:
+            end = self.end_date().strftime("%I:%M%p")
+        out  = "%s to %s" % (start, end)
+        if self.multiday():
+            out += " (multiday)"
+        return out
+
 
 class Feedback(db.Model):
     user    = db.UserProperty(auto_current_user_add=True)

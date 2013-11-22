@@ -45,3 +45,10 @@ def select_time(event,item,element):
         if half == item:
             st = "selected='selected'"
     return st
+
+@register.filter
+def select(target,val):
+    st = "value=%s" % val
+    if (target==val):
+        st += " selected=selected"
+    return st

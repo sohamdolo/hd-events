@@ -1,5 +1,5 @@
 from google.appengine.api import urlfetch, memcache
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 import pytz
 
@@ -88,12 +88,16 @@ class UserRights(object):
             user: User() object that you want to perform the check on.
             event: Event() object that you want to perform the check against if applicable.
         """
+
+        self.quick_edit = False
         self.user = user
         self.event = event
         self.is_admin = False
         self.is_owner = False
         self.can_approve = False
         self.can_cancel = False
+        self.can_delete = False
+        self.can_undelete = False
         self.can_edit = False
         self.can_staff = False
         self.can_unstaff = False
@@ -101,11 +105,16 @@ class UserRights(object):
         if self.user:
             self.is_admin = username(self.user) in dojo('/groups/events',force=False)
         if self.event:
+            """ Allow people 30 minutes to do quick edits, like deletion. """
+            if (datetime.now() - event.created) > timedelta (minutes=30):
+                self.quick_edit = True
             self.is_owner = (self.user == self.event.member)
             self.can_approve = ((self.event.status in ['pending'] or self.event.status in ['onhold'] or self.event.status in ['not_approved'] ) and self.is_admin
                                 and not self.is_owner)
             self.can_not_approve = self.event.status not in ['not_approved'] and self.is_admin
             self.can_cancel = self.is_admin or self.is_owner
+            self.can_delete = self.is_admin or ( self.is_owner and self.quick_edit )
+            self.can_undelete = self.is_admin or self.is_owner
             self.can_edit = self.is_admin or self.is_owner
             self.can_staff = (self.event.status in ['pending', 'understaffed', 'approved']
                               and self.user not in self.event.staff)
