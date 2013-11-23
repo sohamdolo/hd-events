@@ -331,7 +331,7 @@ class Event(db.Model):
         out  = "%s to %s" % (start, end)
         if self.multiday():
             out += " (multiday)"
-        return 
+        return out
 
     def full_url(self):
         protocol = re.compile("^https?:\/\/")
