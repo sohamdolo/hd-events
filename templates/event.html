@@ -46,7 +46,7 @@
   {% if event.contact_name %}
     <div class='b-block'><div class='b-label'>Contact:</div><div class='b-data'>{{event.contact_name}}{% if user %}, {{event.contact_phone}}{% endif %}</div></div>
   {% endif %}
-  <div class='b-block'><div class='b-label'>URL:</div><div class='b-data'><a href='{{event.url}}'>{{event.url}}</a></div></div>
+  <div class='b-block'><div class='b-label'>URL:</div><div class='b-data'><a href='{{event.full_url}}'>{{event.url}}</a></div></div>
   <div class='b-block'><div class='b-label'>Fee:</div><div class='b-data'>{{event.fee}}</div></div>
   <div class='b-block'><div class='b-label'>Rooms:</div><div class='b-data'>{{event.roomlist}}</div></div>
   <!--<div class='b-block'><div class='b-label'>Staff:</div><div class='b-data'>{{event.stafflist}}</div></div>-->

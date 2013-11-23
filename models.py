@@ -5,6 +5,7 @@ from copy import copy
 from utils import human_username, local_today, to_sentence_list
 import logging
 import pytz
+import re
     
 ROOM_OPTIONS = (
     ('Maker Space', 12),
@@ -332,6 +333,11 @@ class Event(db.Model):
             out += " (multiday)"
         return out
 
+    def full_url(self):
+        protocol = re.compile("^https?:\/\/")
+        if protocol.search(self.url):
+            return self.url
+        return "http://"+self.url
 
 class Feedback(db.Model):
     user    = db.UserProperty(auto_current_user_add=True)
