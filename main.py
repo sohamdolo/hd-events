@@ -290,7 +290,6 @@ class EditHandler(webapp.RequestHandler):
                         hours = [1,2,3,4,5,6,7,8,9,10,11,12]
                         if log_desc:
                           edited = "<u>Saved changes:</u><br>"+log_desc
-                        event.status = 'pending'
                         notify_event_change(event=event,modification=1)
                         event.put()
                         self.response.out.write(template.render('templates/edit.html', locals()))
