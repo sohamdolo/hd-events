@@ -290,15 +290,13 @@ class EditHandler(webapp.RequestHandler):
                         hours = [1,2,3,4,5,6,7,8,9,10,11,12]
                         if log_desc:
                           edited = "<u>Saved changes:</u><br>"+log_desc
-                        event.status = 'pending'
                         notify_event_change(event=event,modification=1)
                         event.put()
                         self.response.out.write(template.render('templates/edit.html', locals()))
                     else:
                         self.response.out.write("Access denied")
-
-            except ValueError, e:
-                error = str(e)
+            except NameError, e:
+                logging.log(e)
                 self.response.out.write(template.render('templates/error.html', locals()))
         else:
             self.response.out.write("Access denied")
@@ -516,8 +514,7 @@ class NewHandler(webapp.RequestHandler):
                 start_time,end_time,
                 self.request.get('setup'),
                 self.request.get('teardown'),
-                self.request.get_all('rooms'),
-                int(id)
+                self.request.get_all('rooms')
             )
             if conflicts:
                 if "Deck" in self.request.get_all('rooms') or "Savanna" in self.request.get_all('rooms'):
@@ -569,7 +566,7 @@ class NewHandler(webapp.RequestHandler):
                 self.response.out.write(template.render('templates/confirmation.html', locals()))
 
 
-        except Exception, e:
+        except ValueError, e:
             message = str(e)
             if 'match format' in message:
                 message = 'Date is required.'

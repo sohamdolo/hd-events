@@ -323,11 +323,11 @@ class Event(db.Model):
         return d
 
     def human_time(self):
-        start = self.start_date().strftime("%m/%d/%y %I:%M%p")
+        start = self.start_time.strftime("%m/%d/%y %I:%M%p")
         if self.multiday():
-            end = self.end_date().strftime("%m/%d/%y %I:%M%p")
+            end = self.end_time.strftime("%m/%d/%y %I:%M%p")
         else:
-            end = self.end_date().strftime("%I:%M%p")
+            end = self.end_time.strftime("%I:%M%p")
         out  = "%s to %s" % (start, end)
         if self.multiday():
             out += " (multiday)"
