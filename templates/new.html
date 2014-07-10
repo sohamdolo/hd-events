@@ -81,11 +81,10 @@
 
     <div class='b-block'>
     <div class='b-label'>
-      Setup Time (minutes):
+      Setup Time (15 minutes minimum):
     </div>
     <div class='b-data'>
       <select name="setup_time" id="setup_time">
-          <option {{event.setup_time|select:0}}>00</option>
           <option {{event.setup_time|select:15}}>15</option>
           <option {{event.setup_time|select:30}}>30</option>
           <option {{event.setup_time|select:45}}>45</option>
@@ -96,11 +95,10 @@
 
   <div class='b-block'>
     <div class='b-label'>
-      Teardown Time (minutes):
+      Teardown Time (15 minutes minimum):
     </div>
     <div class='b-data'>
       <select name="setup_time" id="teardown_time">
-          <option {{event.teardown_time|select:0}}>00</option>
           <option {{event.teardown_time|select:15}}>15</option>
           <option {{event.teardown_time|select:30}}>30</option>
           <option {{event.teardown_time|select:45}}>45</option>
