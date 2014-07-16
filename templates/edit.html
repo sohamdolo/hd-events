@@ -65,11 +65,11 @@
       Setup Time (15 minutes minimum):
     </div>
     <div class='b-data'>
-      <select name="setup_time" id="setup_time">
-          <option {{event.setup_time|select:15}}>15</option>
-          <option {{event.setup_time|select:30}}>30</option>
-          <option {{event.setup_time|select:45}}>45</option>
-          <option {{event.setup_time|select:60}}>60</option>
+      <select name="setup" id="setup">
+          <option {{event.setup|select:15}}>15</option>
+          <option {{event.setup|select:30}}>30</option>
+          <option {{event.setup|select:45}}>45</option>
+          <option {{event.setup|select:60}}>60</option>
         </select>
       </div>
   </div>
@@ -79,11 +79,11 @@
       Teardown Time (15 minutes minimum):
     </div>
     <div class='b-data'>
-      <select name="setup_time" id="teardown_time">
-          <option {{event.teardown_time|select:15}}>15</option>
-          <option {{event.teardown_time|select:30}}>30</option>
-          <option {{event.teardown_time|select:45}}>45</option>
-          <option {{event.teardown_time|select:60}}>60</option>
+      <select name="teardown" id="teardown">
+          <option {{event.teardown|select:15}}>15</option>
+          <option {{event.teardown|select:30}}>30</option>
+          <option {{event.teardown|select:45}}>45</option>
+          <option {{event.teardown|select:60}}>60</option>
         </select>
       </div>
   </div>

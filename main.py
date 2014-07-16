@@ -268,18 +268,18 @@ class EditHandler(webapp.RequestHandler):
                       log_desc += "<strong>Rooms changed</strong><br />"
                       log_desc += "<strong>Old room:</strong> " + previous_object.roomlist() + "<br />"
                       log_desc += "<strong>New room:</strong> " + event.roomlist() + "<br />"
-                    setup_time = cgi.escape(self.request.get('setup_time')) or 0
-                    event.setup_time = int(setup_time)
-                    if (previous_object.setup_time != event.setup_time):
+                    setup = cgi.escape(self.request.get('setup')) or 0
+                    event.setup = int(setup)
+                    if (previous_object.setup != event.setup):
                         log_desc += "<strong>Setup time changed</strong><br />"
-                        log_desc += "<strong>Old time:</strong> %s minutes<br/>" % previous_object.setup_time
-                        log_desc += "<strong>New time:</strong> %s minutes<br/>" % event.setup_time
-                    teardown_time = cgi.escape(self.request.get('teardown_time')) or 0
-                    event.teardown_time = int(teardown_time)
-                    if (previous_object.setup_time != event.teardown_time):
+                        log_desc += "<strong>Old time:</strong> %s minutes<br/>" % previous_object.setup
+                        log_desc += "<strong>New time:</strong> %s minutes<br/>" % event.setup
+                    teardown = cgi.escape(self.request.get('teardown')) or 0
+                    event.teardown = int(teardown)
+                    if (previous_object.teardown != event.teardown):
                         log_desc += "<strong>Teardown time changed</strong><br />"
-                        log_desc += "<strong>Old time:</strong> %s minutes<br/>" % previous_object.teardown_time
-                        log_desc += "<strong>New time:</strong> %s minutes<br/>" % event.teardown_time
+                        log_desc += "<strong>Old time:</strong> %s minutes<br/>" % previous_object.teardown
+                        log_desc += "<strong>New time:</strong> %s minutes<br/>" % event.teardown
                     log = HDLog(event=event,description="Event edited<br />"+log_desc)
                     log.put()
                     show_all_nav = user
@@ -546,8 +546,8 @@ class NewHandler(webapp.RequestHandler):
                     notes = cgi.escape(self.request.get('notes')),
                     rooms = self.request.get_all('rooms'),
                     expired = local_today() + timedelta(days=PENDING_LIFETIME), # Set expected expiration date
-                    setup_time = int(self.request.get('setup_time') or 0),
-                    teardown_time = int(self.request.get('setup_time') or 0)
+                    setup = int(self.request.get('setup') or 0),
+                    teardown = int(self.request.get('teardown') or 0)
                 )
                 event.put()
                 log = HDLog(event=event,description="Created new event")

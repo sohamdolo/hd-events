@@ -45,15 +45,19 @@ class Event(db.Model):
     updated = db.DateTimeProperty(auto_now=True)
 
     # Teardown / setup to avoid double-bookings
-    setup_time    = db.IntegerProperty()
-    teardown_time = db.IntegerProperty()
+    setup    = db.IntegerProperty()
+    teardown = db.IntegerProperty()
 
     @classmethod
-    def check_conflict(cls,proposed_start_time,proposed_end_time,setup,teardown,proposed_rooms,optional_existing_event_id = 0):
+    def check_conflict(cls,
+                       proposed_start_time, proposed_end_time,
+                       setup, teardown,
+                       proposed_rooms,
+                       optional_existing_event_id = 0):
       if setup:
-        proposed_start_time -= timedelta(minutes=setup)
+        proposed_start_time -= timedelta(minutes=int(setup))
       if teardown:
-        proposed_end_time   += timedelta(minutes=teardown)
+        proposed_end_time   += timedelta(minutes=int(teardown))
       possible_conflicts = cls.all() \
             .filter('end_time >', proposed_start_time) \
             .filter('status IN', ['approved', 'pending', 'onhold'])
