@@ -18,7 +18,7 @@ import PyRSS2Gen
 import re
 import pytz
 import keymaster
-    
+
 webapp.template.register_template_library('templatefilters.templatefilters')
 
 def slugify(str):
@@ -169,7 +169,7 @@ class ExportHandler(webapp.RequestHandler):
             items = [PyRSS2Gen.RSSItem(
                         title = "%s @ %s: %s" % (
                             event.start_time.strftime("%A, %B %d"),
-                            event.start_time.strftime("%I:%M%p").lstrip("0"), 
+                            event.start_time.strftime("%I:%M%p").lstrip("0"),
                             event.name),
                         link = url_base + event_path(event),
                         description = event.details,
@@ -547,7 +547,7 @@ class NewHandler(webapp.RequestHandler):
                     rooms = self.request.get_all('rooms'),
                     expired = local_today() + timedelta(days=PENDING_LIFETIME), # Set expected expiration date
                     setup_time = int(self.request.get('setup_time') or 0),
-                    teardown_time = int(self.request.get('setup_time') or 0)   
+                    teardown_time = int(self.request.get('setup_time') or 0)
                 )
                 event.put()
                 log = HDLog(event=event,description="Created new event")
@@ -641,7 +641,7 @@ class FeedbackHandler(webapp.RequestHandler):
 
 class TempHandler(webapp.RequestHandler):
     def get(self):
-        units = {"AC1":"EDD9A758", "AC2":"B65D8121", "AC3":"0BA20EDC", "AC5":"47718E38"} 
+        units = {"AC1":"EDD9A758", "AC2":"B65D8121", "AC3":"0BA20EDC", "AC5":"47718E38"}
         modes = ["Off","Heat","Cool"]
         master = units["AC3"]
         key = keymaster.get('thermkey')
@@ -665,7 +665,7 @@ class TempHandler(webapp.RequestHandler):
         else:
             notify_hvac_change(result.status_code,"ERROR connecting to BayWeb API")
             self.response.out.write("500 Internal Server Error")
-        
+
 
 app = webapp.WSGIApplication([
         ('/', ApprovedHandler),
@@ -695,4 +695,3 @@ app = webapp.WSGIApplication([
         #
         ('/logs', LogsHandler),
         ('/feedback/new/(\d+).*', FeedbackHandler) ],debug=True)
-

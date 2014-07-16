@@ -6,7 +6,7 @@
 <form method=POST>
 <div id="primary">
   <h3>Edit: {{event.name|safe}}</h3>
-  {% if edited %} 
+  {% if edited %}
     <div style="width:80%; background:#fdff3b; -webkit-border-radius: 4px; -moz-border-radius: 8px; border-radius: 8px; margin: 0 auto; padding:8px;">{{edited|safe}}</div>
   {% endif %}
   <div class='b-block'><div class='b-label'>Title:</div><div class='b-data'><input type="text" name="name" value="{{event.name|safe}}"/></div></div>
@@ -29,7 +29,7 @@
           <option {{event.start_time|select_minute:15}}>15</option>
           <option {{event.start_time|select_minute:30}}>30</option>
           <option {{event.start_time|select_minute:45}}>45</option>
-        </select> 
+        </select>
         <select name="start_time_ampm" id="start_time_ampm">
           <option {{event.start_time|select_ampm:"pm"}}>pm</option>
           <option {{event.start_time|select_ampm:"am"}}>am</option>
@@ -50,7 +50,7 @@
           <option {{event.end_time|select_minute:15}}>15</option>
           <option {{event.end_time|select_minute:30}}>30</option>
           <option {{event.end_time|select_minute:45}}>45</option>
-        </select> 
+        </select>
         <select name="end_time_ampm" id="end_time_ampm">
           <option {{event.end_time|select_ampm:"pm"}}>pm</option>
           <option {{event.end_time|select_ampm:"am"}}>am</option>
