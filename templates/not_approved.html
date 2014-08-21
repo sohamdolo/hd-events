@@ -7,6 +7,9 @@
 
   {% regroup events by start_date as grouped_events %}
   {% for events in grouped_events %}
+    {% ifchanged events.grouper|date:"F" %}
+        <h3>{{events.grouper|date:"F Y" }}</h3>
+    {% endifchanged %}
     <h4>{% ifequal events.grouper today.date %}<span style="text-decoration:underline;">Today</span> - {% endifequal %}{{events.grouper|date:"l, F j"}}</h4>
     <table>
       {% for event in events.list %}
