@@ -6,7 +6,7 @@ from utils import human_username, local_today, to_sentence_list
 import logging
 import pytz
 import re
-    
+
 ROOM_OPTIONS = (
     ('Maker Space', 12),
     ('Classroom', 20),
@@ -14,8 +14,8 @@ ROOM_OPTIONS = (
     ('Large Event Room', 98),
     ('Loungey', 30),
     ('Patio', 30)
-  ) 
-    
+  )
+
 # GUESTS_PER_STAFF = 25
 PENDING_LIFETIME = 30 # days
 
@@ -45,15 +45,19 @@ class Event(db.Model):
     updated = db.DateTimeProperty(auto_now=True)
 
     # Teardown / setup to avoid double-bookings
-    setup_time    = db.IntegerProperty()
-    teardown_time = db.IntegerProperty()
+    setup    = db.IntegerProperty()
+    teardown = db.IntegerProperty()
 
     @classmethod
-    def check_conflict(cls,proposed_start_time,proposed_end_time,setup,teardown,proposed_rooms,optional_existing_event_id = 0):
+    def check_conflict(cls,
+                       proposed_start_time, proposed_end_time,
+                       setup, teardown,
+                       proposed_rooms,
+                       optional_existing_event_id = 0):
       if setup:
-        proposed_start_time -= timedelta(minutes=setup)
+        proposed_start_time -= timedelta(minutes=int(setup))
       if teardown:
-        proposed_end_time   += timedelta(minutes=teardown)
+        proposed_end_time   += timedelta(minutes=int(teardown))
       possible_conflicts = cls.all() \
             .filter('end_time >', proposed_start_time) \
             .filter('status IN', ['approved', 'pending', 'onhold'])
@@ -90,13 +94,13 @@ class Event(db.Model):
             .filter('start_time >', local_today()) \
             .filter('status IN', ['approved', 'canceled']) \
             .order('start_time')
-    
+
     @classmethod
     def get_approved_list_with_multiday(cls):
         events = list(cls.all() \
             .filter('end_time >', local_today()) \
             .filter('status IN', ['approved', 'canceled']))
-        
+
         # create dupe event objects for each day of multiday events
         for event in list(events):
             if event.start_time < local_today():
@@ -361,4 +365,3 @@ class HDLog(db.Model):
     def get_logs_list(cls):
         return cls.all() \
             .order('-created').fetch(500)
-
