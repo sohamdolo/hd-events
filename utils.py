@@ -5,6 +5,7 @@ import pytz
 
 from shared.api import domain
 import json
+import logging
 
 LOCAL_TZ = 'America/Los_Angeles'
 
@@ -103,7 +104,10 @@ class UserRights(object):
         self.can_unstaff = False
 
         if self.user:
-            self.is_admin = username(self.user) in dojo('/groups/events',force=False)
+            users = dojo('/groups/events', force=False)
+            if not users:
+              logging.error("Failed to load events group data.")
+            self.is_admin = username(self.user) in users
         if self.event:
             """ Allow people 30 minutes to do quick edits, like deletion. """
             if (datetime.now() - event.created) > timedelta (minutes=30):
