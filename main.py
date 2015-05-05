@@ -528,9 +528,11 @@ class NewHandler(webapp.RequestHandler):
             if not int(self.request.get('estimated_size')) > 0:
               raise ValueError('Estimated number of people must be greater then zero')
             if (end_time-start_time).days < 0:
-                raise ValueError('End time must be after start time')
+              raise ValueError('End time must be after start time')
             if (  self.request.get( 'contact_phone' ) and not is_phone_valid( self.request.get( 'contact_phone' ) ) ):
-                raise ValueError( 'Phone number does not appear to be valid' )
+              raise ValueError('Phone number does not appear to be valid' )
+            if not self.request.get_all('rooms'):
+              raise ValueError('You must select a room to reserve.')
             else:
                 event = Event(
                     name = cgi.escape(self.request.get('name')),
