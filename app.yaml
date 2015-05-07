@@ -1,5 +1,5 @@
 application: hd-events-hrd
-version: 1
+version: 2
 api_version: 1
 runtime: python27
 threadsafe: true
