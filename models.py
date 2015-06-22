@@ -48,6 +48,10 @@ class Event(db.Model):
     setup    = db.IntegerProperty()
     teardown = db.IntegerProperty()
 
+    # An alternate person that will be responsible for the event, that must be
+    # specified for events 24 hours or longer.
+    other_member = db.StringProperty(default="")
+
     @classmethod
     def check_conflict(cls,
                        proposed_start_time, proposed_end_time,
