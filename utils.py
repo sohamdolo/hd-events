@@ -1,4 +1,4 @@
-from google.appengine.api import urlfetch, memcache
+from google.appengine.api import urlfetch, users, memcache
 from datetime import datetime, timedelta
 import re
 import pytz
@@ -6,6 +6,8 @@ import pytz
 from shared.api import domain
 import json
 import logging
+
+from config import Config
 
 LOCAL_TZ = 'America/Los_Angeles'
 
@@ -103,11 +105,16 @@ class UserRights(object):
         self.can_staff = False
         self.can_unstaff = False
 
-        if self.user:
-            users = dojo('/groups/events', force=False)
-            if not users:
-              logging.error("Failed to load events group data.")
-            self.is_admin = username(self.user) in users
+        if not Config().is_testing:
+          if self.user:
+              events_users = dojo('/groups/events', force=False)
+              if not events_users:
+                logging.error("Failed to load events group data.")
+              self.is_admin = username(self.user) in events_users
+        else:
+          # Don't make outside requests if we are running unit tests.
+          self.is_admin = users.is_current_user_admin()
+
         if self.event:
             """ Allow people 30 minutes to do quick edits, like deletion. """
             if (datetime.now() - event.created) > timedelta (minutes=30):

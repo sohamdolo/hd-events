@@ -29,16 +29,16 @@ class Event(db.Model):
     staff       = db.ListProperty(users.User)
     rooms       = db.StringListProperty() #choices=set(ROOM_OPTIONS)
 
-    details     = db.TextProperty()
-    url         = db.StringProperty()
-    fee         = db.StringProperty()
-    notes       = db.TextProperty()
+    details     = db.TextProperty(required=True)
+    url         = db.StringProperty(default="")
+    fee         = db.StringProperty(default="")
+    notes       = db.TextProperty(default="")
     type        = db.StringProperty(required=True)
     estimated_size = db.StringProperty(required=True)
     reminded    = db.BooleanProperty(default=False)
 
-    contact_name    = db.StringProperty()
-    contact_phone   = db.StringProperty()
+    contact_name    = db.StringProperty(default="")
+    contact_phone   = db.StringProperty(default="")
 
     expired = db.DateTimeProperty()
     created = db.DateTimeProperty(auto_now_add=True)

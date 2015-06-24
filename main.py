@@ -15,8 +15,10 @@ from utils import username, human_username, set_cookie, local_today, is_phone_va
 from notices import *
 
 import PyRSS2Gen
-import re
 import pytz
+
+from config import Config
+import re
 import keymaster
 
 webapp.template.register_template_library('templatefilters.templatefilters')
@@ -47,20 +49,21 @@ def _get_other_member(handler, start_time, end_time):
     raise ValueError('Need to specify second responsible member' \
                      ' for multi-day event.')
 
-  # Make sure this person is a member.
-  base_url = 'http://hd-signup-hrd.appspot.com/api/v1/user'
-  query = urllib.urlencode({'email': member, 'properties[]': ''})
-  result = urlfetch.fetch("%s?%s" % (base_url, query),
-                          follow_redirects=False)
-  logging.debug("Got response: %s" % (result.content))
+  if not Config().is_testing:
+    # Make sure this person is a member.
+    base_url = 'http://hd-signup-hrd.appspot.com/api/v1/user'
+    query = urllib.urlencode({'email': member, 'properties[]': ''})
+    result = urlfetch.fetch("%s?%s" % (base_url, query),
+                            follow_redirects=False)
+    logging.debug("Got response: %s" % (result.content))
 
-  if result.status_code != 200:
-    # The API call failed.
-    if result.status_code == 422:
-      raise ValueError('\'%s\' is not the email of a member.' % \
-                        (member))
-    raise ValueError('Backend API call failed. Please try again' \
-                     ' later.')
+    if result.status_code != 200:
+      # The API call failed.
+      if result.status_code == 422:
+        raise ValueError('\'%s\' is not the email of a member.' % \
+                          (member))
+      raise ValueError('Backend API call failed. Please try again' \
+                      ' later.')
 
   return member
 
@@ -341,11 +344,14 @@ class EditHandler(webapp.RequestHandler):
                         event.put()
                         self.response.out.write(template.render('templates/edit.html', locals()))
                     else:
+                        self.response.set_status(401)
                         self.response.out.write("Access denied")
             except ValueError, error:
                 logging.error(error)
+                self.response.set_status(400)
                 self.response.out.write(template.render('templates/error.html', locals()))
         else:
+            self.response.set_status(401)
             self.response.out.write("Access denied")
 
 
@@ -625,11 +631,8 @@ class NewHandler(webapp.RequestHandler):
                 message = 'Date is required.'
             if message.startswith('Property'):
                 message = message[9:].replace('_', ' ').capitalize()
-            # This is NOT a reliable way to handle erorrs
-            #set_cookie(self.response.headers, 'formerror', message)
-            #set_cookie(self.response.headers, 'formvalues', dict(self.request.POST))
-            #self.redirect('/new')
             error = message
+            self.response.set_status(400)
             self.response.out.write(template.render('templates/error.html', locals()))
 
 class SavingHandler(webapp.RequestHandler):

@@ -5,6 +5,8 @@ import os
 import unicodedata
 import re
 
+from config import Config
+
 FROM_ADDRESS = 'Dojo Events <robot@hackerdojo.com>'
 NEW_EVENT_ADDRESS = 'events@hackerdojo.com'
 STAFF_ADDRESS = 'staff@hackerdojo.com'
@@ -13,11 +15,11 @@ def slugify(str):
     str = unicodedata.normalize('NFKD', str.lower()).encode('ascii','ignore')
     return re.sub(r'\W+','-',str)
 
-if os.environ['SERVER_SOFTWARE'].startswith('Dev'):
+if Config().is_dev:
     MAIL_OVERRIDE = "nowhere@nowhere.com"
 else:
     MAIL_OVERRIDE = False
-        
+
 def bug_owner_pending(e):
   body = """
 Event: %s
@@ -25,13 +27,13 @@ Owner: %s
 Date: %s
 URL: http://%s/event/%s-%s
 """ % (
-    e.name, 
+    e.name,
     str(e.member),
     e.start_time.strftime('%A, %B %d'),
     os.environ.get('HTTP_HOST'),
     e.key().id(),
     slugify(e.name),)
-  
+
   if not e.is_approved():
     body += """
 Alert! The events team has not approved your event yet.
@@ -44,7 +46,7 @@ Cheers,
 Hacker Dojo Events Team
 events@hackerdojo.com
 """
- 
+
   deferred.defer(mail.send_mail, sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(e.member.email()),
    subject="[Pending Event] Your event is still pending: " + e.name,
    body=body, _queue="emailthrottle")
@@ -59,7 +61,7 @@ Owner: %s
 Date: %s
 URL: http://%s/event/%s-%s
 """ % (
-    e.name, 
+    e.name,
     str(e.owner()),
     e.start_time.strftime('%A, %B %d'),
     os.environ.get('HTTP_HOST'),
@@ -77,11 +79,11 @@ Hacker Dojo Events Team
 events@hackerdojo.com
 
 """
- 
+
   deferred.defer(mail.send_mail, sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(e.member.email()),
-   subject="[Event Reminder] " + e.name,
-   body=body, _queue="emailthrottle")
-             
+                 subject="[Event Reminder] " + e.name,
+                 body=body, _queue="emailthrottle")
+
 def notify_owner_confirmation(event):
     deferred.defer(mail.send_mail ,sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(event.member.email()),
         subject="[New Event] Submitted but **not yet approved**",
@@ -102,7 +104,7 @@ Hacker Dojo Events Team
 events@hackerdojo.com
 
 """ % (
-    event.name, 
+    event.name,
     event.start_time.strftime('%A, %B %d'),
     event.key().id(),
     slugify(event.name),))
@@ -132,8 +134,8 @@ Notes: %s
 
 http://events.hackerdojo.com/event/%s-%s
 """ % (
-    event.name, 
-    event.member.email(), 
+    event.name,
+    event.member.email(),
     event.human_time(),
     event.type,
     event.estimated_size,
@@ -169,7 +171,7 @@ def notify_owner_rsvp(event,user):
     deferred.defer(mail.send_mail,sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(event.member.email()),
         subject="[Event RSVP] %s" % event.name,
         body="""Good news!  %s <%s> has RSVPd to your event.
-        
+
 Friendly Reminder: As per policy, all members are welcome to sit in on any event at Hacker Dojo.
 
 As a courtesy, the Event RSVP system was built such that event hosts won't be surprised by the number of members attending their event.  Members can RSVP up to 48 hours before the event, after that the RSVP list is locked.
@@ -214,7 +216,7 @@ def notify_hvac_change(iat,mode):
 The inside air temperature was %d.  HVAC is now set to %s.
 
 """ % (iat,mode)
- 
+
   deferred.defer(mail.send_mail, sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address("hvac-operations@hackerdojo.com"),
    subject="[HVAC auto-pilot] " + mode,
    body=body, _queue="emailthrottle")
