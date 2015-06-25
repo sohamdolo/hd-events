@@ -7,6 +7,8 @@ import logging
 import pytz
 import re
 
+from config import Config
+
 ROOM_OPTIONS = (
     ('Maker Space', 12),
     ('Classroom', 20),
@@ -58,10 +60,17 @@ class Event(db.Model):
                        setup, teardown,
                        proposed_rooms,
                        optional_existing_event_id = 0):
-      if setup:
-        proposed_start_time -= timedelta(minutes=int(setup))
-      if teardown:
-        proposed_end_time   += timedelta(minutes=int(teardown))
+
+      # Figure out how long we need to pad the start and end times of the event.
+      # This is more complicated that it seems, because setup and teardown can
+      # overlap, but there still must be a minimum amount of time between
+      # consecutive events.
+      conf = Config()
+      start_padding = max(int(setup), conf.MIN_EVENT_SPACING)
+      end_padding = max(int(teardown), conf.MIN_EVENT_SPACING)
+
+      proposed_start_time -= timedelta(minutes=start_padding)
+      proposed_end_time   += timedelta(minutes=end_padding)
       possible_conflicts = cls.all() \
             .filter('end_time >', proposed_start_time) \
             .filter('status IN', ['approved', 'pending', 'onhold'])
