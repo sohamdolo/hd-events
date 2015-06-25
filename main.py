@@ -15,8 +15,10 @@ from utils import username, human_username, set_cookie, local_today, is_phone_va
 from notices import *
 
 import PyRSS2Gen
-import re
 import pytz
+
+from config import Config
+import re
 import keymaster
 
 webapp.template.register_template_library('templatefilters.templatefilters')
@@ -27,6 +29,44 @@ def slugify(str):
 
 def event_path(event):
     return '/event/%s-%s' % (event.key().id(), slugify(event.name))
+
+
+""" Checks if a user needs to enter contact info for another member.
+handler: The handler to read request parameters from.
+start_time: Start time of the event. (datetime)
+end_time: End time of the event. (datetime)
+Returns: Either the member email that they entered, or an empty string if they
+don't need to enter one. """
+def _get_other_member(handler, start_time, end_time):
+  if end_time - start_time < timedelta(hours=24):
+    # No need to do this.
+    return ""
+
+  # If the event lasts for 24 hours or more, they must specify a
+  # second person to be in charge of it.
+  member = handler.request.get('other_member')
+  if not member:
+    raise ValueError('Need to specify second responsible member' \
+                     ' for multi-day event.')
+
+  if not Config().is_testing:
+    # Make sure this person is a member.
+    base_url = 'http://hd-signup-hrd.appspot.com/api/v1/user'
+    query = urllib.urlencode({'email': member, 'properties[]': ''})
+    result = urlfetch.fetch("%s?%s" % (base_url, query),
+                            follow_redirects=False)
+    logging.debug("Got response: %s" % (result.content))
+
+    if result.status_code != 200:
+      # The API call failed.
+      if result.status_code == 422:
+        raise ValueError('\'%s\' is not the email of a member.' % \
+                          (member))
+      raise ValueError('Backend API call failed. Please try again' \
+                      ' later.')
+
+  return member
+
 
 class DomainCacheCron(webapp.RequestHandler):
     def get(self):
@@ -217,6 +257,9 @@ class EditHandler(webapp.RequestHandler):
                     self.request.get_all('rooms'),
                     int(id)
                 )
+
+                other_member = _get_other_member(self, start_time, end_time)
+
                 if conflicts:
                     raise ValueError('Room conflict detected')
                 if not self.request.get('details'):
@@ -280,6 +323,13 @@ class EditHandler(webapp.RequestHandler):
                         log_desc += "<strong>Teardown time changed</strong><br />"
                         log_desc += "<strong>Old time:</strong> %s minutes<br/>" % previous_object.teardown
                         log_desc += "<strong>New time:</strong> %s minutes<br/>" % event.teardown
+                    event.other_member = other_member
+                    if (previous_object.other_member != event.other_member):
+                      log_desc += "<strong>Other member changed</strong><br />"
+                      log_desc += "<strong>Old:</strong> %s<br />" % \
+                          (previous_object.other_member)
+                      log_desc += "<strong>New:</strong> %s<br />" % \
+                          (event.other_member)
                     log = HDLog(event=event,description="Event edited<br />"+log_desc)
                     log.put()
                     show_all_nav = user
@@ -294,11 +344,14 @@ class EditHandler(webapp.RequestHandler):
                         event.put()
                         self.response.out.write(template.render('templates/edit.html', locals()))
                     else:
+                        self.response.set_status(401)
                         self.response.out.write("Access denied")
-            except NameError, e:
-                logging.log(e)
+            except ValueError, error:
+                logging.error(error)
+                self.response.set_status(400)
                 self.response.out.write(template.render('templates/error.html', locals()))
         else:
+            self.response.set_status(401)
             self.response.out.write("Access denied")
 
 
@@ -516,6 +569,9 @@ class NewHandler(webapp.RequestHandler):
                 self.request.get('teardown'),
                 self.request.get_all('rooms')
             )
+
+            other_member = _get_other_member(self, start_time, end_time)
+
             if conflicts:
                 if "Deck" in self.request.get_all('rooms') or "Savanna" in self.request.get_all('rooms'):
                     raise ValueError('Room conflict detected <small>(Note: Deck &amp; Savanna share the same area, two events cannot take place at the same time in these rooms.)</small>')
@@ -535,21 +591,22 @@ class NewHandler(webapp.RequestHandler):
               raise ValueError('You must select a room to reserve.')
             else:
                 event = Event(
-                    name = cgi.escape(self.request.get('name')),
-                    start_time = start_time,
-                    end_time = end_time,
-                    type = cgi.escape(self.request.get('type')),
-                    estimated_size = cgi.escape(self.request.get('estimated_size')),
-                    contact_name = cgi.escape(self.request.get('contact_name')),
-                    contact_phone = cgi.escape(self.request.get('contact_phone')),
-                    details = cgi.escape(self.request.get('details')),
-                    url = cgi.escape(self.request.get('url')),
-                    fee = cgi.escape(self.request.get('fee')),
-                    notes = cgi.escape(self.request.get('notes')),
-                    rooms = self.request.get_all('rooms'),
-                    expired = local_today() + timedelta(days=PENDING_LIFETIME), # Set expected expiration date
-                    setup = int(self.request.get('setup') or 0),
-                    teardown = int(self.request.get('teardown') or 0)
+                    name=cgi.escape(self.request.get('name')),
+                    start_time=start_time,
+                    end_time=end_time,
+                    type=cgi.escape(self.request.get('type')),
+                    estimated_size=cgi.escape(self.request.get('estimated_size')),
+                    contact_name=cgi.escape(self.request.get('contact_name')),
+                    contact_phone=cgi.escape(self.request.get('contact_phone')),
+                    details=cgi.escape(self.request.get('details')),
+                    url=cgi.escape(self.request.get('url')),
+                    fee=cgi.escape(self.request.get('fee')),
+                    notes=cgi.escape(self.request.get('notes')),
+                    rooms=self.request.get_all('rooms'),
+                    expired=local_today() + timedelta(days=PENDING_LIFETIME), # Set expected expiration date
+                    setup=int(self.request.get('setup') or 0),
+                    teardown=int(self.request.get('teardown') or 0),
+                    other_member=other_member
                 )
                 event.put()
                 log = HDLog(event=event,description="Created new event")
@@ -574,11 +631,8 @@ class NewHandler(webapp.RequestHandler):
                 message = 'Date is required.'
             if message.startswith('Property'):
                 message = message[9:].replace('_', ' ').capitalize()
-            # This is NOT a reliable way to handle erorrs
-            #set_cookie(self.response.headers, 'formerror', message)
-            #set_cookie(self.response.headers, 'formvalues', dict(self.request.POST))
-            #self.redirect('/new')
             error = message
+            self.response.set_status(400)
             self.response.out.write(template.render('templates/error.html', locals()))
 
 class SavingHandler(webapp.RequestHandler):

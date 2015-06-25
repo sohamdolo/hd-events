@@ -34,7 +34,7 @@ handlers:
   script: gaeunit.app
 - url: /_ah/queue/deferred
   script: google.appengine.ext.deferred.handler.app
-  login: admin  
+  login: admin
 - url: /_km/.*
   script: keymaster.app
   login: admin
@@ -46,3 +46,6 @@ libraries:
   version: latest
 - name: jinja2
   version: latest
+
+env_variables:
+  DJANGO_SETTINGS_MODULE: 'settings'

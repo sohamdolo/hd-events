@@ -1,0 +1,3 @@
+webtest == 2.0.18
+pytz == 2015.4
+pyRSS2Gen == 1.1

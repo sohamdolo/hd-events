@@ -96,6 +96,15 @@
     {% endfor %}
     </div>
   </div>
+
+  <div class='b-block'>
+    <div class='b-label'>Other member email:</div>
+    <span style="font-size: 10; font-weight: normal;">
+        If your event lasts 24h or longer, you must specify the email of
+        another member who will also be responsible for it.</span>
+    <input type="text" name="other_member" size="16" value="{{ event.other_member }}"/>
+  </div>
+
   <div class='b-block'><div class='b-label'>More Info:</div><div class='b-data'><textarea rows=4 name="details">{{event.details|safe}}</textarea></div></div>
   <div class='b-block'><div class='b-label'>Notes:</div><div class='b-data'><textarea rows=3 name="notes">{{event.notes|safe}}</textarea></div></div>
   <div class='b-block'><div class='b-label'>Estimated Size:</div><div class='b-data'><input type="text" name="estimated_size" value="{{event.estimated_size}}"/></div></div>
