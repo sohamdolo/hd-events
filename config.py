@@ -33,6 +33,8 @@ class Config:
     # The minimum amount of time that must be left between consecutive events,
     # in minutes.
     self.MIN_EVENT_SPACING = 30
+    # The maximum amount of future events a single user can have scheduled.
+    self.USER_MAX_FUTURE_EVENTS = 10
 
     if Config.is_testing:
       logging.debug("Is testing.")

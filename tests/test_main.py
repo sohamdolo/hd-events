@@ -18,6 +18,7 @@ import webtest
 # get loaded.
 os.environ["DJANGO_SETTINGS_MODULE"] = "settings"
 
+from config import Config
 import main
 import models
 
@@ -112,6 +113,24 @@ class NewHandlerTest(BaseTest):
     self.assertEqual(200, response.status_int)
 
     self._check_new_event_in_datastore()
+
+  """ Tests that it properly limits members to having a fixed number of future
+  events scheduled. """
+  def test_event_limit(self):
+    # Create the maximum number of events.
+    event_start = datetime.datetime.now() + datetime.timedelta(days=5)
+    event_end = datetime.datetime.now() + datetime.timedelta(days=5, hours=2)
+    for i in range(0, Config().USER_MAX_FUTURE_EVENTS):
+      event = models.Event(name="Test Event", start_time=event_start,
+                           end_time=event_end, type="Meetup",
+                           estimated_size="10", setup=15, teardown=15,
+                           details="This is a test event.")
+      event.put()
+
+    # Now it should stop us from creating another one.
+    response = self.test_app.post("/new", self.params, expect_errors=True)
+    self.assertEqual(400, response.status_int)
+    self.assertIn("future events", response.body)
 
 
 """ Tests that the edit event handler works properly. """
