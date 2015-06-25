@@ -30,6 +30,10 @@ class Config:
 
     Config.is_prod = not (Config.is_dev or Config.is_testing)
 
+    # The minimum amount of time that must be left between consecutive events,
+    # in minutes.
+    self.MIN_EVENT_SPACING = 30
+
     if Config.is_testing:
       logging.debug("Is testing.")
     elif Config.is_dev:
