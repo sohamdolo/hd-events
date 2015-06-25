@@ -71,16 +71,83 @@ def _get_other_member(handler, start_time, end_time):
 """ Checks that this particular user is clear to create an event. Mainly, this
 means that they don't have too many future events already scheduled.
 user: The user we are checking for. (GAE User() object.)
-Returns: True if the user should be able to add an event, False otherwise. """
-def _check_user_can_create(user):
+start_time: When the proposed event starts. """
+def _check_user_can_create(user, start_time):
   events_query = db.GqlQuery("SELECT * FROM Event WHERE member = :1 AND" \
                              " start_time > :2 AND status IN :3", user,
                              datetime.now(), ["approved", "pending", "on_hold"])
-  if events_query.count() >= Config().USER_MAX_FUTURE_EVENTS:
+
+  conf = Config()
+  if events_query.count() >= conf.USER_MAX_FUTURE_EVENTS:
     logging.warning("User has %d events. Cannot create more." % \
                     (events_query.count()))
-    return False
-  return True
+    raise ValueError("You may only have %d future events." % \
+                     (conf.USER_MAX_FUTURE_EVENTS))
+
+  # We have a limit on how many events we can have within a four-week period
+  # too.
+  # Find the subset of events that this event could possibly cause to be in
+  # violation of this rule.
+  earliest_start = start_time - timedelta(days=28)
+  latest_start = start_time + timedelta(days=28)
+  possible_violators = db.GqlQuery("SELECT * FROM Event WHERE member = :1 AND" \
+                                   " start_time >= :2 AND" \
+                                   " start_time <= :3 AND status IN :4" \
+                                   " ORDER BY start_time",
+                                   user, earliest_start, latest_start,
+                                   ["approved", "pending", "on_hold"])
+
+  if possible_violators.count() < conf.USER_MAX_FOUR_WEEKS:
+    # There's no way we could be violating this rule.
+    return
+
+  # Narrow the group of possible violators down to the subset of events
+  # surrounding our event's start time.
+  before_event = []
+  after_event = []
+  for event in possible_violators.run():
+    # Split it into groups of events that happen before and after our proposed
+    # event.
+    if event.start_time < start_time:
+      before_event.append(event.start_time)
+    else:
+      after_event.append(event.start_time)
+
+  # If we have extraneous events, it means that the rule was already violated.
+  if (len(before_event) > conf.USER_MAX_FOUR_WEEKS or \
+      len(after_event) > conf.USER_MAX_FOUR_WEEKS):
+    logging.warning("User was already in violation of the 4-week rule.")
+    raise ValueError("You may only have %d events within a 4-week period." % \
+                     (conf.USER_MAX_FOUR_WEEKS))
+
+  # Recombine the lists.
+  possible_violators = before_event
+  # Sandwhich in the time of the event we want to create.
+  possible_violators.append(start_time)
+  possible_violators.extend(after_event)
+
+  # Now look through every possible combination of USER_MAX_FOUR_WEEKS + 1
+  # consecutive events and see if it violates our rule. (The + 1 is so that
+  # every group we come up with will contain the event we are trying to add.)
+  event_group = []
+  for event_time in possible_violators:
+    if len(event_group) < conf.USER_MAX_FOUR_WEEKS:
+      # We don't have enough events yet to do anything.
+      event_group.append(event_time)
+      continue
+
+    # On to the next group...
+    event_group.pop(0)
+    event_group.append(event_time)
+
+    # Check that our current event group is valid.
+    if event_group[len(event_group) - 1] - event_group[0] <= \
+        timedelta(days=28):
+      # Now if we were to create that event, we would have one too many events
+      # in a four week period, meaning that this event violates the rule.
+      logging.warning("User has too many events within a 4-week period.")
+      raise ValueError("You may only have %d events within a 4-week period." % \
+                       (conf.USER_MAX_FOUR_WEEKS))
 
 
 class DomainCacheCron(webapp.RequestHandler):
@@ -587,8 +654,7 @@ class NewHandler(webapp.RequestHandler):
 
             other_member = _get_other_member(self, start_time, end_time)
 
-            if not _check_user_can_create(user):
-              raise ValueError('You have too many future events already.')
+            _check_user_can_create(user, start_time)
 
             if conflicts:
                 if "Deck" in self.request.get_all('rooms') or "Savanna" in self.request.get_all('rooms'):

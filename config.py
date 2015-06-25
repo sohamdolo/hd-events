@@ -35,6 +35,9 @@ class Config:
     self.MIN_EVENT_SPACING = 30
     # The maximum amount of future events a single user can have scheduled.
     self.USER_MAX_FUTURE_EVENTS = 10
+    # The maximum number of events a single user can have within a four-week
+    # period.
+    self.USER_MAX_FOUR_WEEKS = 6
 
     if Config.is_testing:
       logging.debug("Is testing.")
