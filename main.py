@@ -68,6 +68,21 @@ def _get_other_member(handler, start_time, end_time):
   return member
 
 
+""" Checks that this particular user is clear to create an event. Mainly, this
+means that they don't have too many future events already scheduled.
+user: The user we are checking for. (GAE User() object.)
+Returns: True if the user should be able to add an event, False otherwise. """
+def _check_user_can_create(user):
+  events_query = db.GqlQuery("SELECT * FROM Event WHERE member = :1 AND" \
+                             " start_time > :2 AND status IN :3", user,
+                             datetime.now(), ["approved", "pending", "on_hold"])
+  if events_query.count() >= Config().USER_MAX_FUTURE_EVENTS:
+    logging.warning("User has %d events. Cannot create more." % \
+                    (events_query.count()))
+    return False
+  return True
+
+
 class DomainCacheCron(webapp.RequestHandler):
     def get(self):
         noop = dojo('/groups/events',force=True)
@@ -571,6 +586,9 @@ class NewHandler(webapp.RequestHandler):
             )
 
             other_member = _get_other_member(self, start_time, end_time)
+
+            if not _check_user_can_create(user):
+              raise ValueError('You have too many future events already.')
 
             if conflicts:
                 if "Deck" in self.request.get_all('rooms') or "Savanna" in self.request.get_all('rooms'):
