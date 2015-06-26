@@ -150,6 +150,58 @@ def _check_user_can_create(user, start_time):
                        (conf.USER_MAX_FOUR_WEEKS))
 
 
+""" Makes sure that a proposed event is valid.
+handler: The handler handling the users request to create/change an event.
+editing_event_id: The id of the event we are editing. We use this so that we can
+ignore it when detecting conflicts.
+Raises a ValueError if it detects a problem.
+Returns: A tuple containing the event start time and end time. """
+def _validate_event(handler, editing_event_id=0):
+  user = users.get_current_user()
+  start_time = datetime.strptime('%s %s:%s %s' % (
+      handler.request.get('start_date'),
+      handler.request.get('start_time_hour'),
+      handler.request.get('start_time_minute'),
+      handler.request.get('start_time_ampm')), '%m/%d/%Y %I:%M %p')
+  end_time = datetime.strptime('%s %s:%s %s' % (
+      handler.request.get('end_date'),
+      handler.request.get('end_time_hour'),
+      handler.request.get('end_time_minute'),
+      handler.request.get('end_time_ampm')), '%m/%d/%Y %I:%M %p')
+  conflicts = Event.check_conflict(
+      start_time,end_time,
+      handler.request.get('setup'),
+      handler.request.get('teardown'),
+      handler.request.get_all('rooms'),
+      optional_existing_event_id=editing_event_id
+  )
+
+  _check_user_can_create(user, start_time)
+
+  if conflicts:
+    if ("Deck" in handler.request.get_all('rooms') or \
+        "Savanna" in handler.request.get_all('rooms')):
+      raise ValueError('Room conflict detected <small>(Note: Deck &amp;' \
+                        ' Savanna share the same area, two events cannot take' \
+                        ' place at the same time in these rooms.)</small>')
+    else:
+      raise ValueError('Room conflict detected')
+  if not handler.request.get('details'):
+    raise ValueError('You must provide a description of the event')
+  if not handler.request.get('estimated_size').isdigit():
+    raise ValueError('Estimated number of people must be a number')
+  if not int(handler.request.get('estimated_size')) > 0:
+    raise ValueError('Estimated number of people must be greater then zero')
+  if (end_time-start_time).days < 0:
+    raise ValueError('End time must be after start time')
+  if (handler.request.get('contact_phone') and not is_phone_valid(handler.request.get('contact_phone'))):
+    raise ValueError('Phone number does not appear to be valid' )
+  if not handler.request.get_all('rooms'):
+    raise ValueError('You must select a room to reserve.')
+
+  return (start_time, end_time)
+
+
 class DomainCacheCron(webapp.RequestHandler):
     def get(self):
         noop = dojo('/groups/events',force=True)
@@ -321,120 +373,93 @@ class EditHandler(webapp.RequestHandler):
         user = users.get_current_user()
         access_rights = UserRights(user, event)
         if access_rights.can_edit:
-            try:
-                start_time = datetime.strptime('%s %s:%s %s' % (
-                    self.request.get('start_date'),
-                    self.request.get('start_time_hour'),
-                    self.request.get('start_time_minute'),
-                    self.request.get('start_time_ampm')), '%m/%d/%Y %I:%M %p')
-                end_time = datetime.strptime('%s %s:%s %s' % (
-                    self.request.get('end_date'),
-                    self.request.get('end_time_hour'),
-                    self.request.get('end_time_minute'),
-                    self.request.get('end_time_ampm')), '%m/%d/%Y %I:%M %p')
-                conflicts = Event.check_conflict(
-                    start_time,end_time,
-                    self.request.get('setup'),
-                    self.request.get('teardown'),
-                    self.request.get_all('rooms'),
-                    int(id)
-                )
+          try:
+            start_time, end_time = _validate_event(self,
+                                                   editing_event_id=int(id))
 
-                other_member = _get_other_member(self, start_time, end_time)
+            other_member = _get_other_member(self, start_time, end_time)
+          except ValueError, e:
+            error = str(e)
+            self.response.set_status(400)
+            self.response.out.write(template.render('templates/error.html', locals()))
+            return
 
-                if conflicts:
-                    raise ValueError('Room conflict detected')
-                if not self.request.get('details'):
-                    raise ValueError('You must provide a description of the event')
-                if not self.request.get('estimated_size').isdigit():
-                    raise ValueError('Estimated number of people must be a number')
-                if not int(self.request.get('estimated_size')) > 0:
-                    raise ValueError('Estimated number of people must be greater then zero')
-                if (  self.request.get( 'contact_phone' ) and not is_phone_valid( self.request.get( 'contact_phone' ) ) ):
-                    raise ValueError( 'Phone number does not appear to be valid' )
-                if start_time == end_time:
-                    raise ValueError('End time for the event cannot be the same as the start time')
-                else:
-                    log_desc = ""
-                    previous_object = Event.get_by_id(int(id))
-                    event.status = 'pending'
-                    event.name = self.request.get('name')
-                    if (previous_object.name != event.name):
-                      log_desc += "<strong>Title:</strong> " + previous_object.name + " to " + event.name + "<br />"
-                    event.start_time = start_time
-                    if (previous_object.start_time != event.start_time):
-                      log_desc += "<strong>Start time:</strong> " + str(previous_object.start_time) + " to " + str(event.start_time) + "<br />"
-                    event.end_time = end_time
-                    if (previous_object.end_time != event.end_time):
-                      log_desc += "<strong>End time:</strong> " + str(previous_object.end_time) + " to " + str(event.end_time) + "<br />"
-                    event.estimated_size = cgi.escape(self.request.get('estimated_size'))
-                    if (previous_object.estimated_size != event.estimated_size):
-                      log_desc += "<strong>Est. size:</strong> " + previous_object.estimated_size + " to " + event.estimated_size + "<br />"
-                    event.contact_name = cgi.escape(self.request.get('contact_name'))
-                    if (previous_object.contact_name != event.contact_name):
-                      log_desc += "<strong>Contact:</strong> " + previous_object.contact_name + " to " + event.contact_name + "<br />"
-                    event.contact_phone = cgi.escape(self.request.get('contact_phone'))
-                    if (previous_object.contact_phone != event.contact_phone):
-                      log_desc += "<strong>Contact phone:</strong> " + previous_object.contact_phone + " to " + event.contact_phone + "<br />"
-                    event.details = cgi.escape(self.request.get('details'))
-                    if (previous_object.details != event.details):
-                      log_desc += "<strong>Details:</strong> " + previous_object.details + " to " + event.details + "<br />"
-                    event.url = cgi.escape(self.request.get('url'))
-                    if (previous_object.url != event.url):
-                      log_desc += "<strong>Url:</strong> " + previous_object.url + " to " + event.url + "<br />"
-                    event.fee = cgi.escape(self.request.get('fee'))
-                    if (previous_object.fee != event.fee):
-                      log_desc += "<strong>Fee:</strong> " + previous_object.fee + " to " + event.fee + "<br />"
-                    event.notes = cgi.escape(self.request.get('notes'))
-                    if (previous_object.notes != event.notes):
-                      log_desc += "<strong>Notes:</strong> " + previous_object.notes + " to " + event.notes + "<br />"
-                    event.rooms = self.request.get_all('rooms')
-                    if (previous_object.rooms != event.rooms):
-                      log_desc += "<strong>Rooms changed</strong><br />"
-                      log_desc += "<strong>Old room:</strong> " + previous_object.roomlist() + "<br />"
-                      log_desc += "<strong>New room:</strong> " + event.roomlist() + "<br />"
-                    setup = cgi.escape(self.request.get('setup')) or 0
-                    event.setup = int(setup)
-                    if (previous_object.setup != event.setup):
-                        log_desc += "<strong>Setup time changed</strong><br />"
-                        log_desc += "<strong>Old time:</strong> %s minutes<br/>" % previous_object.setup
-                        log_desc += "<strong>New time:</strong> %s minutes<br/>" % event.setup
-                    teardown = cgi.escape(self.request.get('teardown')) or 0
-                    event.teardown = int(teardown)
-                    if (previous_object.teardown != event.teardown):
-                        log_desc += "<strong>Teardown time changed</strong><br />"
-                        log_desc += "<strong>Old time:</strong> %s minutes<br/>" % previous_object.teardown
-                        log_desc += "<strong>New time:</strong> %s minutes<br/>" % event.teardown
-                    event.other_member = other_member
-                    if (previous_object.other_member != event.other_member):
-                      log_desc += "<strong>Other member changed</strong><br />"
-                      log_desc += "<strong>Old:</strong> %s<br />" % \
-                          (previous_object.other_member)
-                      log_desc += "<strong>New:</strong> %s<br />" % \
-                          (event.other_member)
-                    log = HDLog(event=event,description="Event edited<br />"+log_desc)
-                    log.put()
-                    show_all_nav = user
-                    access_rights = UserRights(user, event)
-                    if access_rights.can_edit:
-                        logout_url = users.create_logout_url('/')
-                        rooms = ROOM_OPTIONS
-                        hours = [1,2,3,4,5,6,7,8,9,10,11,12]
-                        if log_desc:
-                          edited = "<u>Saved changes:</u><br>"+log_desc
-                        notify_event_change(event=event,modification=1)
-                        event.put()
-                        self.response.out.write(template.render('templates/edit.html', locals()))
-                    else:
-                        self.response.set_status(401)
-                        self.response.out.write("Access denied")
-            except ValueError, error:
-                logging.error(error)
-                self.response.set_status(400)
-                self.response.out.write(template.render('templates/error.html', locals()))
-        else:
+          log_desc = ""
+          previous_object = Event.get_by_id(int(id))
+          event.status = 'pending'
+          event.name = self.request.get('name')
+          if (previous_object.name != event.name):
+            log_desc += "<strong>Title:</strong> " + previous_object.name + " to " + event.name + "<br />"
+          event.start_time = start_time
+          if (previous_object.start_time != event.start_time):
+            log_desc += "<strong>Start time:</strong> " + str(previous_object.start_time) + " to " + str(event.start_time) + "<br />"
+          event.end_time = end_time
+          if (previous_object.end_time != event.end_time):
+            log_desc += "<strong>End time:</strong> " + str(previous_object.end_time) + " to " + str(event.end_time) + "<br />"
+          event.estimated_size = cgi.escape(self.request.get('estimated_size'))
+          if (previous_object.estimated_size != event.estimated_size):
+            log_desc += "<strong>Est. size:</strong> " + previous_object.estimated_size + " to " + event.estimated_size + "<br />"
+          event.contact_name = cgi.escape(self.request.get('contact_name'))
+          if (previous_object.contact_name != event.contact_name):
+            log_desc += "<strong>Contact:</strong> " + previous_object.contact_name + " to " + event.contact_name + "<br />"
+          event.contact_phone = cgi.escape(self.request.get('contact_phone'))
+          if (previous_object.contact_phone != event.contact_phone):
+            log_desc += "<strong>Contact phone:</strong> " + previous_object.contact_phone + " to " + event.contact_phone + "<br />"
+          event.details = cgi.escape(self.request.get('details'))
+          if (previous_object.details != event.details):
+            log_desc += "<strong>Details:</strong> " + previous_object.details + " to " + event.details + "<br />"
+          event.url = cgi.escape(self.request.get('url'))
+          if (previous_object.url != event.url):
+            log_desc += "<strong>Url:</strong> " + previous_object.url + " to " + event.url + "<br />"
+          event.fee = cgi.escape(self.request.get('fee'))
+          if (previous_object.fee != event.fee):
+            log_desc += "<strong>Fee:</strong> " + previous_object.fee + " to " + event.fee + "<br />"
+          event.notes = cgi.escape(self.request.get('notes'))
+          if (previous_object.notes != event.notes):
+            log_desc += "<strong>Notes:</strong> " + previous_object.notes + " to " + event.notes + "<br />"
+          event.rooms = self.request.get_all('rooms')
+          if (previous_object.rooms != event.rooms):
+            log_desc += "<strong>Rooms changed</strong><br />"
+            log_desc += "<strong>Old room:</strong> " + previous_object.roomlist() + "<br />"
+            log_desc += "<strong>New room:</strong> " + event.roomlist() + "<br />"
+          setup = cgi.escape(self.request.get('setup')) or 0
+          event.setup = int(setup)
+          if (previous_object.setup != event.setup):
+              log_desc += "<strong>Setup time changed</strong><br />"
+              log_desc += "<strong>Old time:</strong> %s minutes<br/>" % previous_object.setup
+              log_desc += "<strong>New time:</strong> %s minutes<br/>" % event.setup
+          teardown = cgi.escape(self.request.get('teardown')) or 0
+          event.teardown = int(teardown)
+          if (previous_object.teardown != event.teardown):
+              log_desc += "<strong>Teardown time changed</strong><br />"
+              log_desc += "<strong>Old time:</strong> %s minutes<br/>" % previous_object.teardown
+              log_desc += "<strong>New time:</strong> %s minutes<br/>" % event.teardown
+          event.other_member = other_member
+          if (previous_object.other_member != event.other_member):
+            log_desc += "<strong>Other member changed</strong><br />"
+            log_desc += "<strong>Old:</strong> %s<br />" % \
+                (previous_object.other_member)
+            log_desc += "<strong>New:</strong> %s<br />" % \
+                (event.other_member)
+          log = HDLog(event=event,description="Event edited<br />"+log_desc)
+          log.put()
+          show_all_nav = user
+          access_rights = UserRights(user, event)
+          if access_rights.can_edit:
+            logout_url = users.create_logout_url('/')
+            rooms = ROOM_OPTIONS
+            hours = [1,2,3,4,5,6,7,8,9,10,11,12]
+            if log_desc:
+              edited = "<u>Saved changes:</u><br>"+log_desc
+            notify_event_change(event=event,modification=1)
+            event.put()
+            self.response.out.write(template.render('templates/edit.html', locals()))
+          else:
             self.response.set_status(401)
             self.response.out.write("Access denied")
+        else:
+          self.response.set_status(401)
+          self.response.out.write("Access denied")
 
 
 class EventHandler(webapp.RequestHandler):
@@ -633,91 +658,51 @@ class NewHandler(webapp.RequestHandler):
 
 
     def post(self):
-        user = users.get_current_user()
-        try:
-            start_time = datetime.strptime('%s %s:%s %s' % (
-                self.request.get('start_date'),
-                self.request.get('start_time_hour'),
-                self.request.get('start_time_minute'),
-                self.request.get('start_time_ampm')), '%m/%d/%Y %I:%M %p')
-            end_time = datetime.strptime('%s %s:%s %s' % (
-                self.request.get('end_date'),
-                self.request.get('end_time_hour'),
-                self.request.get('end_time_minute'),
-                self.request.get('end_time_ampm')), '%m/%d/%Y %I:%M %p')
-            conflicts = Event.check_conflict(
-                start_time,end_time,
-                self.request.get('setup'),
-                self.request.get('teardown'),
-                self.request.get_all('rooms')
-            )
+      try:
+        start_time, end_time = _validate_event(self)
 
-            other_member = _get_other_member(self, start_time, end_time)
-
-            _check_user_can_create(user, start_time)
-
-            if conflicts:
-                if "Deck" in self.request.get_all('rooms') or "Savanna" in self.request.get_all('rooms'):
-                    raise ValueError('Room conflict detected <small>(Note: Deck &amp; Savanna share the same area, two events cannot take place at the same time in these rooms.)</small>')
-                else:
-                    raise ValueError('Room conflict detected')
-            if not self.request.get('details'):
-              raise ValueError('You must provide a description of the event')
-            if not self.request.get('estimated_size').isdigit():
-              raise ValueError('Estimated number of people must be a number')
-            if not int(self.request.get('estimated_size')) > 0:
-              raise ValueError('Estimated number of people must be greater then zero')
-            if (end_time-start_time).days < 0:
-              raise ValueError('End time must be after start time')
-            if (  self.request.get( 'contact_phone' ) and not is_phone_valid( self.request.get( 'contact_phone' ) ) ):
-              raise ValueError('Phone number does not appear to be valid' )
-            if not self.request.get_all('rooms'):
-              raise ValueError('You must select a room to reserve.')
-            else:
-                event = Event(
-                    name=cgi.escape(self.request.get('name')),
-                    start_time=start_time,
-                    end_time=end_time,
-                    type=cgi.escape(self.request.get('type')),
-                    estimated_size=cgi.escape(self.request.get('estimated_size')),
-                    contact_name=cgi.escape(self.request.get('contact_name')),
-                    contact_phone=cgi.escape(self.request.get('contact_phone')),
-                    details=cgi.escape(self.request.get('details')),
-                    url=cgi.escape(self.request.get('url')),
-                    fee=cgi.escape(self.request.get('fee')),
-                    notes=cgi.escape(self.request.get('notes')),
-                    rooms=self.request.get_all('rooms'),
-                    expired=local_today() + timedelta(days=PENDING_LIFETIME), # Set expected expiration date
-                    setup=int(self.request.get('setup') or 0),
-                    teardown=int(self.request.get('teardown') or 0),
-                    other_member=other_member
-                )
-                event.put()
-                log = HDLog(event=event,description="Created new event")
-                log.put()
-                notify_owner_confirmation(event)
-                notify_event_change(event)
-                set_cookie(self.response.headers, 'formvalues', None)
-
-                rules = memcache.get("rules")
-                if(rules is None):
-                    try:
-                        rules = urlfetch.fetch("http://wiki.hackerdojo.com/api_v2/op/GetPage/page/Event+Policies/_type/html", "GET").content
-                        memcache.add("rules", rules, 86400)
-                    except Exception, e:
-                        rules = "Error fetching rules.  Please report this error to internal-dev@hackerdojo.com."
-                self.response.out.write(template.render('templates/confirmation.html', locals()))
+        other_member = _get_other_member(self, start_time, end_time)
+      except ValueError, e:
+        error = str(e)
+        self.response.set_status(400)
+        self.response.out.write(template.render('templates/error.html', locals()))
+        return
 
 
-        except ValueError, e:
-            message = str(e)
-            if 'match format' in message:
-                message = 'Date is required.'
-            if message.startswith('Property'):
-                message = message[9:].replace('_', ' ').capitalize()
-            error = message
-            self.response.set_status(400)
-            self.response.out.write(template.render('templates/error.html', locals()))
+      event = Event(
+          name=cgi.escape(self.request.get('name')),
+          start_time=start_time,
+          end_time=end_time,
+          type=cgi.escape(self.request.get('type')),
+          estimated_size=cgi.escape(self.request.get('estimated_size')),
+          contact_name=cgi.escape(self.request.get('contact_name')),
+          contact_phone=cgi.escape(self.request.get('contact_phone')),
+          details=cgi.escape(self.request.get('details')),
+          url=cgi.escape(self.request.get('url')),
+          fee=cgi.escape(self.request.get('fee')),
+          notes=cgi.escape(self.request.get('notes')),
+          rooms=self.request.get_all('rooms'),
+          expired=local_today() + timedelta(days=PENDING_LIFETIME), # Set expected expiration date
+          setup=int(self.request.get('setup') or 0),
+          teardown=int(self.request.get('teardown') or 0),
+          other_member=other_member
+      )
+      event.put()
+      log = HDLog(event=event,description="Created new event")
+      log.put()
+      notify_owner_confirmation(event)
+      notify_event_change(event)
+      set_cookie(self.response.headers, 'formvalues', None)
+
+      rules = memcache.get("rules")
+      if(rules is None):
+          try:
+              rules = urlfetch.fetch("http://wiki.hackerdojo.com/api_v2/op/GetPage/page/Event+Policies/_type/html", "GET").content
+              memcache.add("rules", rules, 86400)
+          except Exception, e:
+              rules = "Error fetching rules.  Please report this error to internal-dev@hackerdojo.com."
+      self.response.out.write(template.render('templates/confirmation.html', locals()))
+
 
 class SavingHandler(webapp.RequestHandler):
     def get(self, target):
