@@ -73,6 +73,12 @@ means that they don't have too many future events already scheduled.
 user: The user we are checking for. (GAE User() object.)
 start_time: When the proposed event starts. """
 def _check_user_can_create(user, start_time):
+  # If they are an admin, they can do whatever they want.
+  user_status = UserRights(user)
+  if user_status.is_admin:
+    logging.info("User %s is admin, not performing checks." % (user.email()))
+    return
+
   events_query = db.GqlQuery("SELECT * FROM Event WHERE member = :1 AND" \
                              " start_time > :2 AND status IN :3", user,
                              datetime.now(), ["approved", "pending", "on_hold"])
