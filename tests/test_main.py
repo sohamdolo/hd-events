@@ -228,3 +228,15 @@ class EditHandlerTest(BaseTest):
 
     self._check_new_event_in_datastore()
 
+  """ Tests that you can't specify a start time that's later than the end time.
+  """
+  def test_bad_times(self):
+    params = self.params.copy()
+    # Make the end time before the start time.
+    params["end_time_hour"] = "10"
+    params["end_time_ampm"] = "AM"
+
+    response = self.test_app.post("/edit/%d" % (self.event.key().id()), params,
+                                  expect_errors=True)
+    self.assertEqual(400, response.status_int)
+    self.assertIn("must be after", response.body)
