@@ -132,6 +132,42 @@ class NewHandlerTest(BaseTest):
     self.assertEqual(400, response.status_int)
     self.assertIn("future events", response.body)
 
+  """ Tests that it properly limits the number of events members can have in a
+  4-week period. """
+  def test_four_week_limit(self):
+    # Make one fewer than the limit events.
+    start = datetime.datetime.now() + datetime.timedelta(days=1)
+    events = []
+    for i in range(0, Config().USER_MAX_FOUR_WEEKS - 1):
+      event = models.Event(name="Test Event", start_time=start,
+                           end_time=start + datetime.timedelta(hours=1),
+                           type="Meetup", estimated_size="10", setup=15,
+                           teardown=15, details="This is a test event.")
+      event.put()
+      events.append(event)
+
+      # Make one the next day too.
+      start += datetime.timedelta(days=1)
+
+    # Now, it should let us create a last one.
+    event_date = "%d/%d/%d" % (start.month, start.day, start.year)
+    params = self.params.copy()
+    params["start_date"] = event_date
+    params["end_date"] = event_date
+
+    response = self.test_app.post("/new", params)
+    self.assertEqual(200, response.status_int)
+
+    # It should not, however, allow us to create another one.
+    start += datetime.timedelta(days=1)
+    event_date = "%d/%d/%d" % (start.month, start.day, start.year)
+    params["start_date"] = event_date
+    params["end_date"] = event_date
+
+    response = self.test_app.post("/new", params, expect_errors=True)
+    self.assertEqual(400, response.status_int)
+    self.assertIn("4-week period", response.body)
+
 
 """ Tests that the edit event handler works properly. """
 class EditHandlerTest(BaseTest):
