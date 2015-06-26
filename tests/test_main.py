@@ -168,6 +168,15 @@ class NewHandlerTest(BaseTest):
     self.assertEqual(400, response.status_int)
     self.assertIn("4-week period", response.body)
 
+  """ Tests that it forces people to select at least one room. """
+  def test_no_room_prohibition(self):
+    params = self.params.copy()
+    del params["rooms"]
+
+    response = self.test_app.post("/new", params, expect_errors=True)
+    self.assertEqual(400, response.status_int)
+    self.assertIn("select a room", response.body)
+
 
 """ Tests that the edit event handler works properly. """
 class EditHandlerTest(BaseTest):
@@ -240,3 +249,13 @@ class EditHandlerTest(BaseTest):
                                   expect_errors=True)
     self.assertEqual(400, response.status_int)
     self.assertIn("must be after", response.body)
+
+  """ Tests that it forces people to select at least one room. """
+  def test_no_room_prohibition(self):
+    params = self.params.copy()
+    del params["rooms"]
+
+    response = self.test_app.post("/edit/%d" % (self.event.key().id()), params,
+                                  expect_errors=True)
+    self.assertEqual(400, response.status_int)
+    self.assertIn("select a room", response.body)
