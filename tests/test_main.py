@@ -177,6 +177,22 @@ class NewHandlerTest(BaseTest):
     self.assertEqual(400, response.status_int)
     self.assertIn("select a room", response.body)
 
+  """ Tests that it limits people to having one event per day starting during
+  Dojo hours. """
+  def test_one_per_day(self):
+    start = datetime.datetime.now() + datetime.timedelta(days=1)
+    start = start.replace(hour=11)
+    event = models.Event(name="Test Event", start_time=start,
+                           end_time=start + datetime.timedelta(minutes=30),
+                           type="Meetup", estimated_size="10", setup=15,
+                           teardown=15, details="This is a test event.")
+    event.put()
+
+    # That should be our one event for that day. It should complain if we try to
+    # create another one.
+    response = self.test_app.post("/new", self.params, expect_errors=True)
+    self.assertEqual(400, response.status_int)
+
 
 """ Tests that the edit event handler works properly. """
 class EditHandlerTest(BaseTest):
