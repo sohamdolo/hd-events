@@ -182,6 +182,7 @@ def _validate_event(handler, editing_event_id=0):
   )
 
   _check_user_can_create(user, start_time)
+  _check_one_event_per_day(user, start_time, editing_event_id=editing_event_id)
 
   if conflicts:
     if ("Deck" in handler.request.get_all('rooms') or \
@@ -205,6 +206,46 @@ def _validate_event(handler, editing_event_id=0):
     raise ValueError('You must select a room to reserve.')
 
   return (start_time, end_time)
+
+
+""" Makes sure that adding this event won't violate a rule against having more
+than one event per day during Dojo hours. There are, of course, exceptions to
+this rule for anyone on the @events team.
+user: The user that is creating this event.
+start_time: The proposed start time of the event.
+editing_event_id: The id of the event we are editing, if we are editing. """
+def _check_one_event_per_day(user, start_time, editing_event_id=0):
+  # If we're an admin, we can do anything we want.
+  user_status = UserRights(user)
+  if user_status.is_admin:
+    logging.info("User %s is admin, not performing check." % (user.email()))
+    return
+
+  conf = Config()
+  # The earliest and latest that other events during Dojo hours this day might
+  # start.
+  earliest_start = start_time.replace(hour=conf.DOJO_HOURS[0], minute=0,
+                                      second=0, microsecond=0)
+  latest_start = start_time.replace(hour=conf.DOJO_HOURS[1], minute=0, second=0,
+                                    microsecond=0)
+
+  event_query = db.GqlQuery("SELECT * FROM Event WHERE start_time >= :1 AND" \
+                            " start_time <= :2", earliest_start, latest_start)
+  found_events = event_query.count()
+
+  if editing_event_id:
+    old_event = Event.get_by_id(editing_event_id)
+    if (old_event.start_time >= earliest_start and \
+        old_event.end_time <= latest_start):
+      # In this case, our old event is going to show up in the query and cause
+      # it to register one too many events.
+      logging.debug("Removing old event from event count.")
+      found_events -= 1
+
+  if found_events >= 1:
+    # We can't have another event that starts today.
+    raise ValueError("There can only be one event starting during Dojo hours"
+                     " each day.")
 
 
 class DomainCacheCron(webapp.RequestHandler):
