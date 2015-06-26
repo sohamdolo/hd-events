@@ -77,10 +77,10 @@ def _check_user_can_create(user, start_time):
                              " start_time > :2 AND status IN :3", user,
                              datetime.now(), ["approved", "pending", "on_hold"])
 
+  logging.debug("User has %d events." % (events_query.count()))
+
   conf = Config()
   if events_query.count() >= conf.USER_MAX_FUTURE_EVENTS:
-    logging.warning("User has %d events. Cannot create more." % \
-                    (events_query.count()))
     raise ValueError("You may only have %d future events." % \
                      (conf.USER_MAX_FUTURE_EVENTS))
 
@@ -145,7 +145,6 @@ def _check_user_can_create(user, start_time):
         timedelta(days=28):
       # Now if we were to create that event, we would have one too many events
       # in a four week period, meaning that this event violates the rule.
-      logging.warning("User has too many events within a 4-week period.")
       raise ValueError("You may only have %d events within a 4-week period." % \
                        (conf.USER_MAX_FOUR_WEEKS))
 
@@ -380,6 +379,7 @@ class EditHandler(webapp.RequestHandler):
             other_member = _get_other_member(self, start_time, end_time)
           except ValueError, e:
             error = str(e)
+            logging.warning(error)
             self.response.set_status(400)
             self.response.out.write(template.render('templates/error.html', locals()))
             return
@@ -664,6 +664,7 @@ class NewHandler(webapp.RequestHandler):
         other_member = _get_other_member(self, start_time, end_time)
       except ValueError, e:
         error = str(e)
+        logging.warning(error)
         self.response.set_status(400)
         self.response.out.write(template.render('templates/error.html', locals()))
         return
