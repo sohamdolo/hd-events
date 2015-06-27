@@ -224,9 +224,9 @@ def _check_one_event_per_day(user, start_time, editing_event_id=0):
   conf = Config()
   # The earliest and latest that other events during Dojo hours this day might
   # start.
-  earliest_start = start_time.replace(hour=conf.DOJO_HOURS[0], minute=0,
+  earliest_start = start_time.replace(hour=conf.EVENT_HOURS[0], minute=0,
                                       second=0, microsecond=0)
-  latest_start = start_time.replace(hour=conf.DOJO_HOURS[1], minute=0, second=0,
+  latest_start = start_time.replace(hour=conf.EVENT_HOURS[1], minute=0, second=0,
                                     microsecond=0)
 
   event_query = db.GqlQuery("SELECT * FROM Event WHERE start_time >= :1 AND" \

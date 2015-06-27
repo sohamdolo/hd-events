@@ -39,8 +39,8 @@ class Config:
     # period.
     self.USER_MAX_FOUR_WEEKS = 6
 
-    # The hours that the Dojo is open to guests. (24-hour time.)
-    self.DOJO_HOURS = (9, 17)
+    # The hours that we wan to have only one event during. (24-hour time.)
+    self.EVENT_HOURS = (9, 17)
 
     if Config.is_testing:
       logging.debug("Is testing.")
