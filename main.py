@@ -236,7 +236,7 @@ def _check_one_event_per_day(user, start_time, editing_event_id=0):
   if editing_event_id:
     old_event = Event.get_by_id(editing_event_id)
     if (old_event.start_time >= earliest_start and \
-        old_event.end_time <= latest_start):
+        old_event.start_time <= latest_start):
       # In this case, our old event is going to show up in the query and cause
       # it to register one too many events.
       logging.debug("Removing old event from event count.")
