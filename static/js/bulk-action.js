@@ -3,6 +3,13 @@
 // High-level pseudo-namespace for everything in this file.
 var bulkAction = {};
 
+/** Allows for setting which set of events we are showing so that we can adapt
+ * accordingly.
+ @param {String} type: The type of events we are showing. */
+bulkAction.setEventType = function(type) {
+  bulkAction.eventType = type;
+}
+
 /** Manages a set of bulk action checkboxes on the page. */
 bulkAction.BulkActionHandler = function() {
   // An array to keep track of all the events that are selected.
@@ -35,25 +42,47 @@ bulkAction.BulkActionHandler = function() {
 
   /** Approves all the events currently selected. */
   this.doApprove = function() {
-    this.doAction_('approve');
+    if (bulkAction.eventType == 'all_future') {
+      if (!this.doAction_('approve', true)) {
+        return;
+      }
+
+      this.setBadgeText_(null);
+      this.toggleChecked(false);
+    } else {
+      this.doAction_('approve');
+    }
   };
 
   /** Rejects all the events currently selected. */
   this.doReject = function() {
-    this.doAction_('notapproved');
+    if (bulkAction.eventType == 'all_future') {
+      if (!this.doAction_('notapproved', true)) {
+        return;
+      }
+
+      this.setBadgeText_('not_approved');
+      this.toggleChecked(false);
+    } else {
+      this.doAction_('notapproved');
+    }
   };
 
   /** Puts all the events currently selected on hold. */
   this.doHold = function() {
-    this.doAction_('onhold', true);
+    if (bulkAction.eventType == 'pending' ||
+        bulkAction.eventType == 'all_future') {
+      // For pending events, we need to do this a special way because the events
+      // don't dissapear from this view after we've performed the action.
+      if (!this.doAction_('onhold', true)) {
+        return;
+      }
 
-    // Change all the little badges to "onhold".
-    for (i = 0; i < this.selected_.length; ++i) {
-      var id = this.selected_[i].id.replace('-box', '-badge');
-      $('#' + id).text('onhold');
+      this.setBadgeText_('onhold');
+      this.toggleChecked(false);
+    } else {
+      this.doAction_('onhold');
     }
-
-    this.toggleChecked(false);
   };
 
   /** Deletes all the events currently selected. */
@@ -89,14 +118,15 @@ bulkAction.BulkActionHandler = function() {
   * @param {String} action: The name of the action to perform.
   * @param {Boolean} opt_keep: Specifies whether to keep the events that the
   * action was perfomed on showing afterwards. Defaults to false.
+  * @returns: true if it performs the action, false if it doesn't.
   */
   this.doAction_ = function(action, opt_keep) {
     if (!this.barVisible_) {
-      return;
+      return false;
     }
     if (this.validActions_.indexOf(action) < 0) {
       // We can't perform this action.
-      return;
+      return false;
     }
 
     var properties = {'action': action};
@@ -123,6 +153,8 @@ bulkAction.BulkActionHandler = function() {
         outer_this.setActionBarVisibility_();
       }
     });
+
+    return true;
   };
 
   /** Adds a new item to the array of selected items.
@@ -202,6 +234,25 @@ bulkAction.BulkActionHandler = function() {
     }
 
     return selectedIds;
+  };
+
+  /** Changes the text on the event badges of selected events.
+  * @private
+  * @param {String} text: The text to change it to, or null. Null erases the
+  * badge altogether.
+  */
+  this.setBadgeText_ = function(text) {
+    var selectedIds = this.getDatastoreIds_();
+
+    for (i = 0; i < selectedIds.length; ++i) {
+      var badge = $('#' + selectedIds[i] + '-badge');
+      if (text == null) {
+        badge.fadeOut();
+      } else {
+        badge.fadeIn();
+        badge.text(text);
+      }
+    }
   };
 };
 

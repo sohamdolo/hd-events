@@ -1,8 +1,10 @@
 <tr id="{{ event.key.id }}-row">
+    {% if is_admin %}
     <td width="75">
         <input type="checkbox" class="checkbox-big" name="bulk-select",
             id="{{ event.key.id }}-box">
     </td>
+    {% endif %}
 
     <td><p>{{ event.start_date }}</p></td>
 

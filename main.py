@@ -711,6 +711,8 @@ class ApprovedHandler(webapp.RequestHandler):
 
         wait_days = _get_user_wait_time(user)
 
+        user_rights = UserRights(user)
+        is_admin = user_rights.is_admin
         self.response.out.write(template.render('templates/approved.html', locals()))
 
 
@@ -762,6 +764,8 @@ class NotApprovedHandler(webapp.RequestHandler):
 
         wait_days = _get_user_wait_time(user)
 
+        user_rights = UserRights(user)
+        is_admin = user_rights.is_admin
         self.response.out.write(template.render('templates/not_approved.html', locals()))
 
 
@@ -786,6 +790,8 @@ class AllFutureHandler(webapp.RequestHandler):
 
         wait_days = _get_user_wait_time(user)
 
+        user_rights = UserRights(user)
+        is_admin = user_rights.is_admin
         self.response.out.write(template.render('templates/all_future.html', locals()))
 
 class LargeHandler(webapp.RequestHandler):

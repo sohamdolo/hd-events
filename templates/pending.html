@@ -4,30 +4,14 @@
 
 <head>
 <script type="text/javascript" src="/static/js/bulk-action.js"></script>
+
+<script>bulkAction.setEventType('pending');</script>
 </head>
 
-{% if is_admin %}
-<div class="btn-group" style="width: 100%; padding-bottom: 10px;">
-  <button id="toggle-all" class="btn btn-default" style="width: 8%; padding: 1.5px;">
-      <input type="checkbox" class="checkbox-big" id="toggle-all-box">
-  <button id="approve" class="btn btn-success disabled" style="width: 23%;">Approve
-      <span class="glyphicon glyphicon-ok" style="padding-left: 5px;"></span>
-  </button>
-  <button id="notapproved" class="btn btn-danger disabled" style="width: 23%;">Reject
-      <span class="glyphicon glyphicon-remove" style="padding-left: 5px"></span>
-  </button>
-  <button id="onhold" class="btn btn-default disabled" style="width: 23%;">On Hold
-      <span class="glyphicon glyphicon-time" style="padding-left: 5px"></span>
-  </button>
-  <button id="delete" class="btn btn-default disabled" style="width: 23%;">Delete
-      <span class="glyphicon glyphicon-trash" style="padding-left: 5px"></span>
-  </button>
-</div>
-{% endif %}
+{% include 'bulk_action_bar.html' %}
 
 <div id="primary">
   <h3>Pending Events</h3>
-  <h4>{% ifequal events.grouper today.date %}<span style="text-decoration:underline;">Today</span> - {% endifequal %}{% ifequal events.grouper tomorrow.date %}<span style="text-decoration:underline;">Tomorrow</span> - {% endifequal %}{{events.grouper|date:"l, F j"}}</h4>
   <table class="table-striped" style="width: 100%">
   {% regroup events by start_date as grouped_events %}
   {% for events in grouped_events %}
