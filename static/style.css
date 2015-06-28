@@ -42,7 +42,7 @@ a:visited { color: blue;}
 h3 a {text-decoration: none; color:#0000bb;}
 
 #content { border-top: 3px solid #d50025; background: #eee; padding: 10px; }
-#primary { background: white; width: 660px; padding: 10px; line-height: 1.5;}
+#primary { background: white; width: 100%; padding: 10px; line-height: 1.5;}
 #secondary {font-size: 80%;}
 
 h4 { font-size: smaller; }
@@ -90,9 +90,17 @@ input.dp-applied {
 
 #edit-approve-btns, #cancel-delete-btns {
   display: inline;
-  
 }
 
 #edit-approve-btns {
   padding-right: 50px;
+}
+
+.checkbox-big {
+    width: 20px;
+    height: 20px;
+    outline-width: 0px;
+    border-radius: 0px;
+    vertical-align: baseline;
+    padding-top: 6px;
 }

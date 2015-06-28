@@ -235,7 +235,7 @@ class Event(db.Model):
         if self.is_staffed():
             self.expired = None
             self.status = 'approved'
-            logging.info('%s approved %s' % (user.nickname, self.name))
+            logging.info('%s approved %s' % (user.nickname(), self.name))
         else:
             self.status = 'understaffed'
             logging.info('%s approved %s but it is still understaffed' % (user.nickname, self.name))

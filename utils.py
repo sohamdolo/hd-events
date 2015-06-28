@@ -105,7 +105,7 @@ class UserRights(object):
         self.can_staff = False
         self.can_unstaff = False
 
-        if not Config().is_testing:
+        if Config().is_prod:
           if self.user:
               events_users = dojo('/groups/events', force=False)
               if not events_users:

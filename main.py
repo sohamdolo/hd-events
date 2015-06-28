@@ -299,6 +299,56 @@ def _get_user_wait_time(user):
   return to_wait
 
 
+""" Performs an action on a single event.
+event: The event object that we are working with.
+action: A string specifying the action to perform.
+user: The user who is performing this action. (User() object.)
+"""
+def _do_event_action(event, action, user):
+  access_rights = UserRights(user, event)
+
+  desc = ''
+  if action.lower() == 'approve' and access_rights.can_approve:
+    event.approve()
+    desc = 'Approved event'
+  elif action.lower() == 'notapproved' and access_rights.can_not_approve:
+    event.not_approved()
+    desc = 'Event marked not approved'
+  elif action.lower() == 'rsvp' and user:
+    event.rsvp()
+    notify_owner_rsvp(event,user)
+  elif action.lower() == 'staff' and access_rights.can_staff:
+    event.add_staff(user)
+    desc = 'added self as staff'
+  elif action.lower() == 'unstaff' and access_rights.can_unstaff:
+    event.remove_staff(user)
+    desc = 'Removed self as staff'
+  elif action.lower() == 'onhold' and access_rights.can_cancel:
+    event.on_hold()
+    desc = 'Put event on hold'
+  elif action.lower() == 'cancel' and access_rights.can_cancel:
+    event.cancel()
+    desc = 'Cancelled event'
+  elif action.lower() == 'delete' and access_rights.can_delete:
+    event.delete()
+    desc = 'Deleted event'
+    notify_deletion(event,user)
+  elif action.lower() == 'undelete' and access_rights.can_undelete:
+    event.undelete()
+    desc = 'Undeleted event'
+  elif action.lower() == 'expire' and access_rights.is_admin:
+    event.expire()
+    desc = 'Expired event'
+  elif event.status == 'approved' and action.lower() == 'approve':
+    notify_owner_approved(event)
+  else:
+    logging.warning("Action '%s' was specified, but not performed." % (action))
+
+  if desc != '':
+    log = HDLog(event=event,description=desc)
+    log.put()
+
+
 class DomainCacheCron(webapp.RequestHandler):
     def get(self):
         noop = dojo('/groups/events',force=True)
@@ -588,47 +638,10 @@ class EventHandler(webapp.RequestHandler):
     def post(self, id):
         event = Event.get_by_id(int(id))
         user = users.get_current_user()
-        access_rights = UserRights(user, event)
+        action = self.request.get('state')
 
-        state = self.request.get('state')
-        if state:
-            desc = ''
-            if state.lower() == 'approve' and access_rights.can_approve:
-                event.approve()
-                desc = 'Approved event'
-            if state.lower() == 'notapproved' and access_rights.can_not_approve:
-                event.not_approved()
-                desc = 'Event marked not approved'
-            if state.lower() == 'rsvp' and user:
-                event.rsvp()
-                notify_owner_rsvp(event,user)
-            if state.lower() == 'staff' and access_rights.can_staff:
-                event.add_staff(user)
-                desc = 'Added self as staff'
-            if state.lower() == 'unstaff' and access_rights.can_unstaff:
-                event.remove_staff(user)
-                desc = 'Removed self as staff'
-            if state.lower() == 'onhold' and access_rights.can_cancel:
-                event.on_hold()
-                desc = 'Put event on hold'
-            if state.lower() == 'cancel' and access_rights.can_cancel:
-                event.cancel()
-                desc = 'Cancelled event'
-            if state.lower() == 'delete' and access_rights.can_delete:
-                event.delete()
-                desc = 'Deleted event'
-                notify_deletion(event,user)
-            if state.lower() == 'undelete' and access_rights.can_undelete:
-                event.undelete()
-                desc = 'Undeleted event'
-            if state.lower() == 'expire' and access_rights.is_admin:
-                event.expire()
-                desc = 'Expired event'
-            if event.status == 'approved' and state.lower() == 'approve':
-                notify_owner_approved(event)
-            if desc != '':
-                log = HDLog(event=event,description=desc)
-                log.put()
+        _do_event_action(event, action, user)
+
         event.details = db.Text(event.details.replace('\n','<br/>'))
         show_all_nav = user
         event.notes = db.Text(event.notes.replace('\n','<br/>'))
@@ -759,6 +772,8 @@ class PendingHandler(webapp.RequestHandler):
 
         wait_days = _get_user_wait_time(user)
 
+        user_rights = UserRights(user)
+        is_admin = user_rights.is_admin
         self.response.out.write(template.render('templates/pending.html', locals()))
 
 
@@ -948,6 +963,26 @@ class ExpireSuspendedCronHandler(webapp.RequestHandler):
         event.expire()
 
 
+""" Performs bulk actions on a set of events. """
+class BulkActionHandler(webapp.RequestHandler):
+  def post(self):
+    action = self.request.get("action")
+    event_ids = self.request.get("events")
+    event_ids = json.loads(event_ids)
+
+    # Get the actual events.
+    events = []
+    for event in event_ids:
+      events.append(Event.get_by_id(int(event)))
+
+    user = users.get_current_user()
+
+    # Perform the action on all the events.
+    logging.debug("Performing bulk action: %s" % (action))
+    for event in events:
+      _do_event_action(event, action, user)
+
+
 app = webapp.WSGIApplication([
         ('/', ApprovedHandler),
         ('/all_future', AllFutureHandler),
@@ -969,5 +1004,6 @@ app = webapp.WSGIApplication([
         ('/domaincache', DomainCacheCron),
         ('/logs', LogsHandler),
         ('/feedback/new/(\d+).*', FeedbackHandler),
-        ('/expire_suspended', ExpireSuspendedCronHandler)],
-        debug=True)
+        ('/expire_suspended', ExpireSuspendedCronHandler),
+        ('/bulk_action', BulkActionHandler),
+        ],debug=True)
