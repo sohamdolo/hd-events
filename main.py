@@ -303,50 +303,97 @@ def _get_user_wait_time(user):
 event: The event object that we are working with.
 action: A string specifying the action to perform.
 user: The user who is performing this action. (User() object.)
+check: If True, the it will check whether the action can be run, but won't
+actually run it.
+Returns: True if the action is performed or can be performed, False otherwise.
 """
-def _do_event_action(event, action, user):
+def _do_event_action(event, action, user, check=False):
   access_rights = UserRights(user, event)
 
   desc = ''
-  if action.lower() == 'approve' and access_rights.can_approve:
-    event.approve()
+  todo = None
+  args = []
+  if action.lower() == 'approve':
+    if not access_rights.can_approve:
+      return False
+    todo = event.approve
     desc = 'Approved event'
-  elif action.lower() == 'notapproved' and access_rights.can_not_approve:
-    event.not_approved()
+
+  elif action.lower() == 'notapproved':
+    if not access_rights.can_not_approve:
+      return False
+    todo = event.not_approved
     desc = 'Event marked not approved'
-  elif action.lower() == 'rsvp' and user:
-    event.rsvp()
-    notify_owner_rsvp(event,user)
-  elif action.lower() == 'staff' and access_rights.can_staff:
-    event.add_staff(user)
+
+  elif action.lower() == 'rsvp':
+    if not user:
+      return False
+    todo = event.rsvp
+    if not check:
+      notify_owner_rsvp(event,user)
+
+  elif action.lower() == 'staff':
+    if not access_rights.can_staff:
+      return False
+    todo = event.add_staff
+    args.append(user)
     desc = 'added self as staff'
-  elif action.lower() == 'unstaff' and access_rights.can_unstaff:
-    event.remove_staff(user)
+
+  elif action.lower() == 'unstaff':
+    if not access_rights.can_unstaff:
+      return False
+    todo = event.remove_staff
+    args.append(user)
     desc = 'Removed self as staff'
-  elif action.lower() == 'onhold' and access_rights.can_cancel:
-    event.on_hold()
+
+  elif action.lower() == 'onhold':
+    if not access_rights.can_cancel:
+      return False
+    todo = event.on_hold
     desc = 'Put event on hold'
-  elif action.lower() == 'cancel' and access_rights.can_cancel:
-    event.cancel()
+
+  elif action.lower() == 'cancel':
+    if not access_rights.can_cancel:
+      return False
+    todo = event.cancel
     desc = 'Cancelled event'
-  elif action.lower() == 'delete' and access_rights.can_delete:
-    event.delete()
+
+  elif action.lower() == 'delete':
+    if not access_rights.can_delete:
+      return False
+    todo = event.delete
     desc = 'Deleted event'
-    notify_deletion(event,user)
-  elif action.lower() == 'undelete' and access_rights.can_undelete:
-    event.undelete()
+    if not check:
+      notify_deletion(event,user)
+
+  elif action.lower() == 'undelete':
+    if not access_rights.can_undelete:
+      return False
+    todo = event.undelete
     desc = 'Undeleted event'
+
   elif action.lower() == 'expire' and access_rights.is_admin:
-    event.expire()
+    todo = event.expire
     desc = 'Expired event'
+
   elif event.status == 'approved' and action.lower() == 'approve':
-    notify_owner_approved(event)
+    if not check:
+      notify_owner_approved(event)
+
   else:
-    logging.warning("Action '%s' was specified, but not performed." % (action))
+    logging.warning("Action '%s' was not recognized." % (action))
+
+  if check:
+    return True
 
   if desc != '':
     log = HDLog(event=event,description=desc)
     log.put()
+
+  if todo:
+    todo(*args)
+
+  return True
 
 
 class DomainCacheCron(webapp.RequestHandler):
@@ -963,10 +1010,11 @@ class ExpireSuspendedCronHandler(webapp.RequestHandler):
         event.expire()
 
 
-""" Performs bulk actions on a set of events. """
-class BulkActionHandler(webapp.RequestHandler):
-  def post(self):
-    action = self.request.get("action")
+""" Stuff that the bulk action handlers have in common. """
+class BulkActionCommon(webapp.RequestHandler):
+  """ Reads the event ids given and produces a list of Event objects.
+  Returns: A list of Event objects corresponding to the event ids specified. """
+  def _get_events(self):
     event_ids = self.request.get("events")
     event_ids = json.loads(event_ids)
 
@@ -975,12 +1023,55 @@ class BulkActionHandler(webapp.RequestHandler):
     for event in event_ids:
       events.append(Event.get_by_id(int(event)))
 
+    return events
+
+
+""" Performs bulk actions on a set of events. """
+class BulkActionHandler(BulkActionCommon):
+  def post(self):
+    action = self.request.get("action")
+
+    events = self._get_events()
+
     user = users.get_current_user()
 
     # Perform the action on all the events.
     logging.debug("Performing bulk action: %s" % (action))
     for event in events:
-      _do_event_action(event, action, user)
+      if not _do_event_action(event, action, user):
+        logging.warning("Performing action '%s' failed." % (action))
+        self.response.set_status(400)
+        return
+
+
+""" Checks which bulk actions can be performed on a set of events. """
+class BulkActionCheckHandler(BulkActionCommon):
+  """ Gets a list of bulk actions that can be performed on a set of events.
+  Request parameters:
+  events: The list of event ids to check.
+  Response: JSON-formatted dictionary containing two lists: A "valid" list of
+  valid actions, and an "invalid" list of invalid actions. """
+  def get(self):
+    events = self._get_events()
+
+    user = users.get_current_user()
+
+    # See what actions can be performed on all the events.
+    possible_actions = ["approve", "notapproved", "onhold", "delete"]
+    bad_actions = []
+    for event in events:
+      to_remove = []
+      for action in possible_actions:
+        if not _do_event_action(event, action, user, check=True):
+          # This action cannot be performed.
+          bad_actions.append(action)
+          to_remove.append(action)
+
+      for action in to_remove:
+        possible_actions.remove(action)
+
+    response = {"valid": possible_actions, "invalid": bad_actions}
+    self.response.out.write(json.dumps(response))
 
 
 app = webapp.WSGIApplication([
@@ -1006,4 +1097,5 @@ app = webapp.WSGIApplication([
         ('/feedback/new/(\d+).*', FeedbackHandler),
         ('/expire_suspended', ExpireSuspendedCronHandler),
         ('/bulk_action', BulkActionHandler),
+        ('/bulk_action_check', BulkActionCheckHandler),
         ],debug=True)

@@ -9,6 +9,8 @@ bulkAction.BulkActionHandler = function() {
   this.selected_ = [];
   // Whether we are showing the actions bar.
   this.barVisible_ = false;
+  // A list of actions that we are currently able to perform.
+  this.validActions_ = []
 
   /** Handles a particular change action.
   * @param {Object} event: The event object passed from jQuery.
@@ -92,16 +94,15 @@ bulkAction.BulkActionHandler = function() {
     if (!this.barVisible_) {
       return;
     }
+    if (this.validActions_.indexOf(action) < 0) {
+      // We can't perform this action.
+      return;
+    }
 
     var properties = {'action': action};
 
     // Extract the ids of everything selected.
-    var selectedIds = [];
-    for (i = 0; i < this.selected_.length; ++i) {
-      var id = this.selected_[i].id
-      id = id.replace('-box', '');
-      selectedIds.push(id);
-    }
+    var selectedIds = this.getDatastoreIds_();
 
     eventsString = JSON.stringify(selectedIds);
     properties['events'] = eventsString;
@@ -147,23 +148,61 @@ bulkAction.BulkActionHandler = function() {
    * checked.
    * @private
    */
-   this.setActionBarVisibility_ = function() {
+  this.setActionBarVisibility_ = function() {
     if ((this.selected_.length > 0 && !this.barVisible_) ||
         (!this.selected_.length && this.barVisible_)) {
-      // The state is incorrect, switch it.
-      $('#approve').toggleClass('disabled');
-      $('#reject').toggleClass('disabled');
-      $('#on-hold').toggleClass('disabled');
-      $('#delete').toggleClass('disabled');
-
       this.barVisible_ = !this.barVisible_;
 
-      // The "select all" box should be not be checked if everything is hidden.
       if (!this.barVisible_) {
+        // Hide everything.
+        $('#approve').addClass('disabled');
+        $('#notapproved').addClass('disabled');
+        $('#onhold').addClass('disabled');
+        $('#delete').addClass('disabled');
+        // The "select all" box should be not be checked if everything is hidden.
         $('#toggle-all-box').prop('checked', this.barVisible_);
       }
+      // If stuff should be shown, we'll decide what it is later...
     }
-   };
+
+    if (!this.barVisible_) {
+      return;
+    }
+
+    // Check which buttons we can enable.
+    var selectedIds = this.getDatastoreIds_();
+    properties = {'events': JSON.stringify(selectedIds)};
+    var outer_this = this;
+    $.get('/bulk_action_check', properties, function(data) {
+      var actions = JSON.parse(data);
+      outer_this.validActions_ = actions['valid'];
+      var invalid = actions['invalid'];
+
+      for (i = 0; i < outer_this.validActions_.length; ++i) {
+        // Make sure these get shown.
+        $('#' + outer_this.validActions_[i]).removeClass('disabled');
+      }
+      for (i = 0; i < invalid.length; ++i) {
+        // Make sure these get disabled.
+        $('#' + invalid[i]).addClass('disabled');
+      }
+    });
+  };
+
+  /** Extracts the datastore IDs from the elements that are selected.
+  * @private
+  * @returns: An array of the datastore IDs of everything selected.
+  */
+  this.getDatastoreIds_ = function() {
+    var selectedIds = [];
+    for (i = 0; i < this.selected_.length; ++i) {
+      var id = this.selected_[i].id
+      id = id.replace('-box', '');
+      selectedIds.push(id);
+    }
+
+    return selectedIds;
+  };
 };
 
 $(document).ready(function() {
@@ -180,10 +219,10 @@ $(document).ready(function() {
   $('#approve').click(function() {
     handler.doApprove();
   });
-  $('#reject').click(function() {
+  $('#notapproved').click(function() {
     handler.doReject();
   });
-  $('#on-hold').click(function() {
+  $('#onhold').click(function() {
     handler.doHold();
   });
   $('#delete').click(function() {

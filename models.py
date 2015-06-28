@@ -268,64 +268,64 @@ class Event(db.Model):
         user = users.get_current_user()
         self.status = 'canceled'
         self.put()
-        logging.info('%s canceled %s' % (user.nickname, self.name))
+        logging.info('%s canceled %s' % (user.nickname(), self.name))
 
     def on_hold(self):
         user = users.get_current_user()
         self.status = 'onhold'
         self.put()
-        logging.info('%s put %s on hold' % (user.nickname, self.name))
+        logging.info('%s put %s on hold' % (user.nickname(), self.name))
 
     def not_approved(self):
         user = users.get_current_user()
         self.status = 'not_approved'
         self.put()
-        logging.info('%s not_approved %s' % (user.nickname, self.name))
+        logging.info('%s not_approved %s' % (user.nickname(), self.name))
 
     def delete(self):
         user = users.get_current_user()
         self.status = 'deleted'
         self.put()
-        logging.info('%s deleted %s' % (user.nickname, self.name))
+        logging.info('%s deleted %s' % (user.nickname(), self.name))
 
     def undelete(self):
         user = users.get_current_user()
         self.status = 'pending'
         self.put()
-        logging.info('%s undeleted %s' % (user.nickname, self.name))
+        logging.info('%s undeleted %s' % (user.nickname(), self.name))
 
     def delete(self):
         user = users.get_current_user()
         self.status = 'deleted'
         self.put()
-        logging.info('%s deleted %s' % (user.nickname, self.name))
+        logging.info('%s deleted %s' % (user.nickname(), self.name))
 
     def undelete(self):
         user = users.get_current_user()
         self.status = 'pending'
         self.put()
-        logging.info('%s undeleted %s' % (user.nickname, self.name))
+        logging.info('%s undeleted %s' % (user.nickname(), self.name))
 
     def expire(self):
         user = users.get_current_user()
         self.expired = datetime.now()
         self.status = 'expired'
         self.put()
-        logging.info('%s expired %s' % (user.nickname, self.name))
+        logging.info('%s expired %s' % (user.nickname(), self.name))
 
     def add_staff(self, user):
         self.staff.append(user)
         if self.is_staffed() and self.status == 'understaffed':
             self.status = 'approved'
         self.put()
-        logging.info('%s staffed %s' % (user.nickname, self.name))
+        logging.info('%s staffed %s' % (user.nickname(), self.name))
 
     def remove_staff(self, user):
         self.staff.remove(user)
         if not self.is_staffed() and self.status == 'approved':
             self.status = 'understaffed'
         self.put()
-        logging.info('%s staffed %s' % (user.nickname, self.name))
+        logging.info('%s staffed %s' % (user.nickname(), self.name))
 
     def to_dict(self, summarize=False):
         d = dict()
