@@ -97,9 +97,9 @@ class NewHandlerTest(BaseTest):
   name of another member. """
   def test_second_member_requirement(self):
     params = self.params.copy()
-    date = datetime.date.today()
+    date = datetime.date.today() +  datetime.timedelta(days=2)
     # Make it last 24 hours or more.
-    params["end_date"] = "%d/%d/%d" % (date.month, date.day + 2, date.year)
+    params["end_date"] = "%d/%d/%d" % (date.month, date.day, date.year)
 
     response = self.test_app.post("/new", params, expect_errors=True)
     self.assertEqual(400, response.status_int)
@@ -235,9 +235,9 @@ class EditHandlerTest(BaseTest):
   name of another member. """
   def test_second_member_requirement(self):
     params = self.params.copy()
-    date = datetime.date.today()
+    date = datetime.date.today() + datetime.timedelta(days=2)
     # Make it last 24 hours or more.
-    params["end_date"] = "%d/%d/%d" % (date.month, date.day + 2, date.year)
+    params["end_date"] = "%d/%d/%d" % (date.month, date.day, date.year)
 
     response = self.test_app.post("/edit/%d" % (self.event.key().id()), params,
                                   expect_errors=True)
