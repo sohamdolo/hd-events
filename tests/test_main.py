@@ -1,10 +1,12 @@
 """ Tests for the stuff in main.py. """
 
+
 # This goes at the top so that we have access to all of our external
 # dependencies.
 import appengine_config
 
 import datetime
+import json
 import os
 import unittest
 
@@ -41,6 +43,24 @@ class BaseTest(unittest.TestCase):
     # Check that it was logged.
     log = models.HDLog().all().get()
     self.assertEqual(params["name"], log.event.name)
+
+  """ Creates a series of events in the datastore for testing purposes. Each
+  event is an hour long and separated from the next event by exactly one day.
+  The first event is made exactly one day in the future from the current time.
+  events: How many events to create.
+  Returns: A list of the events created. """
+  def _make_events(self, events):
+    start = datetime.datetime.now() + datetime.timedelta(days=1)
+    made_events = []
+    for i in range(0, events):
+      event = models.Event(name="Test Event", start_time=start,
+                           end_time=start + datetime.timedelta(hours=1),
+                           type="Meetup", estimated_size="10", setup=15,
+                           teardown=15, details="This is a test event.")
+      event.put()
+      made_events.append(event)
+
+    return made_events
 
   def setUp(self):
     # Set up GAE testbed.
@@ -120,14 +140,7 @@ class NewHandlerTest(BaseTest):
   events scheduled. """
   def test_event_limit(self):
     # Create the maximum number of events.
-    event_start = datetime.datetime.now() + datetime.timedelta(days=5)
-    event_end = datetime.datetime.now() + datetime.timedelta(days=5, hours=2)
-    for i in range(0, Config().USER_MAX_FUTURE_EVENTS):
-      event = models.Event(name="Test Event", start_time=event_start,
-                           end_time=event_end, type="Meetup",
-                           estimated_size="10", setup=15, teardown=15,
-                           details="This is a test event.")
-      event.put()
+    self._make_events(Config().USER_MAX_FUTURE_EVENTS)
 
     # Now it should stop us from creating another one.
     response = self.test_app.post("/new", self.params, expect_errors=True)
@@ -138,21 +151,14 @@ class NewHandlerTest(BaseTest):
   4-week period. """
   def test_four_week_limit(self):
     # Make one fewer than the limit events.
-    start = datetime.datetime.now() + datetime.timedelta(days=1)
-    events = []
-    for i in range(0, Config().USER_MAX_FOUR_WEEKS - 1):
-      event = models.Event(name="Test Event", start_time=start,
-                           end_time=start + datetime.timedelta(hours=1),
-                           type="Meetup", estimated_size="10", setup=15,
-                           teardown=15, details="This is a test event.")
-      event.put()
-      events.append(event)
-
-      # Make one the next day too.
-      start += datetime.timedelta(days=1)
+    events = self._make_events(Config().USER_MAX_FOUR_WEEKS - 1)
+    # The start time of our last event.
+    last_start = datetime.datetime.now() + \
+        datetime.timedelta(days=Config().USER_MAX_FOUR_WEEKS)
 
     # Now, it should let us create a last one.
-    event_date = "%d/%d/%d" % (start.month, start.day, start.year)
+    event_date = "%d/%d/%d" % (last_start.month, last_start.day,
+                               last_start.year)
     params = self.params.copy()
     params["start_date"] = event_date
     params["end_date"] = event_date
@@ -161,8 +167,9 @@ class NewHandlerTest(BaseTest):
     self.assertEqual(200, response.status_int)
 
     # It should not, however, allow us to create another one.
-    start += datetime.timedelta(days=1)
-    event_date = "%d/%d/%d" % (start.month, start.day, start.year)
+    last_start += datetime.timedelta(days=1)
+    event_date = "%d/%d/%d" % (last_start.month, last_start.day,
+                               last_start.year)
     params["start_date"] = event_date
     params["end_date"] = event_date
 
@@ -358,3 +365,67 @@ class ExpireSuspendedCronHandlerTest(BaseTest):
     # The other one shouldn't.
     other_event = Event.get_by_id(self.other_event_id)
     self.assertEqual("onhold", other_event.status)
+
+
+""" The BulkAction and BulkActionCheck handlers are similar enough that it makes
+sense to have a common superclass for them. """
+class BulkActionBase(BaseTest):
+  def setUp(self):
+    super(BulkActionBase, self).setUp()
+
+    # Make some events and save their ids.
+    events = self._make_events(3)
+    self.event_ids = [event.key().id() for event in events]
+
+
+""" Tests that the bulk action handler works properly. """
+class BulkActionHandlerTest(BulkActionBase):
+  """ Tests that it works properly when you give it reasonable inputs. """
+  def test_post(self):
+    events = json.dumps(self.event_ids)
+    params = {"action": "onhold", "events": events}
+
+    response = self.test_app.post("/bulk_action", params)
+    self.assertEqual(200, response.status_int)
+
+  """ Tests that it handles authorization requirements correctly. """
+  def test_authorization_requirements(self):
+    events = json.dumps(self.event_ids)
+    params = {"action": "approve", "events": events}
+
+    # It should not allow us to approve our own event.
+    response = self.test_app.post("/bulk_action", params, expect_errors=True)
+    self.assertEqual(400, response.status_int)
+
+    # If we switch users, though, this should be remedied.
+    self.testbed.setup_env(user_email="testy.testerson1@gmail.com",
+                           user_is_admin="1", overwrite=True)
+    response = self.test_app.post("/bulk_action", params)
+    self.assertEqual(200, response.status_int)
+
+
+""" Tests that the bulk action check handler works properly. """
+class BulkActionCheckHandlerTest(BulkActionBase):
+  """ Tests that it works properly when we give it reasonable inputs. """
+  def test_get(self):
+    params = {"events": json.dumps(self.event_ids)}
+
+    response = self.test_app.get("/bulk_action_check", params)
+    self.assertEqual(200, response.status_int)
+
+    # It should not allow us to approve or not approve because we are not
+    # admins, however, we are the owner, so we can do the rest.
+    self.assertEqual({"valid": ["onhold", "delete"],
+                      "invalid": ["approve", "notapproved"]},
+                      json.loads(response.body))
+
+    # If we switch users, though, we should be able to do everything.
+    self.testbed.setup_env(user_email="testy.testerson1@gmail.com",
+                           user_is_admin="1", overwrite=True)
+
+    response = self.test_app.get("/bulk_action_check", params)
+    self.assertEqual(200, response.status_int)
+
+    self.assertEqual({"valid": ["approve", "notapproved", "onhold", "delete"],
+                      "invalid": []},
+                      json.loads(response.body))

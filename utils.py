@@ -117,7 +117,7 @@ class UserRights(object):
 
         if self.event:
             """ Allow people 30 minutes to do quick edits, like deletion. """
-            if (datetime.now() - event.created) > timedelta (minutes=30):
+            if (datetime.now() - event.created) <= timedelta(minutes=30):
                 self.quick_edit = True
             self.is_owner = (self.user == self.event.member)
             self.can_approve = ((self.event.status in ['pending'] or self.event.status in ['onhold'] or self.event.status in ['not_approved'] ) and self.is_admin
