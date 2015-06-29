@@ -9,6 +9,10 @@ import sys
 import unittest
 
 
+""" The version of the GAE SDK to download. """
+GAE_SDK_VERSION = "1.9.23"
+
+
 """ Generates a name for the directory that this module will reside in.
 external: The line from externals.txt for this external.
 Returns: A tuple of four containing the name, comparator, and version for this
@@ -106,17 +110,17 @@ def get_external(external):
 sdk_path: The path to the appengine sdk.
 Returns: True or False depending on whether tests succeed. """
 def run_tests(sdk_path, *args):
-    sys.path.insert(0, sdk_path)
-    import dev_appserver
-    dev_appserver.fix_sys_path()
+  sys.path.insert(0, sdk_path)
+  import dev_appserver
+  dev_appserver.fix_sys_path()
 
-    suite = unittest.loader.TestLoader().discover("tests")
-    test_result = unittest.TextTestRunner(verbosity=2).run(suite)
-    if not test_result.wasSuccessful():
-      print "ERROR: Unit tests failed."
-      return False
+  suite = unittest.loader.TestLoader().discover("tests")
+  test_result = unittest.TextTestRunner(verbosity=2).run(suite)
+  if not test_result.wasSuccessful():
+    print "ERROR: Unit tests failed."
+    return False
 
-    return True
+  return True
 
 """ Runs the dev server.
 sdk_location: Path to the GAE sdk.
@@ -160,12 +164,39 @@ def get_location(program):
   location = output.decode("utf-8").rstrip("%s\n" % (program))
   return location
 
+""" Downloads the GAE SDK for use with Travis CI.
+Returns: The location of the SDK. """
+def prepare_travis_gae():
+  print "Downloading GAE SDK..."
+
+  wget = os.path.join(get_location("wget"), "wget")
+  unzip = os.path.join(get_location("unzip"), "unzip")
+
+  sdk_zip = "google_appengine_%s.zip" % (GAE_SDK_VERSION)
+  sdk_url = "https://storage.googleapis.com/appengine-sdks/featured/%s" % \
+            (sdk_zip)
+
+  subprocess.call([wget, sdk_url, "-nv"])
+  subprocess.call([unzip, "-q", sdk_zip])
+
+  os.remove(sdk_zip)
+
+  return "google_appengine/"
+
+""" Removes the GAE SDK for use with Travis CI.
+location: The location of the downloaded SDK. """
+def cleanup_travis_gae(location):
+  print "Cleaning up..."
+  shutil.rmtree(location)
+
 def main():
   # Parse options.
   parser = argparse.ArgumentParser( \
       description="Safely deploy and test application.")
   parser.add_argument("-f", "--force", action="store_true",
       help="Takes requested action even if unit tests fail.")
+  parser.add_argument("-t", "--travis", action="store_true",
+      help="Handles unit testing properly for Travis CI.")
   subparsers = parser.add_subparsers()
   test_parser = subparsers.add_parser("test",
       help="Runs the unit tests and exits.")
@@ -181,8 +212,11 @@ def main():
   args, forward_args = parser.parse_known_args()
 
   # Get the location of the GAE installation.
-  gae_installation = get_location("appcfg.py")
-  print "Using gae installation directory: %s" % (gae_installation)
+  if args.travis:
+    gae_installation = prepare_travis_gae()
+  else:
+    gae_installation = get_location("appcfg.py")
+    print "Using gae installation directory: %s" % (gae_installation)
 
   # Check for required packages. Pip can't be trusted to deal with
   # already-installed packages correctly, so we're going to install each one
@@ -194,8 +228,14 @@ def main():
       get_external(requirement)
 
   # Do the requested action.
+  exit_status = 0
   if not args.func(gae_installation, args, forward_args):
-    os._exit(1)
+    exit_status = 1
+
+  if args.travis:
+    cleanup_travis_gae(gae_installation)
+
+  os._exit(exit_status)
 
 
 if __name__ == "__main__":

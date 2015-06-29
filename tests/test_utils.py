@@ -1,5 +1,7 @@
 """ Tests for the contents of utils.py. """
 
+# This needs to be at the top so that we have all our externals.
+import appengine_config
 
 import unittest, utils
 
