@@ -181,23 +181,57 @@ class NewHandlerTest(BaseTest):
   Dojo hours. """
   def test_one_per_day(self):
     start = datetime.datetime.now() + datetime.timedelta(days=1)
+    # For this test to work, the event initially has to be scheduled on a
+    # weekday.
+    if start.weekday() > 4:
+      start += datetime.timedelta(days=2)
+    self.assertLess(start.weekday(), 5)
+
     start = start.replace(hour=11)
     event = models.Event(name="Test Event", start_time=start,
-                           end_time=start + datetime.timedelta(minutes=30),
-                           type="Meetup", estimated_size="10", setup=15,
-                           teardown=15, details="This is a test event.")
+                         end_time=start + datetime.timedelta(minutes=30),
+                         type="Meetup", estimated_size="10", setup=15,
+                         teardown=15, details="This is a test event.")
     event.put()
+
+    params = self.params.copy()
+    params["start_date"] = "%d/%d/%d" % (start.month, start.day, start.year)
+    params["end_date"] = params["start_date"]
 
     # That should be our one event for that day. It should complain if we try to
     # create another one.
-    response = self.test_app.post("/new", self.params, expect_errors=True)
+    response = self.test_app.post("/new", params, expect_errors=True)
     self.assertEqual(400, response.status_int)
+    self.assertIn("one event", response.body)
 
     # It should ignore the event if it doesn't have the right status.
     event.status = "not_approved"
     event.put()
 
-    response = self.test_app.post("/new", self.params)
+    response = self.test_app.post("/new", params)
+    self.assertEqual(200, response.status_int)
+
+    # Another status that should trigger it is approved.
+    event.status = "approved"
+    event.put()
+
+    response = self.test_app.post("/new", params, expect_errors=True)
+    self.assertEqual(400, response.status_int)
+    self.assertIn("one event", response.body)
+
+    # If we schedule it on a weekend, however, we should have no such problems.
+    days_to_weekend = 6 - datetime.datetime.today().weekday()
+    start = datetime.datetime.now() + datetime.timedelta(days=days_to_weekend)
+    self.assertGreater(start.weekday(), 4)
+
+    event.start_time = start
+    event.end_time = start + datetime.timedelta(minutes=30)
+    event.put()
+
+    params["start_date"] = "%d/%d/%d" % (start.month, start.day, start.year)
+    params["end_date"] = params["start_date"]
+
+    response = self.test_app.post("/new", params)
     self.assertEqual(200, response.status_int)
 
 

@@ -221,6 +221,11 @@ def _check_one_event_per_day(user, start_time, editing_event_id=0):
     logging.info("User %s is admin, not performing check." % (user.email()))
     return
 
+  # If it is on a weekend, we shouldn't check either.
+  if start_time.weekday() > 4:
+    logging.info("Not performing check because event is on the weekend.")
+    return
+
   conf = Config()
   # The earliest and latest that other events during Dojo hours this day might
   # start.
