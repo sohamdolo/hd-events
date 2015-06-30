@@ -230,7 +230,9 @@ def _check_one_event_per_day(user, start_time, editing_event_id=0):
                                     microsecond=0)
 
   event_query = db.GqlQuery("SELECT * FROM Event WHERE start_time >= :1 AND" \
-                            " start_time <= :2", earliest_start, latest_start)
+                            " start_time <= :2 AND status IN :3",
+                            earliest_start, latest_start,
+                            ["pending", "approved"])
   found_events = event_query.count()
 
   if editing_event_id:

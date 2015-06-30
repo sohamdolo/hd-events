@@ -193,6 +193,13 @@ class NewHandlerTest(BaseTest):
     response = self.test_app.post("/new", self.params, expect_errors=True)
     self.assertEqual(400, response.status_int)
 
+    # It should ignore the event if it doesn't have the right status.
+    event.status = "not_approved"
+    event.put()
+
+    response = self.test_app.post("/new", self.params)
+    self.assertEqual(200, response.status_int)
+
 
 """ Tests that the edit event handler works properly. """
 class EditHandlerTest(BaseTest):
