@@ -58,8 +58,8 @@ class BaseTest(unittest.TestCase):
                            user_is_admin="0", overwrite=True)
 
     # Default parameters for putting in the form.
-    date = datetime.date.today()
-    event_date = "%d/%d/%d" % (date.month, date.day + 1, date.year)
+    date = datetime.date.today() + datetime.timedelta(days=1)
+    event_date = "%d/%d/%d" % (date.month, date.day, date.year)
     self.params = {"start_date": event_date,
                    "start_time_hour": "12",
                    "start_time_minute": "0",
