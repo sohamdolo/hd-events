@@ -233,12 +233,15 @@ def _check_one_event_per_day(user, start_time, editing_event_id=0):
                                       second=0, microsecond=0)
   latest_start = start_time.replace(hour=conf.EVENT_HOURS[1], minute=0, second=0,
                                     microsecond=0)
+  logging.debug("earliest start: %s, latest start: %s" % \
+                (earliest_start, latest_start))
 
   event_query = db.GqlQuery("SELECT * FROM Event WHERE start_time >= :1 AND" \
-                            " start_time <= :2 AND status IN :3",
+                            " start_time < :2 AND status IN :3",
                             earliest_start, latest_start,
                             ["pending", "approved"])
   found_events = event_query.count()
+  logging.debug("Found %d events." % (found_events))
 
   if editing_event_id:
     old_event = Event.get_by_id(editing_event_id)
