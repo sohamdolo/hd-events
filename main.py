@@ -629,7 +629,8 @@ class PastHandler(webapp.RequestHandler):
             login_url = users.create_login_url('/')
         today = local_today()
         show_all_nav = user
-        events = Event.all().filter('start_time < ', today).order('-start_time')
+        events = db.GqlQuery("SELECT * FROM Event WHERE start_time < :1 ORDER" \
+                             " BY start_time DESC LIMIT 100", today)
         self.response.out.write(template.render('templates/past.html', locals()))
 
 
