@@ -8,6 +8,7 @@ import unicodedata
 from icalendar import Calendar, Event as CalendarEvent
 import logging, urllib, os
 from pprint import pprint
+import cPickle as pickle
 from datetime import datetime, timedelta
 
 from models import Event, Feedback, HDLog, ROOM_OPTIONS, PENDING_LIFETIME
@@ -49,9 +50,10 @@ def _get_other_member(handler, start_time, end_time):
     raise ValueError('Need to specify second responsible member' \
                      ' for multi-day event.')
 
-  if not Config().is_testing:
+  conf = Config()
+  if not conf.is_testing:
     # Make sure this person is a member.
-    base_url = 'http://hd-signup-hrd.appspot.com/api/v1/user'
+    base_url = conf.SIGNUP_URL + '/api/v1/user'
     query = urllib.urlencode({'email': member, 'properties[]': ''})
     result = urlfetch.fetch("%s?%s" % (base_url, query),
                             follow_redirects=False)
@@ -258,6 +260,45 @@ def _check_one_event_per_day(user, start_time, editing_event_id=0):
                      " each day.")
 
 
+""" Figure out how many days a user must wait before they can create an event.
+user: The user we are getting information for.
+Returns: How many more days the user must wait to create an event. """
+def _get_user_wait_time(user):
+  conf = Config()
+  if not conf.is_prod:
+    # Don't do this check if we're not on the production server.
+    return 0
+
+  if not user:
+    # We'll perform the check when they are logged in.
+    return 0
+
+  # Make an API request to the signup app to get this information about the
+  # user.
+  base_url = conf.SIGNUP_URL + "/api/v1/user"
+  query_str = urllib.urlencode({"email": user.email(), "properties": "created"})
+  response = urlfetch.fetch("%s?%s" % (base_url, query_str),
+                            follow_redirects=False)
+  logging.debug("Got response from signup app: %s" % (response.content))
+
+  if response.status_code != 200:
+    logging.error("Failed to fetch user data, status %d." % \
+                  (response.status_code))
+    # Disable it to be safe.
+    return conf.NEW_EVENT_WAIT_PERIOD
+
+  result = json.loads(response.content)
+  created = pickle.loads(str(result["created"]))
+  logging.debug("User created at %s." % (created))
+
+  # Check to see how long we have left.
+  since_creation = datetime.now() - created
+  to_wait = max(0, conf.NEW_EVENT_WAIT_PERIOD - since_creation.days)
+  logging.debug("Days to wait: %d" % (to_wait))
+
+  return to_wait
+
+
 class DomainCacheCron(webapp.RequestHandler):
     def get(self):
         noop = dojo('/groups/events',force=True)
@@ -420,6 +461,9 @@ class EditHandler(webapp.RequestHandler):
             logout_url = users.create_logout_url('/')
             rooms = ROOM_OPTIONS
             hours = [1,2,3,4,5,6,7,8,9,10,11,12]
+
+            wait_days = _get_user_wait_time(user)
+
             self.response.out.write(template.render('templates/edit.html', locals()))
         else:
             self.response.out.write("Access denied")
@@ -521,7 +565,6 @@ class EditHandler(webapp.RequestHandler):
 
 class EventHandler(webapp.RequestHandler):
     def get(self, id):
-
         event = Event.get_by_id(int(id))
         if self.request.path.endswith('json'):
             self.response.headers['content-type'] = 'application/json'
@@ -537,6 +580,9 @@ class EventHandler(webapp.RequestHandler):
             event.details = db.Text(event.details.replace('\n','<br/>'))
             show_all_nav = user
             event.notes = db.Text(event.notes.replace('\n','<br/>'))
+
+            wait_days = _get_user_wait_time(user)
+
             self.response.out.write(template.render('templates/event.html', locals()))
 
     def post(self, id):
@@ -602,6 +648,9 @@ class ApprovedHandler(webapp.RequestHandler):
         whichbase = 'base.html'
         if self.request.get('base'):
             whichbase = self.request.get('base') + '.html'
+
+        wait_days = _get_user_wait_time(user)
+
         self.response.out.write(template.render('templates/approved.html', locals()))
 
 
@@ -617,6 +666,9 @@ class MyEventsHandler(webapp.RequestHandler):
         show_all_nav = user
         today = local_today()
         tomorrow = today + timedelta(days=1)
+
+        wait_days = _get_user_wait_time(user)
+
         self.response.out.write(template.render('templates/myevents.html', locals()))
 
 
@@ -631,6 +683,9 @@ class PastHandler(webapp.RequestHandler):
         show_all_nav = user
         events = db.GqlQuery("SELECT * FROM Event WHERE start_time < :1 ORDER" \
                              " BY start_time DESC LIMIT 100", today)
+
+        wait_days = _get_user_wait_time(user)
+
         self.response.out.write(template.render('templates/past.html', locals()))
 
 
@@ -644,6 +699,9 @@ class NotApprovedHandler(webapp.RequestHandler):
         today = local_today()
         show_all_nav = user
         events = Event.get_recent_not_approved_list()
+
+        wait_days = _get_user_wait_time(user)
+
         self.response.out.write(template.render('templates/not_approved.html', locals()))
 
 
@@ -665,6 +723,9 @@ class AllFutureHandler(webapp.RequestHandler):
         events = Event.get_all_future_list()
         today = local_today()
         tomorrow = today + timedelta(days=1)
+
+        wait_days = _get_user_wait_time(user)
+
         self.response.out.write(template.render('templates/all_future.html', locals()))
 
 class LargeHandler(webapp.RequestHandler):
@@ -678,6 +739,9 @@ class LargeHandler(webapp.RequestHandler):
         events = Event.get_large_list()
         today = local_today()
         tomorrow = today + timedelta(days=1)
+
+        wait_days = _get_user_wait_time(user)
+
         self.response.out.write(template.render('templates/large.html', locals()))
 
 
@@ -692,6 +756,9 @@ class PendingHandler(webapp.RequestHandler):
         show_all_nav = user
         today = local_today()
         tomorrow = today + timedelta(days=1)
+
+        wait_days = _get_user_wait_time(user)
+
         self.response.out.write(template.render('templates/pending.html', locals()))
 
 
@@ -712,8 +779,18 @@ class NewHandler(webapp.RequestHandler):
             memcache.add("rules", rules, 86400)
           except Exception, e:
             rules = "Error fetching rules.  Please report this error to internal-dev@hackerdojo.com."
-        self.response.out.write(template.render('templates/new.html', locals()))
 
+        to_wait = _get_user_wait_time(user)
+        if to_wait:
+          # They can't create an event yet.
+          error = "You must wait %d days before creating an event." % \
+                  (to_wait)
+          logging.warning(error)
+          self.response.set_status(401)
+          self.response.out.write(template.render('templates/error.html', locals()))
+          return
+
+        self.response.out.write(template.render('templates/new.html', locals()))
 
     def post(self):
       try:
@@ -763,10 +840,6 @@ class NewHandler(webapp.RequestHandler):
       self.response.out.write(template.render('templates/confirmation.html', locals()))
 
 
-class SavingHandler(webapp.RequestHandler):
-    def get(self, target):
-      self.response.out.write(template.render('templates/saving.html', locals()))
-
 class ConfirmationHandler(webapp.RequestHandler):
     def get(self, id):
       event = Event.get_by_id(int(id))
@@ -779,6 +852,9 @@ class ConfirmationHandler(webapp.RequestHandler):
               rules = "Error fetching rules.  Please report this error to internal-dev@hackerdojo.com."
       user = users.get_current_user()
       logout_url = users.create_logout_url('/')
+
+      wait_days = _get_user_wait_time(user)
+
       self.response.out.write(template.render('templates/confirmation.html', locals()))
 
 class LogsHandler(webapp.RequestHandler):
@@ -791,6 +867,9 @@ class LogsHandler(webapp.RequestHandler):
         else:
             login_url = users.create_login_url('/')
         show_all_nav = user
+
+        wait_days = _get_user_wait_time(user)
+
         self.response.out.write(template.render('templates/logs.html', locals()))
 
 class FeedbackHandler(webapp.RequestHandler):
@@ -802,6 +881,9 @@ class FeedbackHandler(webapp.RequestHandler):
             logout_url = users.create_logout_url('/')
         else:
             login_url = users.create_login_url('/')
+
+        wait_days = _get_user_wait_time(user)
+
         self.response.out.write(template.render('templates/feedback.html', locals()))
 
     def post(self, id):
@@ -862,7 +944,6 @@ app = webapp.WSGIApplication([
         ('/myevents', MyEventsHandler),
         ('/not_approved', NotApprovedHandler),
         ('/new', NewHandler),
-        ('/saving/(.*)', SavingHandler),
         ('/confirm/(\d+).*', ConfirmationHandler),
         ('/edit/(\d+).*', EditHandler),
         # single event views
@@ -870,12 +951,6 @@ app = webapp.WSGIApplication([
         ('/event/(\d+)\.json', EventHandler),
         # various export methods -- events.{json,rss,ics}
         ('/events\.(.+)', ExportHandler),
-        #
-        # CRON tasks
-        #('/expire', ExpireCron),
-        #('/expiring', ExpireReminderCron),
         ('/domaincache', DomainCacheCron),
-        #('/reminder', ReminderCron),
-        #
         ('/logs', LogsHandler),
         ('/feedback/new/(\d+).*', FeedbackHandler) ],debug=True)

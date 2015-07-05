@@ -30,7 +30,8 @@ $(function() {
     }
   }
   
-  // set body class to current page for nav menu use
+  // set body class to current page for nav menu use. Also removes the new
+  // button when we go to make a new event.
   var curPage = location.pathname;
   curPage = curPage.split("/").pop();
   if('' == curPage) {curPage = 'approved';}

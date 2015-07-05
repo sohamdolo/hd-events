@@ -30,6 +30,9 @@ class Config:
 
     Config.is_prod = not (Config.is_dev or Config.is_testing)
 
+    # The URL of the signup app.
+    self.SIGNUP_URL = "http://hd-signup-hrd.appspot.com"
+
     # The minimum amount of time that must be left between consecutive events,
     # in minutes.
     self.MIN_EVENT_SPACING = 30
@@ -38,6 +41,9 @@ class Config:
     # The maximum number of events a single user can have within a four-week
     # period.
     self.USER_MAX_FOUR_WEEKS = 6
+    # How long we have to wait after we sign up before we can create an event.
+    # (days)
+    self.NEW_EVENT_WAIT_PERIOD = 30
 
     # The hours that we wan to have only one event during. (24-hour time.)
     self.EVENT_HOURS = (9, 17)
