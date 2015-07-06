@@ -11,6 +11,9 @@ import unittest
 
 """ The version of the GAE SDK to download. """
 GAE_SDK_VERSION = "1.9.23"
+""" The oldest version of the SDK that is acceptable to have on a user's system.
+"""
+GAE_OLDEST_SDK = "1.9.18"
 
 
 """ Generates a name for the directory that this module will reside in.
@@ -216,7 +219,17 @@ def main():
     gae_installation = prepare_travis_gae()
   else:
     gae_installation = get_location("appcfg.py")
-    print "Using gae installation directory: %s" % (gae_installation)
+    print "Using GAE installation directory: %s" % (gae_installation)
+
+    # Check that we have a reasonable version.
+    version_info = file(os.path.join(gae_installation, "VERSION")).read()
+    gae_version = version_info.split("\n")[0].lstrip("release: ")
+    gae_version = gae_version.strip("\"")
+
+    if not compare_versions(gae_version, GAE_OLDEST_SDK, ">="):
+      print "ERROR: Found version %s of the GAE SDK. Please install at least" \
+            " version %s." % (gae_version, GAE_OLDEST_SDK)
+      os._exit(1)
 
   # Check for required packages. Pip can't be trusted to deal with
   # already-installed packages correctly, so we're going to install each one
