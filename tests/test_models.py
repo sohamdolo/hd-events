@@ -1,6 +1,9 @@
 """ Tests for datastore models in the models.py file. """
 
 
+# We need to have our externals.
+import appengine_config
+
 import datetime
 import unittest
 
