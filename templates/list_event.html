@@ -12,12 +12,15 @@
   <td>
     <a {% if event.is_canceled %}style="text-decoration: line-through;"{% endif %} {% ifnotequal event.status "approved" %}rel="nofollow"{% endifnotequal %} href="/event/{{event.key.id}}-{{event.name|slugify}}">
       {{event.name|safe}}
-    </a>
-    {% ifnotequal event.status "approved" %}
-    <span style="color: white; font-size: x-small; padding: 2px; background: gray"
-        id="{{ event.key.id }}-badge">{{event.status}}
+    </a><span
+        {% ifequal event.status "approved" %}
+        style="color: white; font-size: x-small; padding: 2px; background: gray;
+               display: none"
+        {% else %}
+        style="color: white; font-size: x-small; padding: 2px; background: gray;"
+        {% endifequal %}
+        id="{{ event.key.id }}-badge">{{ event.status }}
     </span>
-    {% endifnotequal %}
     {% if event.is_past %}(<a href="/feedback/new/{{event.key.id}}">Give your feedback</a>){% endif %}
   <div style="font-size:80%">Hosted by <a href="mailto:{{event.member.email}}">{{event.owner}}</a>
   {% if event.roomlist %}in {{event.roomlist}}{% endif %}</div></td>
