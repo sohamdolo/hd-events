@@ -2,25 +2,21 @@
 {% block content %}
 {% include 'nav_menu.html' %}
 
-<head>
-<script type="text/javascript" src="/static/js/bulk-action.js"></script>
-
-<script>bulkAction.setEventType('approved');</script>
-</head>
-
-{% include 'bulk_action_bar.html' %}
-
 <div id="primary">
   {% ifnotequal whichbase "mini.html" %}<h3>Upcoming Events</h3>{% endifnotequal %}
 
-  <table class="table-striped" style="width: 100%">
   {% regroup events by start_date as grouped_events %}
   {% for events in grouped_events %}
-    {% for event in events.list %}
-      {% include 'list_event.html' %}
-    {% endfor %}
+    {% ifchanged events.grouper|date:"F" %}
+        <h3>{{events.grouper|date:"F Y" }}</h3>
+    {% endifchanged %}
+    <h4>{% ifequal events.grouper today.date %}<span style="text-decoration:underline;">Today</span> - {% endifequal %}{% ifequal events.grouper tomorrow.date %}<span style="text-decoration:underline;">Tomorrow</span> - {% endifequal %}{{events.grouper|date:"l, F j"}}</h4>
+    <table>
+      {% for event in events.list %}
+        {% include 'list_event.html' %}
+      {% endfor %}
+    </table>
   {% endfor %}
-  </table>
 
   <p><a href="/past" style="font-size: smaller;">&larr; Past Events</a></p>
 
