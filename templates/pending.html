@@ -12,14 +12,18 @@
 
 <div id="primary">
   <h3>Pending Events</h3>
-  <table class="table-striped" style="width: 100%">
   {% regroup events by start_date as grouped_events %}
   {% for events in grouped_events %}
-    {% for event in events.list %}
-      {% include 'list_event.html' %}
-    {% endfor %}
+    {% ifchanged events.grouper|date:"F" %}
+        <h3 class="month-divider">{{events.grouper|date:"F Y" }}</h3>
+    {% endifchanged %}
+    <h4 class="date-divider">{% ifequal events.grouper today.date %}<span style="text-decoration:underline;">Today</span> - {% endifequal %}{% ifequal events.grouper tomorrow.date %}<span style="text-decoration:underline;">Tomorrow</span> - {% endifequal %}{{events.grouper|date:"l, F j"}}</h4>
+    <table>
+      {% for event in events.list %}
+        {% include 'list_event.html' %}
+      {% endfor %}
+    </table>
   {% endfor %}
-  </table>
 </div>
 
 {% endblock %}

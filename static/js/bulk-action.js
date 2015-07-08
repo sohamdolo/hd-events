@@ -23,9 +23,8 @@ bulkAction.BulkActionHandler = function() {
   * @param {Object} event: The event object passed from jQuery.
   */
   this.handleChange = function(event) {
-    var name = event.target.name;
-    // All of the checkboxes we care about have the name "bulk-select".
-    if (name == 'bulk-select') {
+    // All of the checkboxes we care about have the class "bulk-select".
+    if ($(event.target).hasClass('bulk-select')) {
       if (event.target.checked) {
         this.addSelected_(event.target);
       } else {
@@ -98,7 +97,7 @@ bulkAction.BulkActionHandler = function() {
     var outer_this = this;
 
     $('input').each(function() {
-      if (this.name != 'bulk-select') {
+      if (!$(this).hasClass('bulk-select')) {
         return;
       }
 
@@ -147,6 +146,16 @@ bulkAction.BulkActionHandler = function() {
           var id = selectedIds[i]  + '-row';
           $('#' + id).fadeOut();
         }
+
+        $('.event-row').promise().done(function() {
+          // Remove all the unused rows.
+          for (i = 0; i < selectedIds.length; ++i) {
+            var id = selectedIds[i]  + '-row';
+            $('#' + id).remove();
+          }
+
+          outer_this.hideEmptyDateDividers_();
+        });
 
         // Reset selection status.
         outer_this.selected_ = [];
@@ -253,6 +262,34 @@ bulkAction.BulkActionHandler = function() {
         badge.text(text);
       }
     }
+  };
+
+  /** Hides date dividers than no longer have anything in them.
+  * @private
+  */
+  this.hideEmptyDateDividers_ = function() {
+    var dividers = $('.date-divider');
+    dividers.each(function() {
+      // The table should be the next element.
+      var table = $(this).next();
+      // Check if it's empty or not.
+      if (!table[0].rows.length) {
+        // It's empty, so remove the divider.
+        $(this).remove();
+        // Get rid of the empty table too.
+        table.remove();
+      }
+    });
+
+    // Remove empty month dividers as well.
+    var monthDividers = $('.month-divider');
+    monthDividers.each(function() {
+      // If it has a date divider after it still, then we need it. Otherwise,
+      // it's empty.
+      if (!$(this).next().hasClass('date-divider')) {
+        $(this).remove();
+      }
+    });
   };
 };
 

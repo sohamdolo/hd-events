@@ -761,6 +761,7 @@ class NotApprovedHandler(webapp.RequestHandler):
         else:
             login_url = users.create_login_url('/')
         today = local_today()
+        tomorrow = today + timedelta(days=1)
         show_all_nav = user
         events = Event.get_recent_not_approved_list()
 
