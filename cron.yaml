@@ -14,3 +14,6 @@ cron:
 - description: change HVAC mode as neccessary
   url: /temperature
   schedule: every 90 minutes
+- description: Expire events from suspended users.
+  url: /expire_suspended
+  schedule: every 1 hours

@@ -46,13 +46,15 @@ class StatusChangeHandlerTest(BaseTest):
                   details="test")
     event.put()
 
+    self.event_id = event.key().id()
+
   """ Tests that it correctly puts the event on hold and restores it. """
   def test_hold_and_restore(self):
     # Put the event on hold.
     response = self.test_app.post("/api/v1/status_change", self.params)
     self.assertEqual(200, response.status_int)
 
-    event = db.GqlQuery("SELECT * FROM Event WHERE name='Test Event'").get()
+    event = Event.get_by_id(self.event_id)
     self.assertEqual("onhold", event.status)
     self.assertNotEqual(None, event.owner_suspended_time)
     self.assertEqual("pending", event.original_status)
@@ -63,7 +65,7 @@ class StatusChangeHandlerTest(BaseTest):
     response = self.test_app.post("/api/v1/status_change", params)
     self.assertEqual(200, response.status_int)
 
-    event = db.GqlQuery("SELECT * FROM Event WHERE name='Test Event'").get()
+    event = Event.get_by_id(self.event_id)
     self.assertEqual("pending", event.status)
     self.assertEqual(None, event.owner_suspended_time)
     self.assertEqual(None, event.original_status)
@@ -75,7 +77,7 @@ class StatusChangeHandlerTest(BaseTest):
     response = self.test_app.post("/api/v1/status_change", params)
     self.assertEqual(200, response.status_int)
 
-    event = db.GqlQuery("SELECT * FROM Event WHERE name='Test Event'").get()
+    event = Event.get_by_id(self.event_id)
     self.assertEqual("pending", event.status)
     self.assertEqual(None, event.owner_suspended_time)
     self.assertEqual(None, event.original_status)

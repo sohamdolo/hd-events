@@ -9,6 +9,7 @@ import os
 import unittest
 
 from google.appengine.dist import use_library
+from google.appengine.api import users
 from google.appengine.ext import db
 from google.appengine.ext import testbed
 
@@ -19,6 +20,7 @@ import webtest
 os.environ["DJANGO_SETTINGS_MODULE"] = "settings"
 
 from config import Config
+from models import Event
 import main
 import models
 
@@ -316,3 +318,43 @@ class EditHandlerTest(BaseTest):
                                   expect_errors=True)
     self.assertEqual(400, response.status_int)
     self.assertIn("select a room", response.body)
+
+""" Tests for the ExpireSuspended cron job. """
+class ExpireSuspendedCronHandlerTest(BaseTest):
+  def setUp(self):
+    super(ExpireSuspendedCronHandlerTest, self).setUp()
+
+    # Add an event that should expire.
+    start = datetime.datetime.now() + datetime.timedelta(days=1)
+    suspended_time = datetime.datetime.now() - \
+        datetime.timedelta(days=Config().SUSPENDED_EVENT_EXPIRY)
+    user = users.User(email="testy.testerson@hackerdojo.com")
+    event = Event(member=user, status="onhold", start_time=start,
+                  type="Meetup", estimated_size="10", name="Test Event",
+                  details="test", owner_suspended_time=suspended_time,
+                  original_status="pending")
+    event.put()
+
+    suspended_time += datetime.timedelta(days=5)
+    other_event = Event(member=user, status="onhold", start_time=start,
+                        type="Meetup", estimated_size="10", name="Test Event",
+                        details="test", owner_suspended_time=suspended_time,
+                        original_status="pending")
+    other_event.put()
+
+    self.event_id = event.key().id()
+    self.other_event_id = other_event.key().id()
+
+  """ Tests that running the cron expires events when it should. """
+  def test_expires_events(self):
+    # Run the cron and make sure it expires.
+    response = self.test_app.get("/expire_suspended")
+    self.assertEqual(200, response.status_int)
+
+    # One should expire.
+    event = Event.get_by_id(self.event_id)
+    self.assertEqual("expired", event.status)
+
+    # The other one shouldn't.
+    other_event = Event.get_by_id(self.other_event_id)
+    self.assertEqual("onhold", other_event.status)

@@ -44,6 +44,9 @@ class Config:
     # How long we have to wait after we sign up before we can create an event.
     # (days)
     self.NEW_EVENT_WAIT_PERIOD = 30
+    # How long we will keep an event on hold when a user is suspended before it
+    # expires. (days)
+    self.SUSPENDED_EVENT_EXPIRY = 72
 
     # The hours that we wan to have only one event during. (24-hour time.)
     self.EVENT_HOURS = (9, 17)

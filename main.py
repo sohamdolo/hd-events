@@ -933,6 +933,21 @@ class TempHandler(webapp.RequestHandler):
             self.response.out.write("500 Internal Server Error")
 
 
+""" Expires events that were put on hold when users were suspended. """
+class ExpireSuspendedCronHandler(webapp.RequestHandler):
+  def get(self):
+    events_query = db.GqlQuery("SELECT * FROM Event WHERE" \
+                               " owner_suspended_time != NULL and status = :1",
+                               "onhold")
+
+    for event in events_query.run():
+      # Check if it's been enough time to expire them.
+      expire_period = timedelta(days=Config().SUSPENDED_EVENT_EXPIRY)
+      if datetime.now() - event.owner_suspended_time >= expire_period:
+        logging.info("Expiring event from suspended user: %s" % (event.name))
+        event.expire()
+
+
 app = webapp.WSGIApplication([
         ('/', ApprovedHandler),
         ('/all_future', AllFutureHandler),
@@ -953,4 +968,6 @@ app = webapp.WSGIApplication([
         ('/events\.(.+)', ExportHandler),
         ('/domaincache', DomainCacheCron),
         ('/logs', LogsHandler),
-        ('/feedback/new/(\d+).*', FeedbackHandler) ],debug=True)
+        ('/feedback/new/(\d+).*', FeedbackHandler),
+        ('/expire_suspended', ExpireSuspendedCronHandler)],
+        debug=True)
