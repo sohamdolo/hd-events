@@ -38,6 +38,8 @@ handlers:
 - url: /_km/.*
   script: keymaster.app
   login: admin
+- url: /api/v1/.*
+  script: api.app
 - url: .*
   script: main.app
 

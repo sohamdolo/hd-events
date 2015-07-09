@@ -24,6 +24,10 @@ PENDING_LIFETIME = 30 # days
 class Event(db.Model):
     status  = db.StringProperty(required=True, default='pending', choices=set(
                 ['pending', 'understaffed', 'approved', 'not_approved', 'canceled', 'onhold', 'expired', 'deleted']))
+    # If the member who created the event is now suspended, what the previous
+    # event status was.
+    original_status  = db.StringProperty(default=None, choices=set(
+                ['pending', 'understaffed', 'approved', 'not_approved', 'canceled', 'onhold', 'expired', 'deleted']))
     member  = db.UserProperty(auto_current_user_add=True)
     name        = db.StringProperty(required=True)
     start_time  = db.DateTimeProperty(required=True)
@@ -53,6 +57,9 @@ class Event(db.Model):
     # An alternate person that will be responsible for the event, that must be
     # specified for events 24 hours or longer.
     other_member = db.StringProperty(default="")
+
+    # When the member who owns this event was suspended, if they are.
+    owner_suspended_time = db.DateTimeProperty()
 
     @classmethod
     def check_conflict(cls,
