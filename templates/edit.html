@@ -107,6 +107,14 @@
 
   <div class='b-block'><div class='b-label'>More Info:</div><div class='b-data'><textarea rows=4 name="details">{{event.details|safe}}</textarea></div></div>
   <div class='b-block'><div class='b-label'>Notes:</div><div class='b-data'><textarea rows=3 name="notes">{{event.notes|safe}}</textarea></div></div>
+
+  {% if access_rights.is_admin %}
+  <div class='b-block'>
+    <div class='b-label'>Admin Notes:</div>
+    <textarea rows=3 name="admin_notes">{{event.admin_notes|safe}}</textarea>
+  </div>
+  {% endif %}
+
   <div class='b-block'><div class='b-label'>Estimated Size:</div><div class='b-data'><input type="text" name="estimated_size" value="{{event.estimated_size}}"/></div></div>
   <div class='b-block'><div class='b-label'>Contact Name:</div><div class='b-data'><input type="text" name="contact_name" value="{{event.contact_name|title}}"/></div></div>
   <div class='b-block'><div class='b-label'>Contact Phone:</div><div class='b-data'><input type="text" name="contact_phone" value="{{event.contact_phone}}"/></div></div>

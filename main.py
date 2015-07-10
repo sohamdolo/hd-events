@@ -615,6 +615,10 @@ class EditHandler(webapp.RequestHandler):
           event.notes = cgi.escape(self.request.get('notes'))
           if (previous_object.notes != event.notes):
             log_desc += "<strong>Notes:</strong> " + previous_object.notes + " to " + event.notes + "<br />"
+          event.admin_notes = cgi.escape(self.request.get("admin_notes"))
+          if (previous_object.admin_notes != event.admin_notes):
+            log_desc += "<strong>Admin Notes:</strong> " + \
+                previous_object.admin_notes + " to " + event.admin_notes + "<br />"
           event.rooms = self.request.get_all('rooms')
           if (previous_object.rooms != event.rooms):
             log_desc += "<strong>Rooms changed</strong><br />"
@@ -861,6 +865,7 @@ class NewHandler(webapp.RequestHandler):
           self.response.out.write(template.render('templates/error.html', locals()))
           return
 
+        is_admin = UserRights(user).is_admin
         self.response.out.write(template.render('templates/new.html', locals()))
 
     def post(self):
@@ -892,7 +897,8 @@ class NewHandler(webapp.RequestHandler):
           expired=local_today() + timedelta(days=PENDING_LIFETIME), # Set expected expiration date
           setup=int(self.request.get('setup') or 0),
           teardown=int(self.request.get('teardown') or 0),
-          other_member=other_member
+          other_member=other_member,
+          admin_notes=self.request.get('admin_notes')
       )
       event.put()
       log = HDLog(event=event,description="Created new event")

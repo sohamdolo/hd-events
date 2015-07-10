@@ -157,6 +157,11 @@
           <textarea rows="3" style="width: 300px;" name="notes"></textarea></td></tr>
       </tr></table>
 
+    {% if is_admin %}
+    <label for="details">Admin Notes:</label>
+    <textarea rows="3" style="width: 300px;" name="admin_notes"></textarea>
+    {% endif %}
+
     <p style="font-size:smaller;">You have 30 days for approval before your event application expires. The primary bottleneck to quick approval is getting staff to opt in. You will be notified either way.</p>
     <p style="font-size:smaller; font-weight: bold;">By submitting this event, you agree to the responsibilities listed to the right.</p>
     <input type="submit" value="I agree, submit event for approval" style="font-size: larger; margin: 5px;" />

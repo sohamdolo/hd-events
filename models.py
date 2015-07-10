@@ -36,6 +36,7 @@ class Event(db.Model):
     rooms       = db.StringListProperty() #choices=set(ROOM_OPTIONS)
 
     details     = db.TextProperty(required=True)
+    admin_notes = db.TextProperty(default="")
     url         = db.StringProperty(default="")
     fee         = db.StringProperty(default="")
     notes       = db.TextProperty(default="")
