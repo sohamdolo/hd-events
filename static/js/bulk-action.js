@@ -86,7 +86,23 @@ bulkAction.BulkActionHandler = function() {
 
   /** Deletes all the events currently selected. */
   this.doDelete = function() {
-    this.doAction_('delete');
+    // Deletion is hard to undo, so make the user confirm before we actually
+    // delete.
+    if (this.validActions_.indexOf('delete') >= 0) {
+      $('#confirm-message').text('Are you sure you want to delete these' +
+                                 ' events?');
+      $('#confirm-modal').modal()
+
+      // Only delete it if the Ok button is clicked.
+      var outer_this = this;
+      $('#okay-button').click(function() {
+        outer_this.doAction_('delete');
+      });
+      // If the cancel button is clicked, uncheck everything.
+      $('#cancel-button').click(function() {
+        outer_this.toggleChecked(false);
+      });
+    }
   };
 
   /** Check or uncheck everything.
