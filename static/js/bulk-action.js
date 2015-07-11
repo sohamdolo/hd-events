@@ -202,6 +202,9 @@ bulkAction.BulkActionHandler = function() {
         $('#delete').addClass('disabled');
         // The "select all" box should be not be checked if everything is hidden.
         $('#toggle-all-box').prop('checked', this.barVisible_);
+
+        // We should not be able to do any actions.
+        this.validActions_ = [];
       }
       // If stuff should be shown, we'll decide what it is later...
     }
