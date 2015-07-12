@@ -91,12 +91,13 @@ bulkAction.BulkActionHandler = function() {
     if (this.validActions_.indexOf('delete') >= 0) {
       $('#confirm-message').text('Are you sure you want to delete these' +
                                  ' events?');
-      $('#confirm-modal').modal()
+      $('#confirm-modal').modal();
 
       // Only delete it if the Ok button is clicked.
       var outer_this = this;
       $('#okay-button').click(function() {
-        outer_this.doAction_('delete');
+        var message = 'Deleted ' + outer_this.selected_.length + ' events.';
+        outer_this.doAction_('delete', false, message);
       });
       // If the cancel button is clicked, uncheck everything.
       $('#cancel-button').click(function() {
@@ -133,9 +134,11 @@ bulkAction.BulkActionHandler = function() {
   * @param {String} action: The name of the action to perform.
   * @param {Boolean} opt_keep: Specifies whether to keep the events that the
   * action was perfomed on showing afterwards. Defaults to false.
+  * @param {String} opt_message: An optional message to show after the action
+  * succeeeds.
   * @returns: true if it performs the action, false if it doesn't.
   */
-  this.doAction_ = function(action, opt_keep) {
+  this.doAction_ = function(action, opt_keep, opt_message) {
     if (!this.barVisible_) {
       return false;
     }
@@ -171,12 +174,26 @@ bulkAction.BulkActionHandler = function() {
           }
 
           outer_this.hideEmptyDateDividers_();
+
+          // Show an alert message if we need to.
+          if (opt_message) {
+            $('#alert-message').text(opt_message);
+            $('#alert-modal').modal();
+          }
         });
 
         // Reset selection status.
         outer_this.selected_ = [];
         outer_this.setActionBarVisibility_();
+      } else {
+        // Show an alert message here since we don't have to wait for any
+        // animations.
+        if (opt_message) {
+          $('#alert-message').text(opt_message);
+          $('#alert-modal').modal();
+        }
       }
+
     });
 
     return true;

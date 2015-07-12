@@ -1,5 +1,4 @@
 <!-- Modal for confirming a bulk action. -->
-
 <div id="confirm-modal" class="modal fade" role="dialog">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -15,6 +14,25 @@
             data-dismiss="modal" id="okay-button">Ok</button>
         <button type="button" class="btn btn-primary"
             data-dismiss="modal" id="cancel-button">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for alerting user when bulk action is done. -->
+<div id="alert-modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title">Alert</h4>
+      </div>
+      <div class="modal-body">
+        <!-- We'll fill this in in JS. -->
+        <p id="alert-message"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary"
+            data-dismiss="modal" id="okay-button">Ok</button>
       </div>
     </div>
   </div>
