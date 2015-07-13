@@ -1062,11 +1062,13 @@ class BulkActionHandler(BulkActionCommon):
 """ Checks which bulk actions can be performed on a set of events. """
 class BulkActionCheckHandler(BulkActionCommon):
   """ Gets a list of bulk actions that can be performed on a set of events.
+  Even though this is "safe", it is a POST request because the list of events
+  can be extremely long.
   Request parameters:
   events: The list of event ids to check.
   Response: JSON-formatted dictionary containing two lists: A "valid" list of
   valid actions, and an "invalid" list of invalid actions. """
-  def get(self):
+  def post(self):
     events = self._get_events()
 
     user = users.get_current_user()

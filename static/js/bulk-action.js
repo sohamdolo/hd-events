@@ -219,7 +219,7 @@ bulkAction.BulkActionHandler = function() {
   };
 
   /** Sets whether or not the bulk action bar is activated based on what's
-   * checked.
+   * checked and what actions are allowable.
    * @private
    */
   this.setActionBarVisibility_ = function() {
@@ -250,7 +250,7 @@ bulkAction.BulkActionHandler = function() {
     var selectedIds = this.getDatastoreIds_();
     properties = {'events': JSON.stringify(selectedIds)};
     var outer_this = this;
-    $.get('/bulk_action_check', properties, function(data) {
+    $.post('/bulk_action_check', properties, function(data) {
       var actions = JSON.parse(data);
       outer_this.validActions_ = actions['valid'];
       var invalid = actions['invalid'];

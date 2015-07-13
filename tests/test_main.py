@@ -407,10 +407,10 @@ class BulkActionHandlerTest(BulkActionBase):
 """ Tests that the bulk action check handler works properly. """
 class BulkActionCheckHandlerTest(BulkActionBase):
   """ Tests that it works properly when we give it reasonable inputs. """
-  def test_get(self):
+  def test_post(self):
     params = {"events": json.dumps(self.event_ids)}
 
-    response = self.test_app.get("/bulk_action_check", params)
+    response = self.test_app.post("/bulk_action_check", params)
     self.assertEqual(200, response.status_int)
 
     # It should not allow us to approve or not approve because we are not
@@ -423,7 +423,7 @@ class BulkActionCheckHandlerTest(BulkActionBase):
     self.testbed.setup_env(user_email="testy.testerson1@gmail.com",
                            user_is_admin="1", overwrite=True)
 
-    response = self.test_app.get("/bulk_action_check", params)
+    response = self.test_app.post("/bulk_action_check", params)
     self.assertEqual(200, response.status_int)
 
     self.assertEqual({"valid": ["approve", "notapproved", "onhold", "delete"],
