@@ -238,6 +238,11 @@ def _check_one_event_per_day(user, start_time, editing_event_id=0):
   logging.debug("earliest start: %s, latest start: %s" % \
                 (earliest_start, latest_start))
 
+  # Check that we are trying to make this event during coworking hours.
+  if (start_time < earliest_start or start_time > latest_start):
+    logging.debug("Event is not during coworking hours.")
+    return
+
   event_query = db.GqlQuery("SELECT * FROM Event WHERE start_time >= :1 AND" \
                             " start_time < :2 AND status IN :3",
                             earliest_start, latest_start,

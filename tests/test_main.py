@@ -228,6 +228,14 @@ class NewHandlerTest(BaseTest):
     self.assertEqual(400, response.status_int)
     self.assertIn("coworking hours", response.body)
 
+    # If the event we are making is not during these hours, it should not have a
+    # problem.
+    new_params = params.copy()
+    new_params["start_time_hour"] = "6"
+    new_params["end_time_hour"] = "7"
+    response = self.test_app.post("/new", new_params)
+    self.assertEqual(200, response.status_int)
+
     # If we schedule it on a weekend, however, we should have no such problems.
     days_to_weekend = 6 - datetime.datetime.today().weekday()
     start = datetime.datetime.now() + datetime.timedelta(days=days_to_weekend)
