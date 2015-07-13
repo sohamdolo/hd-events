@@ -256,8 +256,12 @@ def _check_one_event_per_day(user, start_time, editing_event_id=0):
 
   if found_events >= 1:
     # We can't have another event that starts today.
-    raise ValueError("There can only be one event starting during Dojo hours"
-                     " each day.")
+    raise ValueError("Hacker Dojo does not have enough space for all of our" \
+                     " events+meetings+startups. As a result, we have to" \
+                     " limit events during coworking hours (Monday through" \
+                     " Friday, 9AM-5PM). There is already an event booked" \
+                     " for this date. Please try another date. Sorry about" \
+                     " any inconvenience.")
 
 
 """ Figure out how many days a user must wait before they can create an event.

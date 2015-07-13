@@ -211,7 +211,7 @@ class NewHandlerTest(BaseTest):
     # create another one.
     response = self.test_app.post("/new", params, expect_errors=True)
     self.assertEqual(400, response.status_int)
-    self.assertIn("one event", response.body)
+    self.assertIn("coworking hours", response.body)
 
     # It should ignore the event if it doesn't have the right status.
     event.status = "not_approved"
@@ -226,7 +226,7 @@ class NewHandlerTest(BaseTest):
 
     response = self.test_app.post("/new", params, expect_errors=True)
     self.assertEqual(400, response.status_int)
-    self.assertIn("one event", response.body)
+    self.assertIn("coworking hours", response.body)
 
     # If we schedule it on a weekend, however, we should have no such problems.
     days_to_weekend = 6 - datetime.datetime.today().weekday()
