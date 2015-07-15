@@ -34,8 +34,12 @@
         <a style="position: absolute; right: 100px; font-size: 12px;
                   white-space: nowrap; padding-top: 15px;">
             {{ wait_days }} days until you can create an event.</a>
-        <form action="/new" method="get"><div id='new-event-link'>
-          <button type="submit" id="nav_new" class="emph" disabled>New Event</button></div>
+        <form action="/new" method="get">
+          <div id='new-event-link'>
+            <button type="submit" id="nav_new" class="emph"
+                style="color: #C3C3C3;" disabled>New Event
+            </button>
+          </div>
         </form>
         {% else %}
         <form action="/new" method="get"><div id='new-event-link'>
