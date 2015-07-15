@@ -99,6 +99,17 @@ http://events.hackerdojo.com/event/%s-%s
 
 Again, your event is NOT YET APPROVED and not on the calendar.
 
+After the Event:
+
+Cleanup: You must leave Hacker Dojo in the condition you found it in. This
+includes hauling away excess garbage that does not fit in the dumpster. South
+Bay Haul Away (408-661-1743) is a company event hosts have enjoyed working with
+in the the past.
+
+Room Layout: The room furniture (tables and chairs) must be reset after use in
+rooms with standard layouts, including the Large Event Room, the Classroom and
+the Conference Room. Details of the layout are posted in each room.))
+
 Cheers,
 Hacker Dojo Events Team
 events@hackerdojo.com
