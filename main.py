@@ -333,6 +333,8 @@ def _do_event_action(event, action, user, check=False):
   if action.lower() == 'approve':
     if not access_rights.can_approve:
       return False
+    if not check:
+      notify_owner_approved(event)
     todo = event.approve
     desc = 'Approved event'
 
@@ -392,10 +394,6 @@ def _do_event_action(event, action, user, check=False):
   elif action.lower() == 'expire' and access_rights.is_admin:
     todo = event.expire
     desc = 'Expired event'
-
-  elif event.status == 'approved' and action.lower() == 'approve':
-    if not check:
-      notify_owner_approved(event)
 
   else:
     logging.warning("Action '%s' was not recognized." % (action))
