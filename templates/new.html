@@ -17,8 +17,7 @@
     <table style="margin-bottom: 20px;">
       <tr>
         <td>
-          <input type="checkbox" name="regular_user"
-              style="vertical-align: baseline;" />
+          <input type="checkbox" name="regular_user" />
         </td>
         <td>
           <label for="regular_user">
@@ -178,8 +177,22 @@
     {% endif %}
 
     <p style="font-size:smaller;">You have 30 days for approval before your event application expires. The primary bottleneck to quick approval is getting staff to opt in. You will be notified either way.</p>
-    <p style="font-size:smaller; font-weight: bold;">By submitting this event, you agree to the responsibilities listed to the right.</p>
-    <input type="submit" value="I agree, submit event for approval" style="font-size: larger; margin: 5px;" />
+
+    <table>
+      <tr>
+        <td>
+          <input type="checkbox" id="policies-agree" />
+        </td>
+        <td>
+          <label for="policies-agree" style="font-weight: bold;">I agree to the
+              responsibilities listed to the right.</label>
+        </td>
+      </tr>
+    </table>
+
+    <input type="submit" value="Submit event for approval"
+        style="font-size: larger; margin: 5px; color: #C3C3C3;"
+        id="submit" disabled />
   </form>
 
 </div>

@@ -60,6 +60,8 @@ $(function() {
     // noop
   }
 
+  checkCanSubmit();
+
   $('#room-MakerSpace')
     .click(function() {
     roomAlert(this, "The Maker Space can only be reserved for events that need the tools available in that room. Please confirm your event meets this requirement.")
@@ -68,7 +70,9 @@ $(function() {
     .click(function() {
     roomAlert(this, "Loungey can only be reserved for fun/social events.  Please confirm your event meets this requirement.")
   });
-
+  $('#policies-agree').click(function() {
+    checkCanSubmit();
+  });
 });
 
 function showOther() {
@@ -84,3 +88,17 @@ function hideOther() {
   $('#type-text')
     .css('display', 'none');
 }
+
+/** Enables and disables the submit button based on whether or not the user has
+ * checked the "I agree" box. */
+function checkCanSubmit() {
+  if (document.getElementById('policies-agree').checked) {
+    // We agreed, enable the submit button.
+    $('#submit').removeAttr('disabled');
+    $('#submit').css('color', '#000000');
+  } else {
+    // We did not agree, disable the submit button.
+    $('#submit').attr('disabled', 'disabled')
+    $('#submit').css('color', '#C3C3C3');
+  }
+};
