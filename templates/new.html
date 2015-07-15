@@ -13,6 +13,21 @@
   </div>
 
   <form method="post" style="width: 49%;">
+    {% if is_admin %}
+    <table style="margin-bottom: 20px;">
+      <tr>
+        <td>
+          <input type="checkbox" name="regular_user"
+              style="vertical-align: baseline;" />
+        </td>
+        <td>
+          <label for="regular_user">
+              Submit event as regular user. (Will not be saved.)</label>
+        </td>
+      </tr>
+    </table>
+    {% endif %}
+
     <h4>Event Name</h4>
     <input type="text" name="name" style="width: 300px; margin-left: 4px;" />
     <h4>When</h4>

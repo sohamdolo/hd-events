@@ -73,11 +73,13 @@ def _get_other_member(handler, start_time, end_time):
 """ Checks that this particular user is clear to create an event. Mainly, this
 means that they don't have too many future events already scheduled.
 user: The user we are checking for. (GAE User() object.)
+ignore_admin: Forces it to always perform the check as if the user were a
+regular user. Defaults to False.
 start_time: When the proposed event starts. """
-def _check_user_can_create(user, start_time):
+def _check_user_can_create(user, start_time, ignore_admin=False):
   # If they are an admin, they can do whatever they want.
   user_status = UserRights(user)
-  if user_status.is_admin:
+  if (not ignore_admin and user_status.is_admin):
     logging.info("User %s is admin, not performing checks." % (user.email()))
     return
 
@@ -161,9 +163,11 @@ def _check_user_can_create(user, start_time):
 handler: The handler handling the users request to create/change an event.
 editing_event_id: The id of the event we are editing. We use this so that we can
 ignore it when detecting conflicts.
+ignore_admin: If true, it will ignore the user's possible admin status and
+perform all checks as if they were a normal user. Defaults to False.
 Raises a ValueError if it detects a problem.
 Returns: A tuple containing the event start time and end time. """
-def _validate_event(handler, editing_event_id=0):
+def _validate_event(handler, editing_event_id=0, ignore_admin=False):
   user = users.get_current_user()
   start_time = datetime.strptime('%s %s:%s %s' % (
       handler.request.get('start_date'),
@@ -183,8 +187,9 @@ def _validate_event(handler, editing_event_id=0):
       optional_existing_event_id=editing_event_id
   )
 
-  _check_user_can_create(user, start_time)
-  _check_one_event_per_day(user, start_time, editing_event_id=editing_event_id)
+  _check_user_can_create(user, start_time, ignore_admin=ignore_admin)
+  _check_one_event_per_day(user, start_time, editing_event_id=editing_event_id,
+                           ignore_admin=ignore_admin)
 
   if conflicts:
     if ("Deck" in handler.request.get_all('rooms') or \
@@ -215,11 +220,14 @@ than one event per day during Dojo hours. There are, of course, exceptions to
 this rule for anyone on the @events team.
 user: The user that is creating this event.
 start_time: The proposed start time of the event.
+ignore_admin: Forces it to always perform the check as if the user were a normal
+user. Defaults to False.
 editing_event_id: The id of the event we are editing, if we are editing. """
-def _check_one_event_per_day(user, start_time, editing_event_id=0):
+def _check_one_event_per_day(user, start_time, editing_event_id=0,
+                             ignore_admin=False):
   # If we're an admin, we can do anything we want.
   user_status = UserRights(user)
-  if user_status.is_admin:
+  if (not ignore_admin and user_status.is_admin):
     logging.info("User %s is admin, not performing check." % (user.email()))
     return
 
@@ -878,8 +886,13 @@ class NewHandler(webapp.RequestHandler):
         self.response.out.write(template.render('templates/new.html', locals()))
 
     def post(self):
+      # Whether we want to submit the event as a regular member.
+      ignore_admin = self.request.get("regular_user", None)
+      if ignore_admin:
+        logging.info("Validating as regular member.")
+
       try:
-        start_time, end_time = _validate_event(self)
+        start_time, end_time = _validate_event(self, ignore_admin=ignore_admin)
 
         other_member = _get_other_member(self, start_time, end_time)
       except ValueError, e:
@@ -889,31 +902,32 @@ class NewHandler(webapp.RequestHandler):
         self.response.out.write(template.render('templates/error.html', locals()))
         return
 
-
-      event = Event(
-          name=cgi.escape(self.request.get('name')),
-          start_time=start_time,
-          end_time=end_time,
-          type=cgi.escape(self.request.get('type')),
-          estimated_size=cgi.escape(self.request.get('estimated_size')),
-          contact_name=cgi.escape(self.request.get('contact_name')),
-          contact_phone=cgi.escape(self.request.get('contact_phone')),
-          details=cgi.escape(self.request.get('details')),
-          url=cgi.escape(self.request.get('url')),
-          fee=cgi.escape(self.request.get('fee')),
-          notes=cgi.escape(self.request.get('notes')),
-          rooms=self.request.get_all('rooms'),
-          expired=local_today() + timedelta(days=PENDING_LIFETIME), # Set expected expiration date
-          setup=int(self.request.get('setup') or 0),
-          teardown=int(self.request.get('teardown') or 0),
-          other_member=other_member,
-          admin_notes=self.request.get('admin_notes')
-      )
-      event.put()
-      log = HDLog(event=event,description="Created new event")
-      log.put()
-      notify_owner_confirmation(event)
-      notify_event_change(event)
+      # If we are ignoring our admin status, we are testing, so don't save it.
+      if not ignore_admin:
+        event = Event(
+            name=cgi.escape(self.request.get('name')),
+            start_time=start_time,
+            end_time=end_time,
+            type=cgi.escape(self.request.get('type')),
+            estimated_size=cgi.escape(self.request.get('estimated_size')),
+            contact_name=cgi.escape(self.request.get('contact_name')),
+            contact_phone=cgi.escape(self.request.get('contact_phone')),
+            details=cgi.escape(self.request.get('details')),
+            url=cgi.escape(self.request.get('url')),
+            fee=cgi.escape(self.request.get('fee')),
+            notes=cgi.escape(self.request.get('notes')),
+            rooms=self.request.get_all('rooms'),
+            expired=local_today() + timedelta(days=PENDING_LIFETIME), # Set expected expiration date
+            setup=int(self.request.get('setup') or 0),
+            teardown=int(self.request.get('teardown') or 0),
+            other_member=other_member,
+            admin_notes=self.request.get('admin_notes')
+        )
+        event.put()
+        log = HDLog(event=event,description="Created new event")
+        log.put()
+        notify_owner_confirmation(event)
+        notify_event_change(event)
       set_cookie(self.response.headers, 'formvalues', None)
 
       rules = memcache.get("rules")

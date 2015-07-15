@@ -251,6 +251,46 @@ class NewHandlerTest(BaseTest):
     response = self.test_app.post("/new", params)
     self.assertEqual(200, response.status_int)
 
+  """ Tests that you can force it to validate the event as a regular member if
+  you are an admin. """
+  def test_regular_member_validation(self):
+    params = self.params.copy()
+    self._make_events(Config().USER_MAX_FUTURE_EVENTS)
+
+    # Make sure it doesn't show the box when we're not an admin.
+    response = self.test_app.get("/new")
+    self.assertEqual(200, response.status_int)
+    self.assertNotIn("regular_user", response.body)
+
+    # Login as admin.
+    self.testbed.setup_env(user_is_admin="1", overwrite=True)
+
+    # Make sure the box is there.
+    response = self.test_app.get("/new")
+    self.assertEqual(200, response.status_int)
+    self.assertIn("regular_user", response.body)
+
+    # Check the box.
+    params["regular_user"] = True
+
+    # It should not let us.
+    response = self.test_app.post("/new", params, expect_errors=True)
+    self.assertEqual(400, response.status_int)
+
+    # Make sure it didn't put it in the datastore.
+    events = Event.all().count()
+    self.assertEqual(Config().USER_MAX_FUTURE_EVENTS, events)
+
+    # If we uncheck the box, it should let us because we are an admin.
+    del params["regular_user"]
+
+    response = self.test_app.post("/new", params)
+    self.assertEqual(200, response.status_int)
+
+    # It should have gone in the datastore.
+    events = Event.all().count()
+    self.assertEqual(Config().USER_MAX_FUTURE_EVENTS + 1, events)
+
 
 """ Tests that the edit event handler works properly. """
 class EditHandlerTest(BaseTest):
