@@ -47,9 +47,11 @@ Hacker Dojo Events Team
 events@hackerdojo.com
 """
 
+  html = "<html><head></head><body>" + body + "</body></html>"
+
   deferred.defer(mail.send_mail, sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(e.member.email()),
    subject="[Pending Event] Your event is still pending: " + e.name,
-   body=body, _queue="emailthrottle")
+   body=body, html=html, _queue="emailthrottle")
 
 def schedule_reminder_email(e):
   body = """
@@ -80,14 +82,14 @@ events@hackerdojo.com
 
 """
 
+  html = "<html><head></head><body>" + body + "</body></html>"
+
   deferred.defer(mail.send_mail, sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(e.member.email()),
                  subject="[Event Reminder] " + e.name,
-                 body=body, _queue="emailthrottle")
+                 body=body, html=html, _queue="emailthrottle")
 
 def notify_owner_confirmation(event):
-    deferred.defer(mail.send_mail ,sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(event.member.email()),
-        subject="[New Event] Submitted but **not yet approved**",
-        body="""This is a confirmation that your event:
+  body = """This is a confirmation that your event:
 
 %s
 on %s
@@ -118,18 +120,22 @@ events@hackerdojo.com
     event.name,
     event.start_time.strftime('%A, %B %d'),
     event.key().id(),
-    slugify(event.name),))
+    slugify(event.name),)
+
+  html = "<html><head></head><body>" + body + "</body></html>"
+
+  deferred.defer(mail.send_mail ,sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(event.member.email()),
+        subject="[New Event] Submitted but **not yet approved**", body=body,
+        html=html)
 
 
 def notify_event_change(event,modification=0):
-    if (modification):
-      subject = "[Event Modified]"
-    else:
-      subject = "[New Event]"
-    subject  += ' %s on %s' % (event.name, event.human_time())
-    deferred.defer(mail.send_mail, sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(NEW_EVENT_ADDRESS),
-        subject=subject,
-        body="""Event: %s
+  if (modification):
+    subject = "[Event Modified]"
+  else:
+    subject = "[New Event]"
+  subject  += ' %s on %s' % (event.name, event.human_time())
+  body="""Event: %s
 Member: %s
 When: %s
 Type: %s
@@ -158,13 +164,15 @@ http://events.hackerdojo.com/event/%s-%s
     event.details,
     event.notes,
     event.key().id(),
-    slugify(event.name),))
+    slugify(event.name),)
 
+  html = "<html><head></head><body>" + body + "</body></html>"
+
+  deferred.defer(mail.send_mail, sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(NEW_EVENT_ADDRESS),
+      subject=subject, body=body, html=html)
 
 def notify_owner_approved(event):
-    deferred.defer(mail.send_mail,sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(event.member.email()),
-        subject="[Event Approved] %s" % event.name,
-        body="""Your event is approved and on the calendar!
+  body="""Your event is approved and on the calendar!
 
 Friendly Reminder: You must be present at the event and make sure Dojo policies are followed.
 
@@ -176,12 +184,15 @@ Cheers,
 Hacker Dojo Events Team
 events@hackerdojo.com
 
-""" % (event.key().id(), slugify(event.name)))
+""" % (event.key().id(), slugify(event.name))
+
+  html = "<html><head></head><body>" + body + "</body></html>"
+
+  deferred.defer(mail.send_mail,sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(event.member.email()),
+      subject="[Event Approved] %s" % event.name, body=body, html=html)
 
 def notify_owner_rsvp(event,user):
-    deferred.defer(mail.send_mail,sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(event.member.email()),
-        subject="[Event RSVP] %s" % event.name,
-        body="""Good news!  %s <%s> has RSVPd to your event.
+  body="""Good news!  %s <%s> has RSVPd to your event.
 
 Friendly Reminder: As per policy, all members are welcome to sit in on any event at Hacker Dojo.
 
@@ -193,13 +204,15 @@ Cheers,
 Hacker Dojo Events Team
 events@hackerdojo.com
 
-""" % (user.nickname(),user.email(),event.key().id(), slugify(event.name)))
+""" % (user.nickname(),user.email(),event.key().id(), slugify(event.name))
+
+  html = "<html><head></head><body>" + body + "</body></html>"
+
+  deferred.defer(mail.send_mail,sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(event.member.email()),
+      subject="[Event RSVP] %s" % event.name, body=body, html=html)
 
 def notify_deletion(event,user):
-
-    deferred.defer(mail.send_mail,sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(event.member.email()),
-        subject="[Event Deleted] %s" % event.name,
-        body="""This event has been deleted.
+  body="""This event has been deleted.
 
 http://events.hackerdojo.com/event/%s-%s
 
@@ -207,19 +220,24 @@ Cheers,
 Hacker Dojo Events Team
 events@hackerdojo.com
 
-""" % (event.key().id(), slugify(event.name)))
+""" % (event.key().id(), slugify(event.name))
+
+  html = "<html><head></head><body>" + body + "</body></html>"
+
+  deferred.defer(mail.send_mail,sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(event.member.email()),
+      subject="[Event Deleted] %s" % event.name, body=body, html=html)
 
 def possibly_OVERRIDE_to_address(default):
-    if MAIL_OVERRIDE:
-        return MAIL_OVERRIDE
-    else:
-        return default
+  if MAIL_OVERRIDE:
+    return MAIL_OVERRIDE
+  else:
+    return default
 
 def notify_owner_expiring(event):
-    pass
+  pass
 
 def notify_owner_expired(event):
-    pass
+  pass
 
 def notify_hvac_change(iat,mode):
   body = """
@@ -228,6 +246,7 @@ The inside air temperature was %d.  HVAC is now set to %s.
 
 """ % (iat,mode)
 
+  html = "<html><head></head><body>" + body + "</body></html>"
+
   deferred.defer(mail.send_mail, sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address("hvac-operations@hackerdojo.com"),
-   subject="[HVAC auto-pilot] " + mode,
-   body=body, _queue="emailthrottle")
+      subject="[HVAC auto-pilot] " + mode, body=body, html=html, _queue="emailthrottle")
