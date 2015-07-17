@@ -104,7 +104,8 @@ Again, your event is NOT YET APPROVED and not on the calendar.
 After the Event:
 
 Cleanup: You must leave Hacker Dojo in the condition you found it in. This
-includes hauling away excess garbage that does not fit in the dumpster. South
+includes cleaning up trash left behind by your attendees as well as hauling
+away excess garbage that does not fit in the dumpster. South
 Bay Haul Away (408-661-1743) is a company event hosts have enjoyed working with
 in the the past.
 
