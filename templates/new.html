@@ -20,12 +20,29 @@
           <input type="checkbox" name="regular_user" />
         </td>
         <td>
-          <label for="regular_user">
+          <label for="regular_user" style="margin-left: 8px;">
               Submit event as regular user. (Will not be saved.)</label>
         </td>
       </tr>
     </table>
     {% endif %}
+
+    {% include 'recurring_event.html' %}
+
+    <table style="margin-bottom: 20px;">
+      <tr>
+        <td>
+          <input type="checkbox" name="recurring" id="recurring" />
+        </td>
+        <td>
+          <label for="recurring" style="font-size: 12px; margin-left: 8px;">
+              Repeat <a style="display: none;" href="#" id="edit-repeat">
+                        Edit
+                     </a>
+          </label>
+        </td>
+      </tr>
+    </table>
 
     <h4>Event Name</h4>
     <input type="text" name="name" style="width: 300px; margin-left: 4px;" />

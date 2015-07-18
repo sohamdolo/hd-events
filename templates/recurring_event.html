@@ -1,0 +1,96 @@
+<script type="text/javascript" src="static/js/recurring-event.js"></script>
+
+<!-- Modal for configuring a recurring event. -->
+<div id="recurring-modal" class="modal fade" role="dialog"
+    data-backdrop="static" data-keyboard="false">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Recurring Event</h3>
+      </div>
+      <div class="modal-body">
+
+        <h4 style="margin-bottom: 15px; color: #727272;">Repeat Frequency:</h4>
+        <ul class="nav nav-pills nav-justified">
+          <li role="presentation" class="active">
+            <a id="monthly-pill" data-toggle="pill">Monthly</a>
+          </li>
+          <li role="presentation">
+            <a id="weekly-pill" data-toggle="pill">Weekly</a>
+          </li>
+          <li role="presentation">
+            <a id="daily-pill" data-toggle="pill">Daily</a>
+          </li>
+        </ul>
+
+        <hr>
+
+        <div id="monthly-div">
+          <h4 style="display: inline-block;">Repeat every</h4>
+
+          <div class="dropdown" style="display: inline-block;">
+            <button id="number-dropdown"
+                class="btn btn-default dropdown-toggle" type="button"
+                data-toggle="dropdown">1st <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu">
+              <li><a>1st</a></li>
+              <li><a>2nd</a></li>
+              <li><a>3rd</a></li>
+              <li><a>4th</a></li>
+            </ul>
+          </div>
+
+          <div class="dropdown" style="display: inline-block;">
+            <button id="month-day-dropdown"
+                class="btn btn-default dropdown-toggle" type="button"
+                data-toggle="dropdown">Sunday <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu">
+              <li><a>Sunday</a></li>
+              <li><a>Monday</a></li>
+              <li><a>Tuesday</a></li>
+              <li><a>Wednesday</a></li>
+              <li><a>Thursday</a></li>
+              <li><a>Friday</a></li>
+              <li><a>Saturday</a></li>
+            </ul>
+          </div>
+
+          <h4 style="display: inline-block;">of each month.</h4>
+
+        </div>
+
+        <div id="weekly-div" style="display: none;">
+          <h4>First repetition will be a week after this event's start.</h4>
+        </div>
+
+        <div id="daily-div" style="display: none;">
+          <input type="checkbox" id="weekdays-only">
+          <h4 style="display: inline-block; margin-left: 10px;">
+              Weekdays only.
+          </h4>
+        </div>
+
+
+        <h4 style="display: inline-block; margin-top: 20px;">Stop after</h4>
+        <input type="number" style="width: 60px; display: inline-block;"
+            class="form-control" value="2" min="2" max="6" id="repetitions">
+        <h4 style="display: inline-block;">occurrences.</h4>
+
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary"
+            data-dismiss="modal" id="okay-button">Ok</button>
+        <button type="button" class="btn btn-default"
+            data-dismiss="modal" id="cancel-button">Cancel</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Instead of having to pull all this data from disparate sources, it's
+easier to just have the JS code write the data to a hidden input. -->
+<input type="hidden" name="recurring-data" id="recurring-data">

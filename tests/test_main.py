@@ -46,11 +46,14 @@ class BaseTest(unittest.TestCase):
 
   """ Creates a series of events in the datastore for testing purposes. Each
   event is an hour long and separated from the next event by exactly one day.
-  The first event is made exactly one day in the future from the current time.
+  The first event defaults to being made exactly one day in the future from the
+  current time.
   events: How many events to create.
+  offset: Specify how many days beyond the current day to create the first
+  event.
   Returns: A list of the events created. """
-  def _make_events(self, events):
-    start = datetime.datetime.now() + datetime.timedelta(days=1)
+  def _make_events(self, events, offset=1):
+    start = datetime.datetime.now() + datetime.timedelta(days=offset)
     made_events = []
     for i in range(0, events):
       event = models.Event(name="Test Event", start_time=start,
@@ -98,6 +101,12 @@ class BaseTest(unittest.TestCase):
                    "name": "Test Event",
                    "type": "Meetup",
                   }
+
+    # Make a fake dictionary detailing a basic recurring event.
+    self.recurring_data = {"frequency": "monthly", "repetitions": 5,
+                           "dayNumber": "3rd", "monthDay": "Monday",
+                           "weekdaysOnly": False}
+
 
 """ Tests that the new event handler works properly. """
 class NewHandlerTest(BaseTest):
@@ -290,6 +299,157 @@ class NewHandlerTest(BaseTest):
     # It should have gone in the datastore.
     events = Event.all().count()
     self.assertEqual(Config().USER_MAX_FUTURE_EVENTS + 1, events)
+
+  """ Test that the backend for creating monthly recurring events works. """
+  def test_monthly_recurring_events(self):
+    params = self.params.copy()
+    params["recurring-data"] = json.dumps(self.recurring_data)
+    params["recurring"] = True
+
+    response = self.test_app.post("/new", params)
+    self.assertEqual(200, response.status_int)
+
+    # Check that we ended up with lots of events in the datastore.
+    num_events = Event.all().count()
+    self.assertEqual(5, num_events)
+
+    used_months = []
+    for event in Event.all().run():
+      start_diff = event.start_time - datetime.datetime.now()
+      if start_diff.days <= 1:
+        # Ignore our initial event, because it will not be right.
+        continue
+
+      # Should be on a Monday.
+      self.assertEqual(0, event.start_time.weekday())
+      # None of them should be in the same month.
+      self.assertNotIn(event.start_time.month, used_months)
+      used_months.append(event.start_time.month)
+
+
+  """ Test that the backend for creating weekly recurring events works. """
+  def test_weekly_recurring_events(self):
+    # Make a recurring event that happens every week.
+    recurring_data = self.recurring_data.copy()
+    params = self.params.copy()
+    recurring_data["frequency"] = "weekly"
+    params["recurring-data"] = json.dumps(recurring_data)
+    params["recurring"] = True
+
+    response = self.test_app.post("/new", params)
+    self.assertEqual(200, response.status_int)
+
+    # Check the datastore.
+    num_events = Event.all().count()
+    self.assertEqual(5, num_events)
+
+    query = db.GqlQuery("SELECT * FROM Event ORDER BY start_time ASC")
+    last_event = None
+    for event in query.run():
+      if last_event:
+        # They should all be on the same day of the week.
+        self.assertEqual(last_event.start_time.weekday(),
+                         event.start_time.weekday())
+        # They should all be one week from the last one.
+        event_diff = event.start_time - last_event.start_time
+        self.assertEqual(7, event_diff.days)
+
+      last_event = event
+
+  """ Test that the backend for creating daily recurring events works. """
+  def test_daily_recurring_events(self):
+    # Make a recurring event that happens every day.
+    recurring_data = self.recurring_data.copy()
+    params = self.params.copy()
+    recurring_data["frequency"] = "daily"
+    params["recurring-data"] = json.dumps(recurring_data)
+    params["recurring"] = True
+
+    response = self.test_app.post("/new", params)
+    self.assertEqual(200, response.status_int)
+
+    # Check the datastore.
+    num_events = Event.all().count()
+    self.assertEqual(5, num_events)
+
+    query = db.GqlQuery("SELECT * FROM Event ORDER BY start_time ASC")
+    last_event = None
+    for event in query.run():
+      if last_event:
+        # They should all be one day from the last one.
+        event_diff = event.start_time - last_event.start_time
+        self.assertEqual(1, event_diff.days)
+
+      last_event = event
+
+  """ Test that the backend for creating daily recurring events excluding
+  weekends works. """
+  def test_recurring_no_weekends(self):
+    # Make a recurring event that happens every day.
+    recurring_data = self.recurring_data.copy()
+    params = self.params.copy()
+    recurring_data["frequency"] = "daily"
+    # We want to force there to be some weekends...
+    recurring_data["repetitions"] = 6
+    recurring_data["weekdaysOnly"] = True
+    params["recurring-data"] = json.dumps(recurring_data)
+    params["recurring"] = True
+
+    response = self.test_app.post("/new", params)
+    self.assertEqual(200, response.status_int)
+
+    # Check the datastore.
+    num_events = Event.all().count()
+    self.assertEqual(6, num_events)
+
+    query = db.GqlQuery("SELECT * FROM Event ORDER BY start_time ASC")
+    last_event = None
+    for event in query.run():
+      if last_event:
+        event_diff = event.start_time - last_event.start_time
+        if last_event.start_time.weekday() < 4:
+          # They should all be one day from the last one, unless the last one
+          # was on Friday or a weekend. (The first one could still be on a
+          # weekend.)
+          self.assertEqual(1, event_diff.days)
+
+        self.assertLess(event.start_time.weekday(), 5)
+
+      last_event = event
+
+  """ Test that it properly detects trying to add too many events at once. """
+  def test_recurring_event_limit(self):
+    # Put some initial events in the datastore.
+    self._make_events(2, offset=2)
+
+    recurring_data = self.recurring_data.copy()
+    params = self.params.copy()
+    recurring_data["repetitions"] = Config().USER_MAX_FUTURE_EVENTS
+    params["recurring-data"] = json.dumps(recurring_data)
+    params["recurring"] = True
+
+    response = self.test_app.post("/new", params, expect_errors=True)
+    self.assertEqual(400, response.status_int)
+
+    self.assertIn("may only have", response.body)
+
+  """ Tests that it properly detects a violation of the 4-week event limit rule
+  with recurring events. """
+  def test_recurring_four_week_limit(self):
+    # Put some initial events in the datastore.
+    self._make_events(2, offset=-3)
+
+    recurring_data = self.recurring_data.copy()
+    params = self.params.copy()
+    recurring_data["repetitions"] = Config().USER_MAX_FOUR_WEEKS
+    recurring_data["frequency"] = "daily"
+    params["recurring-data"] = json.dumps(recurring_data)
+    params["recurring"] = True
+
+    response = self.test_app.post("/new", params, expect_errors=True)
+    self.assertEqual(400, response.status_int)
+
+    self.assertIn("within a 4-week period", response.body)
 
 
 """ Tests that the edit event handler works properly. """
