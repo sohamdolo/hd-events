@@ -164,8 +164,13 @@ def get_location(program):
     print "ERROR: Could not find '%s'." % (program)
     os._exit(1)
 
-  location = output.decode("utf-8").rstrip("%s\n" % (program))
-  return location
+  location = output.decode("utf-8").rstrip("\n")
+  try:
+    real_location = subprocess.check_output(["readlink", location])
+  except subprocess.CalledProcessError:
+    real_location = location
+  real_location = real_location.rstrip("%s\n" % (program))
+  return real_location
 
 """ Downloads the GAE SDK for use with Travis CI.
 Returns: The location of the SDK. """
