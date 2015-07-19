@@ -149,7 +149,7 @@ class NewHandlerTest(BaseTest):
   events scheduled. """
   def test_event_limit(self):
     # Create the maximum number of events.
-    self._make_events(Config().USER_MAX_FUTURE_EVENTS)
+    self._make_events(Config().USER_MAX_FUTURE_EVENTS, offset=3)
 
     # Now it should stop us from creating another one.
     response = self.test_app.post("/new", self.params, expect_errors=True)
