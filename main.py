@@ -73,10 +73,15 @@ def _get_other_member(handler, start_time, end_time):
 """ Checks that this particular user is clear to create an event. Mainly, this
 means that they don't have too many future events already scheduled.
 user: The user we are checking for. (GAE User() object.)
+event_times: A list of tuples, with each tuple containing the start and end
+times for a particular event. These are the events that we are checking if we
+can create.
 ignore_admin: Forces it to always perform the check as if the user were a
 regular user. Defaults to False.
 start_time: When the proposed event starts. """
-def _check_user_can_create(user, start_time, ignore_admin=False):
+def _check_user_can_create(user, event_times, ignore_admin=False):
+  logging.debug("User wants to add %d events." % (len(event_times)))
+
   # If they are an admin, they can do whatever they want.
   user_status = UserRights(user)
   if (not ignore_admin and user_status.is_admin):
@@ -87,76 +92,93 @@ def _check_user_can_create(user, start_time, ignore_admin=False):
                              " start_time > :2 AND status IN :3", user,
                              datetime.now(), ["approved", "pending", "on_hold"])
 
-  logging.debug("User has %d events." % (events_query.count()))
+  num_events = events_query.count()
+  logging.debug("User has %d events." % (num_events))
+  num_events += len(event_times)
 
   conf = Config()
-  if events_query.count() >= conf.USER_MAX_FUTURE_EVENTS:
+  if num_events > conf.USER_MAX_FUTURE_EVENTS:
     raise ValueError("You may only have %d future events." % \
                      (conf.USER_MAX_FUTURE_EVENTS))
 
   # We have a limit on how many events we can have within a four-week period
   # too.
-  # Find the subset of events that this event could possibly cause to be in
-  # violation of this rule.
-  earliest_start = start_time - timedelta(days=28)
-  latest_start = start_time + timedelta(days=28)
-  possible_violators = db.GqlQuery("SELECT * FROM Event WHERE member = :1 AND" \
-                                   " start_time >= :2 AND" \
-                                   " start_time <= :3 AND status IN :4" \
-                                   " ORDER BY start_time",
-                                   user, earliest_start, latest_start,
-                                   ["approved", "pending", "on_hold"])
+  for start_time, end_time in event_times:
+    # Find the subset of events that this event could possibly cause to be in
+    # violation of this rule.
+    earliest_start = start_time - timedelta(days=28)
+    latest_start = start_time + timedelta(days=28)
+    possible_violators = db.GqlQuery("SELECT * FROM Event WHERE member = :1 AND" \
+                                     " start_time >= :2 AND" \
+                                     " start_time <= :3 AND status IN :4" \
+                                     " ORDER BY start_time",
+                                     user, earliest_start, latest_start,
+                                     ["approved", "pending", "on_hold"])
 
-  if possible_violators.count() < conf.USER_MAX_FOUR_WEEKS:
-    # There's no way we could be violating this rule.
-    return
+    # Find the subset of events we want to add that could be in violation of
+    # this rule.
+    possible_pending_violators = []
+    for event in event_times:
+      if (event[0] >= earliest_start and event[0] <= latest_start):
+        possible_pending_violators.append(event[0])
 
-  # Narrow the group of possible violators down to the subset of events
-  # surrounding our event's start time.
-  before_event = []
-  after_event = []
-  for event in possible_violators.run():
-    # Split it into groups of events that happen before and after our proposed
-    # event.
-    if event.start_time < start_time:
-      before_event.append(event.start_time)
-    else:
-      after_event.append(event.start_time)
+    if (possible_violators.count() + len(possible_pending_violators)) <= \
+        conf.USER_MAX_FOUR_WEEKS:
+      # There's no way we could be violating this rule.
+      return
 
-  # If we have extraneous events, it means that the rule was already violated.
-  if (len(before_event) > conf.USER_MAX_FOUR_WEEKS or \
-      len(after_event) > conf.USER_MAX_FOUR_WEEKS):
-    logging.warning("User was already in violation of the 4-week rule.")
-    raise ValueError("You may only have %d events within a 4-week period." % \
-                     (conf.USER_MAX_FOUR_WEEKS))
+    # Group the possible violators into those before and after the event.
+    before_event = []
+    after_event = []
+    for event in possible_violators.run():
+      # Split it into groups of events that happen before and after our proposed
+      # event.
+      if event.start_time < start_time:
+        before_event.append(event.start_time)
+      else:
+        after_event.append(event.start_time)
 
-  # Recombine the lists.
-  possible_violators = before_event
-  # Sandwhich in the time of the event we want to create.
-  possible_violators.append(start_time)
-  possible_violators.extend(after_event)
+    # Do the same with the pending events we want to add.
+    for pending_start in possible_pending_violators:
+      if pending_start < start_time:
+        before_event.append(pending_start)
+      else:
+        after_event.append(pending_start)
 
-  # Now look through every possible combination of USER_MAX_FOUR_WEEKS + 1
-  # consecutive events and see if it violates our rule. (The + 1 is so that
-  # every group we come up with will contain the event we are trying to add.)
-  event_group = []
-  for event_time in possible_violators:
-    if len(event_group) < conf.USER_MAX_FOUR_WEEKS:
-      # We don't have enough events yet to do anything.
-      event_group.append(event_time)
-      continue
-
-    # On to the next group...
-    event_group.pop(0)
-    event_group.append(event_time)
-
-    # Check that our current event group is valid.
-    if event_group[len(event_group) - 1] - event_group[0] <= \
-        timedelta(days=28):
-      # Now if we were to create that event, we would have one too many events
-      # in a four week period, meaning that this event violates the rule.
+    # If we have extraneous events, it means that the rule was already violated,
+    # or that it will be violated just by addind recurring events.
+    if (len(before_event) > conf.USER_MAX_FOUR_WEEKS or \
+        len(after_event) > conf.USER_MAX_FOUR_WEEKS):
       raise ValueError("You may only have %d events within a 4-week period." % \
-                       (conf.USER_MAX_FOUR_WEEKS))
+                      (conf.USER_MAX_FOUR_WEEKS))
+
+    # Recombine the lists.
+    possible_violators = before_event
+    # Sandwhich in the time of the event we want to create.
+    possible_violators.append(start_time)
+    possible_violators.extend(after_event)
+
+    # Now look through every possible combination of USER_MAX_FOUR_WEEKS + 1
+    # consecutive events and see if it violates our rule. (The + 1 is so that
+    # every group we come up with will contain the event we are trying to add.)
+    event_group = []
+    for event_time in possible_violators:
+      if len(event_group) < conf.USER_MAX_FOUR_WEEKS:
+        # We don't have enough events yet to do anything.
+        event_group.append(event_time)
+        continue
+
+      # On to the next group...
+      event_group.pop(0)
+      event_group.append(event_time)
+
+      # Check that our current event group is valid.
+      if event_group[len(event_group) - 1] - event_group[0] <= \
+          timedelta(days=28):
+        # Now if we were to create that event, we would have one too many events
+        # in a four week period, meaning that this event violates the rule.
+        raise ValueError("You may only have %d events within a 4-week period." % \
+                        (conf.USER_MAX_FOUR_WEEKS))
 
 
 """ Makes sure that a proposed event is valid.
@@ -165,9 +187,30 @@ editing_event_id: The id of the event we are editing. We use this so that we can
 ignore it when detecting conflicts.
 ignore_admin: If true, it will ignore the user's possible admin status and
 perform all checks as if they were a normal user. Defaults to False.
+recurring: Whether this is a recurring event or not. Defaults to False.
 Raises a ValueError if it detects a problem.
-Returns: A tuple containing the event start time and end time. """
-def _validate_event(handler, editing_event_id=0, ignore_admin=False):
+Returns: A list of tuples, one for each individual event. Each tuple
+contains the event start time and event end time. """
+def _validate_event(handler, editing_event_id=0, ignore_admin=False,
+                    recurring=False):
+  """ Find the next weekday after a given date.
+  date: The date to look for a weekday after.
+  weekday: The day of the week to look for. (The name of the day, e.g.
+  'monday'.) """
+  def find_next_weekday(date, weekday):
+    # Convert the string weekday to a number.
+    day_conversion = {"monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3,
+                      "friday": 4, "saturday": 5, "sunday": 6}
+    weekday = weekday.lower()
+    weekday = day_conversion[weekday]
+
+    # Calculate the next weekday.
+    days_ahead = weekday - date.weekday()
+    if days_ahead <= 0:
+      # Target day already happened this week.
+      days_ahead += 7
+    return date + timedelta(days_ahead)
+
   user = users.get_current_user()
   start_time = datetime.strptime('%s %s:%s %s' % (
       handler.request.get('start_date'),
@@ -187,32 +230,100 @@ def _validate_event(handler, editing_event_id=0, ignore_admin=False):
       optional_existing_event_id=editing_event_id
   )
 
-  _check_user_can_create(user, start_time, ignore_admin=ignore_admin)
-  _check_one_event_per_day(user, start_time, editing_event_id=editing_event_id,
-                           ignore_admin=ignore_admin)
+  # Get the number of times it repeats.
+  if recurring:
+    recurrence_data = handler.request.get("recurring-data")
+    recurrence_data = json.loads(recurrence_data)
 
-  if conflicts:
-    if ("Deck" in handler.request.get_all('rooms') or \
-        "Savanna" in handler.request.get_all('rooms')):
-      raise ValueError('Room conflict detected <small>(Note: Deck &amp;' \
-                        ' Savanna share the same area, two events cannot take' \
-                        ' place at the same time in these rooms.)</small>')
-    else:
-      raise ValueError('Room conflict detected')
-  if not handler.request.get('details'):
-    raise ValueError('You must provide a description of the event')
-  if not handler.request.get('estimated_size').isdigit():
-    raise ValueError('Estimated number of people must be a number')
-  if not int(handler.request.get('estimated_size')) > 0:
-    raise ValueError('Estimated number of people must be greater then zero')
-  if (end_time-start_time).days < 0:
-    raise ValueError('End time must be after start time')
-  if (handler.request.get('contact_phone') and not is_phone_valid(handler.request.get('contact_phone'))):
-    raise ValueError('Phone number does not appear to be valid' )
-  if not handler.request.get_all('rooms'):
-    raise ValueError('You must select a room to reserve.')
+    repetitions = recurrence_data["repetitions"]
+  else:
+    repetitions = 1
 
-  return (start_time, end_time)
+  event_times = [(start_time, end_time)]
+  event_length = end_time - start_time
+  logging.debug("Length of event: %s" % (event_length))
+
+  for i in range(0, repetitions):
+    logging.debug("Next event starting at: %s" % (start_time))
+
+    _check_one_event_per_day(user, start_time, editing_event_id=editing_event_id,
+                            ignore_admin=ignore_admin)
+
+    if conflicts:
+      if ("Deck" in handler.request.get_all('rooms') or \
+          "Savanna" in handler.request.get_all('rooms')):
+        raise ValueError('Room conflict detected <small>(Note: Deck &amp;' \
+                          ' Savanna share the same area, two events cannot take' \
+                          ' place at the same time in these rooms.)</small>')
+      else:
+        raise ValueError('Room conflict detected')
+    if not handler.request.get('details'):
+      raise ValueError('You must provide a description of the event')
+    if not handler.request.get('estimated_size').isdigit():
+      raise ValueError('Estimated number of people must be a number')
+    if not int(handler.request.get('estimated_size')) > 0:
+      raise ValueError('Estimated number of people must be greater then zero')
+    if (end_time-start_time).days < 0:
+      raise ValueError('End time must be after start time')
+    if (handler.request.get('contact_phone') and not is_phone_valid(handler.request.get('contact_phone'))):
+      raise ValueError('Phone number does not appear to be valid' )
+    if not handler.request.get_all('rooms'):
+      raise ValueError('You must select a room to reserve.')
+
+    # Figure out the start and end time of the next event.
+    if recurring:
+      # After we validate the last event, we're done.
+      if i == (repetitions - 1):
+        break
+
+      frequency = recurrence_data["frequency"]
+      if frequency == "monthly":
+        day_number = recurrence_data["dayNumber"]
+        day_name = recurrence_data["monthDay"]
+
+        # Now we can figure out when the next one is. Start by extracting only
+        # the number.
+        day_number = int(day_number[0])
+        # Get a date for the start of the correct week.
+        # Annoyingly, timedelta doesn't support months so we have to add a month
+        # the hard way.
+        months = start_time.month + 1
+        years = start_time.year
+        if months > 12:
+          months = months % 12
+          years += 1
+
+        next_month = start_time.replace(year=years, month=months,
+                                        day=(day_number - 1) * 7)
+        # Find the specified weekday.
+        start_time = find_next_weekday(next_month, day_name)
+
+      elif frequency == "weekly":
+        # Just add a week to our current time.
+        start_time += timedelta(days=7)
+
+      elif frequency == "daily":
+        # Add a day.
+        start_time += timedelta(days=1)
+
+        if recurrence_data["weekdaysOnly"]:
+          # Add days until we get past the weekend.
+          while start_time.weekday() >= 5:
+            start_time += timedelta(days=1)
+
+      else:
+        # This is almost certainly a programming error.
+        error = "Got unknown frequency for recurring event."
+        logging.critical(error)
+        raise RuntimeError(error)
+
+      end_time = start_time + event_length
+      event_times.append((start_time, end_time))
+
+
+  _check_user_can_create(user, event_times, ignore_admin=ignore_admin)
+
+  return event_times
 
 
 """ Makes sure that adding this event won't violate a rule against having more
@@ -586,8 +697,8 @@ class EditHandler(webapp.RequestHandler):
         access_rights = UserRights(user, event)
         if access_rights.can_edit:
           try:
-            start_time, end_time = _validate_event(self,
-                                                   editing_event_id=int(id))
+            event_times = _validate_event(self, editing_event_id=int(id))
+            start_time, end_time = event_times[0]
 
             other_member = _get_other_member(self, start_time, end_time)
           except ValueError, e:
@@ -889,10 +1000,19 @@ class NewHandler(webapp.RequestHandler):
       if ignore_admin:
         logging.info("Validating as regular member.")
 
-      try:
-        start_time, end_time = _validate_event(self, ignore_admin=ignore_admin)
+      recurring = self.request.get("recurring", None)
+      if recurring:
+        logging.debug("Submitting recurring event.")
 
-        other_member = _get_other_member(self, start_time, end_time)
+      try:
+        event_times = _validate_event(self, ignore_admin=ignore_admin,
+                                      recurring=recurring)
+
+        # Since this check is just based on the duration, it doesn't really
+        # matter which start and end times we use.
+        first_start = event_times[0][0]
+        first_end = event_times[0][1]
+        other_member = _get_other_member(self, first_start, first_end)
       except ValueError, e:
         error = str(e)
         logging.warning(error)
@@ -902,30 +1022,39 @@ class NewHandler(webapp.RequestHandler):
 
       # If we are ignoring our admin status, we are testing, so don't save it.
       if not ignore_admin:
-        event = Event(
-            name=cgi.escape(self.request.get('name')),
-            start_time=start_time,
-            end_time=end_time,
-            type=cgi.escape(self.request.get('type')),
-            estimated_size=cgi.escape(self.request.get('estimated_size')),
-            contact_name=cgi.escape(self.request.get('contact_name')),
-            contact_phone=cgi.escape(self.request.get('contact_phone')),
-            details=cgi.escape(self.request.get('details')),
-            url=cgi.escape(self.request.get('url')),
-            fee=cgi.escape(self.request.get('fee')),
-            notes=cgi.escape(self.request.get('notes')),
-            rooms=self.request.get_all('rooms'),
-            expired=local_today() + timedelta(days=PENDING_LIFETIME), # Set expected expiration date
-            setup=int(self.request.get('setup') or 0),
-            teardown=int(self.request.get('teardown') or 0),
-            other_member=other_member,
-            admin_notes=self.request.get('admin_notes')
-        )
-        event.put()
-        log = HDLog(event=event,description="Created new event")
-        log.put()
-        notify_owner_confirmation(event)
-        notify_event_change(event)
+        first_event = None
+        for start_time, end_time in event_times:
+          event = Event(
+              name=cgi.escape(self.request.get('name')),
+              start_time=start_time,
+              end_time=end_time,
+              type=cgi.escape(self.request.get('type')),
+              estimated_size=cgi.escape(self.request.get('estimated_size')),
+              contact_name=cgi.escape(self.request.get('contact_name')),
+              contact_phone=cgi.escape(self.request.get('contact_phone')),
+              details=cgi.escape(self.request.get('details')),
+              url=cgi.escape(self.request.get('url')),
+              fee=cgi.escape(self.request.get('fee')),
+              notes=cgi.escape(self.request.get('notes')),
+              rooms=self.request.get_all('rooms'),
+              expired=local_today() + timedelta(days=PENDING_LIFETIME), # Set expected expiration date
+              setup=int(self.request.get('setup') or 0),
+              teardown=int(self.request.get('teardown') or 0),
+              other_member=other_member,
+              admin_notes=self.request.get('admin_notes')
+          )
+
+          if not first_event:
+            first_event = event
+
+          event.put()
+          log = HDLog(event=event,description="Created new event")
+          log.put()
+
+        # For obvious reasons, we only notify people about the first event in a
+        # recurring series.
+        notify_owner_confirmation(first_event)
+        notify_event_change(first_event)
       set_cookie(self.response.headers, 'formvalues', None)
 
       rules = memcache.get("rules")
