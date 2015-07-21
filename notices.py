@@ -15,6 +15,15 @@ def slugify(str):
     str = unicodedata.normalize('NFKD', str.lower()).encode('ascii','ignore')
     return re.sub(r'\W+','-',str)
 
+""" Convert plain text email bodies to HTML.
+body: The body text to convert. """
+def to_html(body):
+  # Add line breaks.
+  body = body.replace("\n", "<br>")
+  # Add head and body tags.
+  html = "<html><head></head><body>" + body + "</body></html>"
+  return html
+
 if Config().is_dev:
     MAIL_OVERRIDE = "nowhere@nowhere.com"
 else:
@@ -47,9 +56,9 @@ Hacker Dojo Events Team
 events@hackerdojo.com
 """
 
-  html = "<html><head></head><body>" + body + "</body></html>"
+  html = to_html(body)
 
-  deferred.defer(mail.send_mail, sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(e.member.email()),
+  deferred.defer(mail.send_mail, sender=FROM_ADDRESS, to=e.member.email(),
    subject="[Pending Event] Your event is still pending: " + e.name,
    body=body, html=html, _queue="emailthrottle")
 
@@ -82,9 +91,9 @@ events@hackerdojo.com
 
 """
 
-  html = "<html><head></head><body>" + body + "</body></html>"
+  html = to_html(body)
 
-  deferred.defer(mail.send_mail, sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(e.member.email()),
+  deferred.defer(mail.send_mail, sender=FROM_ADDRESS, to=e.member.email(),
                  subject="[Event Reminder] " + e.name,
                  body=body, html=html, _queue="emailthrottle")
 
@@ -123,9 +132,9 @@ events@hackerdojo.com
     event.key().id(),
     slugify(event.name),)
 
-  html = "<html><head></head><body>" + body + "</body></html>"
+  html = to_html(body)
 
-  deferred.defer(mail.send_mail ,sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(event.member.email()),
+  deferred.defer(mail.send_mail ,sender=FROM_ADDRESS, to=event.member.email(),
         subject="[New Event] Submitted but **not yet approved**", body=body,
         html=html)
 
@@ -167,7 +176,7 @@ http://events.hackerdojo.com/event/%s-%s
     event.key().id(),
     slugify(event.name),)
 
-  html = "<html><head></head><body>" + body + "</body></html>"
+  html = to_html(body)
 
   deferred.defer(mail.send_mail, sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(NEW_EVENT_ADDRESS),
       subject=subject, body=body, html=html)
@@ -187,9 +196,9 @@ events@hackerdojo.com
 
 """ % (event.key().id(), slugify(event.name))
 
-  html = "<html><head></head><body>" + body + "</body></html>"
+  html = to_html(body)
 
-  deferred.defer(mail.send_mail,sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(event.member.email()),
+  deferred.defer(mail.send_mail,sender=FROM_ADDRESS, to=event.member.email(),
       subject="[Event Approved] %s" % event.name, body=body, html=html)
 
 def notify_owner_rsvp(event,user):
@@ -207,9 +216,9 @@ events@hackerdojo.com
 
 """ % (user.nickname(),user.email(),event.key().id(), slugify(event.name))
 
-  html = "<html><head></head><body>" + body + "</body></html>"
+  html = to_html(body)
 
-  deferred.defer(mail.send_mail,sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(event.member.email()),
+  deferred.defer(mail.send_mail,sender=FROM_ADDRESS, to=event.member.email(),
       subject="[Event RSVP] %s" % event.name, body=body, html=html)
 
 def notify_deletion(event,user):
@@ -223,9 +232,9 @@ events@hackerdojo.com
 
 """ % (event.key().id(), slugify(event.name))
 
-  html = "<html><head></head><body>" + body + "</body></html>"
+  html = to_html(body)
 
-  deferred.defer(mail.send_mail,sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address(event.member.email()),
+  deferred.defer(mail.send_mail,sender=FROM_ADDRESS, to=event.member.email(),
       subject="[Event Deleted] %s" % event.name, body=body, html=html)
 
 def possibly_OVERRIDE_to_address(default):
@@ -247,7 +256,7 @@ The inside air temperature was %d.  HVAC is now set to %s.
 
 """ % (iat,mode)
 
-  html = "<html><head></head><body>" + body + "</body></html>"
+  html = to_html(body)
 
   deferred.defer(mail.send_mail, sender=FROM_ADDRESS, to=possibly_OVERRIDE_to_address("hvac-operations@hackerdojo.com"),
       subject="[HVAC auto-pilot] " + mode, body=body, html=html, _queue="emailthrottle")
