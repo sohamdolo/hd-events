@@ -1,5 +1,5 @@
 import cgi
-from google.appengine.ext import webapp, db
+from google.appengine.ext import db
 from google.appengine.ext.webapp import util, template
 from google.appengine.api import urlfetch, memcache, users, mail
 
@@ -18,11 +18,13 @@ from notices import *
 import PyRSS2Gen
 import pytz
 
+import webapp2
+
 from config import Config
 import re
 import keymaster
 
-webapp.template.register_template_library('templatefilters.templatefilters')
+template.register_template_library("templatefilters.templatefilters")
 
 def slugify(str):
     str = unicodedata.normalize('NFKD', str.lower()).encode('ascii','ignore')
@@ -522,12 +524,12 @@ def _do_event_action(event, action, user, check=False):
   return True
 
 
-class DomainCacheCron(webapp.RequestHandler):
+class DomainCacheCron(webapp2.RequestHandler):
     def get(self):
         noop = dojo('/groups/events',force=True)
 
 
-class ReminderCron(webapp.RequestHandler):
+class ReminderCron(webapp2.RequestHandler):
     def get(self):
         self.response.out.write("REMINDERS")
         today = local_today()
@@ -545,7 +547,7 @@ class ReminderCron(webapp.RequestHandler):
             event.put()
 
 
-class ExpireCron(webapp.RequestHandler):
+class ExpireCron(webapp2.RequestHandler):
     def post(self):
         # Expire events marked to expire today
         today = local_today()
@@ -558,7 +560,7 @@ class ExpireCron(webapp.RequestHandler):
             notify_owner_expired(event)
 
 
-class ExpireReminderCron(webapp.RequestHandler):
+class ExpireReminderCron(webapp2.RequestHandler):
     def post(self):
         # Find events expiring in 10 days to warn owner
         ten_days = local_today() + timedelta(days=10)
@@ -569,7 +571,7 @@ class ExpireReminderCron(webapp.RequestHandler):
         for event in events:
             notify_owner_expiring(event)
 
-class ExportHandler(webapp.RequestHandler):
+class ExportHandler(webapp2.RequestHandler):
     def get(self, format):
         content_type, body = getattr(self, 'export_%s' % format)()
         self.response.headers['content-type'] = content_type
@@ -674,7 +676,7 @@ class ExportHandler(webapp.RequestHandler):
         return 'application/xml', rss.to_xml()
 
 
-class EditHandler(webapp.RequestHandler):
+class EditHandler(webapp2.RequestHandler):
     def get(self, id):
         event = Event.get_by_id(int(id))
         user = users.get_current_user()
@@ -790,7 +792,7 @@ class EditHandler(webapp.RequestHandler):
           self.response.out.write("Access denied")
 
 
-class EventHandler(webapp.RequestHandler):
+class EventHandler(webapp2.RequestHandler):
     def get(self, id):
         event = Event.get_by_id(int(id))
         if self.request.path.endswith('json'):
@@ -824,7 +826,7 @@ class EventHandler(webapp.RequestHandler):
         event.notes = db.Text(event.notes.replace('\n','<br/>'))
         self.response.out.write(template.render('templates/event.html', locals()))
 
-class ApprovedHandler(webapp.RequestHandler):
+class ApprovedHandler(webapp2.RequestHandler):
     def get(self):
         user = users.get_current_user()
         if user:
@@ -847,7 +849,7 @@ class ApprovedHandler(webapp.RequestHandler):
         self.response.out.write(template.render('templates/approved.html', locals()))
 
 
-class MyEventsHandler(webapp.RequestHandler):
+class MyEventsHandler(webapp2.RequestHandler):
     @util.login_required
     def get(self):
         user = users.get_current_user()
@@ -866,7 +868,7 @@ class MyEventsHandler(webapp.RequestHandler):
         self.response.out.write(template.render('templates/myevents.html', locals()))
 
 
-class PastHandler(webapp.RequestHandler):
+class PastHandler(webapp2.RequestHandler):
     def get(self):
         user = users.get_current_user()
         if user:
@@ -883,7 +885,7 @@ class PastHandler(webapp.RequestHandler):
         self.response.out.write(template.render('templates/past.html', locals()))
 
 
-class NotApprovedHandler(webapp.RequestHandler):
+class NotApprovedHandler(webapp2.RequestHandler):
     def get(self):
         user = users.get_current_user()
         if user:
@@ -902,14 +904,14 @@ class NotApprovedHandler(webapp.RequestHandler):
         self.response.out.write(template.render('templates/not_approved.html', locals()))
 
 
-class CronBugOwnersHandler(webapp.RequestHandler):
+class CronBugOwnersHandler(webapp2.RequestHandler):
     def get(self):
         events = Event.get_pending_list()
         for e in events:
             bug_owner_pending(e)
 
 
-class AllFutureHandler(webapp.RequestHandler):
+class AllFutureHandler(webapp2.RequestHandler):
     def get(self):
         user = users.get_current_user()
         if user:
@@ -927,7 +929,7 @@ class AllFutureHandler(webapp.RequestHandler):
         is_admin = user_rights.is_admin
         self.response.out.write(template.render('templates/all_future.html', locals()))
 
-class LargeHandler(webapp.RequestHandler):
+class LargeHandler(webapp2.RequestHandler):
     def get(self):
         user = users.get_current_user()
         if user:
@@ -944,7 +946,7 @@ class LargeHandler(webapp.RequestHandler):
         self.response.out.write(template.render('templates/large.html', locals()))
 
 
-class PendingHandler(webapp.RequestHandler):
+class PendingHandler(webapp2.RequestHandler):
     def get(self):
         user = users.get_current_user()
         if user:
@@ -963,7 +965,7 @@ class PendingHandler(webapp.RequestHandler):
         self.response.out.write(template.render('templates/pending.html', locals()))
 
 
-class NewHandler(webapp.RequestHandler):
+class NewHandler(webapp2.RequestHandler):
     @util.login_required
     def get(self):
         user = users.get_current_user()
@@ -1067,7 +1069,7 @@ class NewHandler(webapp.RequestHandler):
       self.response.out.write(template.render('templates/confirmation.html', locals()))
 
 
-class ConfirmationHandler(webapp.RequestHandler):
+class ConfirmationHandler(webapp2.RequestHandler):
     def get(self, id):
       event = Event.get_by_id(int(id))
       rules = memcache.get("rules")
@@ -1084,7 +1086,7 @@ class ConfirmationHandler(webapp.RequestHandler):
 
       self.response.out.write(template.render('templates/confirmation.html', locals()))
 
-class LogsHandler(webapp.RequestHandler):
+class LogsHandler(webapp2.RequestHandler):
     @util.login_required
     def get(self):
         user = users.get_current_user()
@@ -1099,7 +1101,7 @@ class LogsHandler(webapp.RequestHandler):
 
         self.response.out.write(template.render('templates/logs.html', locals()))
 
-class FeedbackHandler(webapp.RequestHandler):
+class FeedbackHandler(webapp2.RequestHandler):
     @util.login_required
     def get(self, id):
         user = users.get_current_user()
@@ -1132,7 +1134,7 @@ class FeedbackHandler(webapp.RequestHandler):
             set_cookie(self.response.headers, 'formvalues', dict(self.request.POST))
             self.redirect('/feedback/new/' + id)
 
-class TempHandler(webapp.RequestHandler):
+class TempHandler(webapp2.RequestHandler):
     def get(self):
         units = {"AC1":"EDD9A758", "AC2":"B65D8121", "AC3":"0BA20EDC", "AC5":"47718E38"}
         modes = ["Off","Heat","Cool"]
@@ -1161,7 +1163,7 @@ class TempHandler(webapp.RequestHandler):
 
 
 """ Expires events that were put on hold when users were suspended. """
-class ExpireSuspendedCronHandler(webapp.RequestHandler):
+class ExpireSuspendedCronHandler(webapp2.RequestHandler):
   def get(self):
     events_query = db.GqlQuery("SELECT * FROM Event WHERE" \
                                " owner_suspended_time != NULL and status = :1",
@@ -1176,7 +1178,7 @@ class ExpireSuspendedCronHandler(webapp.RequestHandler):
 
 
 """ Stuff that the bulk action handlers have in common. """
-class BulkActionCommon(webapp.RequestHandler):
+class BulkActionCommon(webapp2.RequestHandler):
   """ Reads the event ids given and produces a list of Event objects.
   Returns: A list of Event objects corresponding to the event ids specified. """
   def _get_events(self):
@@ -1241,7 +1243,7 @@ class BulkActionCheckHandler(BulkActionCommon):
     self.response.out.write(json.dumps(response))
 
 
-app = webapp.WSGIApplication([
+app = webapp2.WSGIApplication([
         ('/', ApprovedHandler),
         ('/all_future', AllFutureHandler),
         ('/large', LargeHandler),
