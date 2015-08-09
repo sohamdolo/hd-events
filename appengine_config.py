@@ -9,7 +9,7 @@ import os
 
 from google.appengine.ext import vendor
 
-import deploy
+from shared import deploy
 
 
 # Use external libraries.
