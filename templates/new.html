@@ -29,29 +29,28 @@
 
     {% include 'recurring_event.html' %}
 
+    <h4>Event Name</h4>
+    <input type="text" name="name" id="event_name" />
+    <h4>When</h4>
     <table style="margin-bottom: 20px;">
       <tr>
         <td>
           <input type="checkbox" name="recurring" id="recurring" />
         </td>
         <td>
-          <label for="recurring" style="font-size: 12px; margin-left: 8px;">
-              Repeat <a style="display: none;" href="#" id="edit-repeat">
-                        Edit
-                     </a>
+          <label for="recurring">
+              Repeating Event (max 6 sessions) <a style="display: none;" href="#" id="edit-repeat">Edit</a>
           </label>
         </td>
       </tr>
     </table>
 
-    <h4>Event Name</h4>
-    <input type="text" name="name" style="width: 300px; margin-left: 4px;" />
-    <h4>When</h4>
     <table style="margin: 0px;">
       <tr>
-        <td class="first"><label for="start_date">Start Date:</label>
-          <input name="start_date" id="start_date" readonly="readonly"/></td>
-        <td><label for="start_time">Start Time:</label>
+        <td><label class="inline-label" for="start_date">Start Date:</label>
+          <input name="start_date" id="start_date" placeholder="Select start date..." readonly="readonly"/></td>
+        </tr><tr>
+        <td><label class="inline-label" for="start_time">Start Time:</label>
           <select name="start_time_hour">
             <option>1</option>
             <option>2</option>
@@ -79,9 +78,10 @@
         </td>
       </tr>
       <tr>
-        <td class="first"><label for="end_date">End Date:</label>
-          <input name="end_date" id="end_date" class="datepicker" readonly="readonly"/></td>
-        <td><label for="end_time">End Time:</label>
+        <td><label class="inline-label" for="end_date">End Date:</label>
+          <input name="end_date" id="end_date" placeholder="Select end date..." class="datepicker" readonly="readonly"/></td>
+        </tr><tr>
+        <td><label class="inline-label" for="end_time">End Time:</label>
         <select name="end_time_hour">
           <option>1</option>
           <option>2</option>
@@ -108,39 +108,42 @@
         </select>
         </td>
       </tr>
-    </table>
-
-    <div class='b-block'>
-    <div class='b-label'>
-      Setup Time (15 minutes minimum):
-    </div>
-    <div class='b-data'>
+      <tr>
+        <td>
+          <label class="inline-label">Setup Time:</label>
       <select name="setup" id="setup">
           <option {{event.setup|select:15}}>15</option>
           <option {{event.setup|select:30}}>30</option>
           <option {{event.setup|select:45}}>45</option>
           <option {{event.setup|select:60}}>60</option>
-        </select>
-      </div>
-  </div>
+        </select> <span> (15 minutes minimum)</span>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <label class="inline-label">Teardown Time:</label>
+      <select name="setup" id="teardown">
+          <option {{event.setup|select:15}}>15</option>
+          <option {{event.setup|select:30}}>30</option>
+          <option {{event.setup|select:45}}>45</option>
+          <option {{event.setup|select:60}}>60</option>
+        </select> <span> (15 minutes minimum)</span>
+        </td>
+      </tr>
+    </table>
 
-  <div class='b-block'>
-    <div class='b-label'>
-      Teardown Time (15 minutes minimum):
-    </div>
-    <div class='b-data'>
-      <select name="teardown" id="teardown">
-          <option {{event.teardown|select:15}}>15</option>
-          <option {{event.teardown|select:30}}>30</option>
-          <option {{event.teardown|select:45}}>45</option>
-          <option {{event.teardown|select:60}}>60</option>
-        </select>
-      </div>
-  </div>
-
+  <h4>Where</h4>
+  <table>
+        <tr><td><label for="details">Requested Rooms:</label>
+        <span style="font-size:10;">(Capacity in parentheses)</span><br />
+          {% for room in rooms %}
+          <nobr><input type="checkbox" id="room-{{room.0|strip_spaces}}" name="rooms" value="{{room.0}}" /><label for="room-{{room.0}}">{{room.0|title}} ({{room.1}})</label></nobr>{% endfor %}
+        </td></tr>
+  </table>
+  
     <h4>Type of Event</h4>
       <table style="margin: 0px;"><tr>
-        <td class="first"><label for="type">Category:</label>
+        <td><label for="type">Category:</label><br>
           <select name="type" id="type-select" onchange="if(this.value=='Other...'){showOther();$('#type-text').focus()}">
             <option>Meetup</option>
             <option>Hackathon</option>
@@ -153,44 +156,46 @@
             <option>Other...</option>
          </select>
          <input type="text" id="type-text" onblur="$('#type-select').append('<option>'+this.value+'</option>');$('#type-select').val(this.value);hideOther();" style="display: none;" size="15"></td>
-        <td><label for="estimated_size" title="This will become a HARD LIMIT on your event.">Max persons:</label>
-          <input type="text" name="estimated_size" size="4" style="text-align: right;" /> <span>people</span></td>
+       </tr>
+       <tr>
+        <td><label for="estimated_size" title="This will become a HARD LIMIT on your event.">Max estimated persons attending:</label><br>
+          <input type="text" name="estimated_size" id="estimated_size" style="text-align: right;" /> </td>
       </tr></table>
 
-    <h4>Other member email:</h4>
+    <h4>Member email:</h4>
       <label for="other_member"><span style="font-size:10;">
           If your event lasts 24h or longer, you must specify the email of
           another member who will also be responsible for it.</span></label>
-        <input type="text" name="other_member" size="16" />
+        <input type="text" name="other_member" id="other_member" size="16" />
 
     <h4>External Contact (if applicable)</h4>
       <table style="margin: 0px;"><tr>
-        <td class="first"><label for="contact_name">Name:</label>
-          <input type="text" name="contact_name" size="16" /></td>
-        <td><label for="contact_phone">Phone Number:</label>
-          <input type="text" name="contact_phone" size="16" /></td>
+        <td><label for="contact_name">Name:</label><br>
+          <input type="text" name="contact_name" id="contact_name" /></td>
+        </tr><tr>
+        <td><label for="contact_phone">Phone Number:</label><br>
+          <input type="text" name="contact_phone" id="contact_phone" /></td>
       </tr></table>
 
     <h4>More Info:</h4>
       <table style="margin: 0px;">
-        <tr><td><label for="details">Event details:<br/><span style="font-size:10;">Since all events are open to attendance by Hacker Dojo members, please describe your event.</span></label>
-          <textarea rows="5" style="width: 300px;" name="details"></textarea></td></tr>
-        <tr><td><label for="url">Event URL: (optional)</label>
-          <input type="text" name="url" style="width: 300px;" /></td></tr>
-        <tr><td><label for="fee">Entry Fee: (optional)</label>
-          <input type="text" name="fee" size="8"/> <span style="color: gray; font-size: x-small;">Leave blank if free</span></td></tr>
-        <tr><td><label for="details">Requested Rooms:</label>
-        <span style="font-size:10;">(Capacity in parentheses)</span><br />
-          {% for room in rooms %}
-          <nobr><input type="checkbox" id="room-{{room.0|strip_spaces}}" name="rooms" value="{{room.0}}" /><label for="room-{{room.0}}">{{room.0|title}} ({{room.1}})</label></nobr>{% endfor %}
-        </td></tr>
+        <tr><td id="details"><label for="details">Event details:<br/><span style="font-size:10;">Since all events are open to attendance by Hacker Dojo members, please describe your event.</span></label>
+          <textarea rows="5" name="details"></textarea></td></tr>
+        <tr><td><label for="url">Event URL: (optional)</label><br>
+          <input type="text" name="url" id="event_url" /></td></tr>
+        <tr><td><label for="fee">Entry Fee: (optional)</label><br>
+          <input type="text" name="fee" id="fee" /> <span style="color: gray;">Leave blank if free</span></td></tr>
         <tr><td style="padding-top: 8px;"><label for="details">Special notes:</label>
-          <textarea rows="3" style="width: 300px;" name="notes"></textarea></td></tr>
+          <textarea rows="3" name="notes"></textarea></td></tr>
       </tr></table>
 
     {% if is_admin %}
-    <label for="details">Admin Notes:</label>
-    <textarea rows="3" style="width: 300px;" name="admin_notes"></textarea>
+    <h4>Admin</h4>
+      <table style="margin: 0px;">
+        <tr><td>
+    <label for="details">Admin Notes:</label><br>
+    <textarea rows="3" name="admin_notes"></textarea>
+  </td></tr></table>
     {% endif %}
 
     <p style="font-size:smaller;">You have 30 days for approval before your event application expires. The primary bottleneck to quick approval is getting staff to opt in. You will be notified either way.</p>
@@ -201,15 +206,14 @@
           <input type="checkbox" id="policies-agree" />
         </td>
         <td>
-          <label for="policies-agree" style="font-weight: bold;">I agree to the
-              responsibilities listed to the right.</label>
+          <label for="policies-agree" style="font-weight: bold;">I agree to the responsibilities listed to the right.</label>
         </td>
       </tr>
     </table>
 
-    <input type="submit" value="Submit event for approval"
-        style="font-size: larger; margin: 5px; color: #C3C3C3;"
-        id="submit" disabled />
+    <div id="submit-link">
+      <input type="submit" value="Submit event for approval" id="submit" class="disabled" disabled />
+    </div>
   </form>
 
 </div>

@@ -3,10 +3,10 @@ var rounder = function(elem, sz, allBrowsers) {
   DD_roundies.addRule(elem, sz.toString()+'px', allBrowsers);
 }
 $(function() {
-  var rndrs = ['#primary', '#new-event-link'];
-  for(r in rndrs) {
-    rounder(rndrs[r], 8, true);
-  }
+  // var rndrs = ['#primary'];
+  // for(r in rndrs) {
+  //   rounder(rndrs[r], 8, true);
+  // }
 
   // Generic handler for retaining values when form submit errored out
   var formvalues = $.cookie('formvalues');
