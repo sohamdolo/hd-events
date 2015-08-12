@@ -8,12 +8,12 @@ body { font-family: Verdana,Arial,sans-serif; margin: 0px;}
 #header img { margin-right: 10px;}
 #header h1 { font-size: 42px; margin-top: 20px; padding-top: 10px; margin-bottom: 0px; padding-bottom: 0px;}
 #header h2 { font-size: x-large; margin: 0px; }
-#new-event-link {padding: 1px; background-color:#d50025; border-radius: 6px; border: 1px solid #ff0000; position: absolute; right: 0px;}
+#new-event-link {position: absolute; right: 0px;}
 #submit-link {width: 218px; border-radius: 6px;}
-#new-event-link a, #new-event-link button {text-decoration: none; border: none; background-color:#eee; border-radius: 4px;}
+#new-event-link a {text-decoration: none; border: none; background-color:#eee; border-radius: 4px;}
 #new-event-link a {color: #fff;}
-#submit {padding: 2px 12px; font-size: larger; color: #fff; background-color: #29A1E6; border-radius: 6px; border: none;}
-#submit:hover {background-color: #3FAEED;}
+#submit, #new-event-link button {padding: 2px 12px; font-size: larger; color: #fff; background-color: #29A1E6; border-radius: 6px; border: none;}
+#submit:hover, #new-event-link button:hover {background-color: #3FAEED;}
 #submit.disabled {color: #F0F9FE; background-color: #B6E1F7;}
 #contact-link {float:left; margin-left: 10px;}
 body.new #new-event-link {display: none;}
@@ -34,6 +34,11 @@ table td.first { width: 110px; padding-right: 20px; }
 #terms ol { padding-left: 25px;}
 #terms li { margin-top: 10px;}
 nobr label { display: inline;}
+td.event-check {width: 40px;}
+a.event-link {font-size: 18px; line-height: 18px;}
+.status-badge {color: white; font-size: small; padding: 3px 6px; background: gray; margin-right: 6px; border-radius: 2px;}
+.status-badge.not_approved-badge, .status-badge.canceled-badge {background: red;}
+.status-badge.onhold-badge {background: green;}
 
 #log-list {width:100%;}
 #log-list th {text-align: left;}
@@ -46,7 +51,7 @@ label { display: block;}
 a:visited { color: blue;}
 h3 a {text-decoration: none; color:#0000bb;}
 
-#content { border-top: 3px solid #d50025; background: #eee; padding: 10px; }
+#content { border-top: 3px solid #d50025; background: #F5F5F5; padding: 10px; }
 #primary { background: white; width: 100%; padding: 10px; line-height: 1.5;}
 #secondary {font-size: 80%;}
 
