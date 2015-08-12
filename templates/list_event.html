@@ -13,7 +13,7 @@
     </a>
         {% ifequal event.status "approved" %}
         {% else %}
-        <span class="status-badge {{ event.status }}-badge" id="{{ event.key.id }}-badge">{{ event.status }}</span>
+        <span class="badge status-badge {{ event.status }}-badge" id="{{ event.key.id }}-badge">{{ event.status }}</span>
         {% endifequal %}
     {% if event.is_past %}(<a href="/feedback/new/{{event.key.id}}">Give your feedback</a>){% endif %}
   <div>Hosted by <a href="mailto:{{event.member.email}}">{{event.owner}}</a>

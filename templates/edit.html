@@ -3,125 +3,183 @@
 <link href="/static/css/edit.css" type="text/css" rel="stylesheet" />
 <script type="text/javascript" src="/static/js/edit.js"></script>
 
-<form method=POST>
 <div id="primary">
-  <h4>Edit: {{event.name|safe}}</h4>
-  {% if edited %}
-    <div style="width:80%; background:#fdff3b; -webkit-border-radius: 4px; -moz-border-radius: 8px; border-radius: 8px; margin: 0 auto; padding:8px;">{{edited|safe}}</div>
-  {% endif %}
-  <div class='b-block'><div class='b-label'>Title:</div><div class='b-data'><input type="text" name="name" value="{{event.name|safe}}"/></div></div>
-  <div class='b-block' id="message">
-  </div>
-  <div class='b-block'>
-    <div class='b-label'>When:</div>
-    <table style="margin: 0px;" class='b-data'>
+  <form method=POST>
+    <h4>Editing: {{event.name|safe}}</h4>
+    {% if edited %}
+      <div style="width:80%; background:#fdff3b; -webkit-border-radius: 4px; -moz-border-radius: 8px; border-radius: 8px; margin: 0 auto; padding:8px;">{{edited|safe}}</div>
+    {% endif %}
+    <label class="inline-label">Event Name</label>
+    <input class="input-wide" type="text" name="name" value="{{event.name|safe}}"/>
+    <div class='b-block' id="message"></div>
+
+    <h4>When</h4>
+    <table style="margin: 0px;">
       <tr>
-      <td class="first"><label for="start_date">Start Date:</label>
-        <input name="start_date" class="datepicker" value="{{event.start_time|american_date}}" readonly="readonly"/></td>
-      <td><label for="start_time">Start Time:</label>
-        <select name="start_time_hour" id="start_time_hour">
-        {% for hour in hours %}
-          <option {{event.start_time|select_hour:hour}}>{{hour}}</option>
-        {% endfor %}
-        </select>:
-        <select name="start_time_minute" id="start_time_minute">
-          <option {{event.start_time|select_minute:0}}>00</option>
-          <option {{event.start_time|select_minute:15}}>15</option>
-          <option {{event.start_time|select_minute:30}}>30</option>
-          <option {{event.start_time|select_minute:45}}>45</option>
-        </select>
-        <select name="start_time_ampm" id="start_time_ampm">
-          <option {{event.start_time|select_ampm:"pm"}}>pm</option>
-          <option {{event.start_time|select_ampm:"am"}}>am</option>
-        </select>
+        <td>
+          <label class="inline-label" for="start_date">Start Date</label>
+          <input name="start_date" class="datepicker" value="{{event.start_time|american_date}}" readonly="readonly"/>
         </td>
       </tr>
       <tr>
-      <td class="first"><label for="end_date">End Date:</label>
-        <input name="end_date" class="datepicker" value="{{event.end_time|american_date}}" readonly="readonly"/></td>
-      <td><label for="end_time">End Time:</label>
-        <select name="end_time_hour" id="end_time_hour">
-        {% for hour in hours %}
-          <option {{event.end_time|select_hour:hour}}>{{hour}}</option>
-        {% endfor %}
-        </select>:
-        <select name="end_time_minute" id="end_time_minute">
-          <option {{event.end_time|select_minute:0}}>00</option>
-          <option {{event.end_time|select_minute:15}}>15</option>
-          <option {{event.end_time|select_minute:30}}>30</option>
-          <option {{event.end_time|select_minute:45}}>45</option>
-        </select>
-        <select name="end_time_ampm" id="end_time_ampm">
-          <option {{event.end_time|select_ampm:"pm"}}>pm</option>
-          <option {{event.end_time|select_ampm:"am"}}>am</option>
-        </select>
+        <td>
+          <label class="inline-label" for="start_time">Start Time</label>
+          <select name="start_time_hour" id="start_time_hour">
+          {% for hour in hours %}
+            <option {{event.start_time|select_hour:hour}}>{{hour}}</option>
+          {% endfor %}
+          </select>:
+          <select name="start_time_minute" id="start_time_minute">
+            <option {{event.start_time|select_minute:0}}>00</option>
+            <option {{event.start_time|select_minute:15}}>15</option>
+            <option {{event.start_time|select_minute:30}}>30</option>
+            <option {{event.start_time|select_minute:45}}>45</option>
+          </select>
+          <select name="start_time_ampm" id="start_time_ampm">
+            <option {{event.start_time|select_ampm:"pm"}}>pm</option>
+            <option {{event.start_time|select_ampm:"am"}}>am</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <label class="inline-label" for="end_date">End Date</label>
+          <input name="end_date" class="datepicker" value="{{event.end_time|american_date}}" readonly="readonly"/>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <label class="inline-label" for="end_time">End Time</label>
+          <select name="end_time_hour" id="end_time_hour">
+          {% for hour in hours %}
+            <option {{event.end_time|select_hour:hour}}>{{hour}}</option>
+          {% endfor %}
+          </select>:
+          <select name="end_time_minute" id="end_time_minute">
+            <option {{event.end_time|select_minute:0}}>00</option>
+            <option {{event.end_time|select_minute:15}}>15</option>
+            <option {{event.end_time|select_minute:30}}>30</option>
+            <option {{event.end_time|select_minute:45}}>45</option>
+          </select>
+          <select name="end_time_ampm" id="end_time_ampm">
+            <option {{event.end_time|select_ampm:"pm"}}>pm</option>
+            <option {{event.end_time|select_ampm:"am"}}>am</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <label class="inline-label">Setup Time</label>
+          <select name="setup" id="setup">
+            <option {{event.setup|select:15}}>15</option>
+            <option {{event.setup|select:30}}>30</option>
+            <option {{event.setup|select:45}}>45</option>
+            <option {{event.setup|select:60}}>60</option>
+          </select>
+          <span> (15 minutes minimum)</span>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <label class="inline-label">Teardown Time</label>
+          <select name="teardown" id="teardown">
+            <option {{event.teardown|select:15}}>15</option>
+            <option {{event.teardown|select:30}}>30</option>
+            <option {{event.teardown|select:45}}>45</option>
+            <option {{event.teardown|select:60}}>60</option>
+          </select>
+          <span> (15 minutes minimum)</span>
         </td>
       </tr>
     </table>
-  </div>
 
-  <div class='b-block'>
-    <div class='b-label'>
-      Setup Time (15 minutes minimum):
-    </div>
-    <div class='b-data'>
-      <select name="setup" id="setup">
-          <option {{event.setup|select:15}}>15</option>
-          <option {{event.setup|select:30}}>30</option>
-          <option {{event.setup|select:45}}>45</option>
-          <option {{event.setup|select:60}}>60</option>
-        </select>
-      </div>
-  </div>
+    <h4>Where</h4>
+    <table>
+      <tr>
+        <td>
+          <label>Requested Rooms</label><br>
+          <div class="room-list">
+          {% for room in rooms %}
+          <input type="checkbox" id="room-{{room.0}}" name="rooms" value="{{room.0}}" {{event.rooms|check_filter:room.0}} /><label for="room-{{room.0}}">{{room.0|title}} ({{room.1}})</label>
+          {% endfor %}
+          </div>
+        </td>
+      </tr>
+    </table>
 
-  <div class='b-block'>
-    <div class='b-label'>
-      Teardown Time (15 minutes minimum):
-    </div>
-    <div class='b-data'>
-      <select name="teardown" id="teardown">
-          <option {{event.teardown|select:15}}>15</option>
-          <option {{event.teardown|select:30}}>30</option>
-          <option {{event.teardown|select:45}}>45</option>
-          <option {{event.teardown|select:60}}>60</option>
-        </select>
-      </div>
-  </div>
+    <h4>Member email</h4>
+    <table>
+      <tr>
+        <td>
+          <p>If your event lasts 24h or longer, enter the email(s) of at least one additional member who will co-host and share responsibility for the event.</p>
+          <input class="input-wide" type="text" name="other_member" value="{{ event.other_member }}"/>
+        </td>
+      </tr>
+    </table>
 
-  <div class='b-block'>
-    <div class='b-label'>Rooms:<br /><span style="font-size:10; font-weight: normal;">(Capacity in<br/>parentheses)</span></div>
-    <div class='b-data checklist' id="roomlist">
-    {% for room in rooms %}
-      <nobr><input type="checkbox" id="room-{{room.0}}" name="rooms" value="{{room.0}}" {{event.rooms|check_filter:room.0}} /><label for="room-{{room.0}}">{{room.0|title}} ({{room.1}})</label></nobr>
-    {% endfor %}
-    </div>
-  </div>
+    <h4>External Contact (if applicable)</h4>
+    <table>
+      <tr>
+        <td>
+          <label class="inline-label">Contact Name</label>
+          <input class="input-wide" type="text" name="contact_name" value="{{event.contact_name|title}}"/>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <label class="inline-label">Contact Phone</label>
+          <input class="input-wide" type="text" name="contact_phone" value="{{event.contact_phone}}"/>
+        </td>
+      </tr>
+    </table>
+    
+    <h4>More Info</h4>
+    <table>
+      <tr>
+        <td>
+          <label class="inline-label">Est. Attendance</label>
+          <input class="input-narrow" type="text" name="estimated_size" value="{{event.estimated_size}}"/>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <label class="inline-label">Fee</label>
+          <input class="input-narrow" type="text" name="fee" value="{{event.fee}}"/>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <label class="inline-label">URL</label>
+          <input class="input-wide" type="text" name="url" value="{{event.url}}"/>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <label>Event details</label><br>
+          <textarea rows=4 name="details">{{event.details|safe}}</textarea>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <label>Notes</label><br>
+          <textarea rows=3 name="notes">{{event.notes|safe}}</textarea>
+        </td>
+      </tr>
+    </table>
 
-  <div class='b-block'>
-    <div class='b-label'>Other member email:</div>
-    <span style="font-size: 10; font-weight: normal;">
-        If your event lasts 24h or longer, you must specify the email of
-        another member who will also be responsible for it.</span>
-    <input type="text" name="other_member" size="16" value="{{ event.other_member }}"/>
-  </div>
+    {% if access_rights.is_admin %}
+    <h4>Admin</h4>
+    <table>
+      <tr>
+        <td>
+          <label>Admin Notes</label><br>
+          <textarea rows=3 name="admin_notes">{{event.admin_notes|safe}}</textarea>
+        </td>
+      </tr>
+    </table>
+    {% endif %}
 
-  <div class='b-block'><div class='b-label'>More Info:</div><div class='b-data'><textarea rows=4 name="details">{{event.details|safe}}</textarea></div></div>
-  <div class='b-block'><div class='b-label'>Notes:</div><div class='b-data'><textarea rows=3 name="notes">{{event.notes|safe}}</textarea></div></div>
-
-  {% if access_rights.is_admin %}
-  <div class='b-block'>
-    <div class='b-label'>Admin Notes:</div>
-    <textarea rows=3 name="admin_notes">{{event.admin_notes|safe}}</textarea>
-  </div>
-  {% endif %}
-
-  <div class='b-block'><div class='b-label'>Estimated Size:</div><div class='b-data'><input type="text" name="estimated_size" value="{{event.estimated_size}}"/></div></div>
-  <div class='b-block'><div class='b-label'>Contact Name:</div><div class='b-data'><input type="text" name="contact_name" value="{{event.contact_name|title}}"/></div></div>
-  <div class='b-block'><div class='b-label'>Contact Phone:</div><div class='b-data'><input type="text" name="contact_phone" value="{{event.contact_phone}}"/></div></div>
-  <div class='b-block'><div class='b-label'>URL:</div><div class='b-data'><input type="text" name="url" value="{{event.url}}"/></div></div>
-  <div class='b-block'><div class='b-label'>Fee:</div><div class='b-data'><input type="text" name="fee" value="{{event.fee}}"/></div></div>
-  <br/>
-  <input type=submit value="Save">
+  <input class="btn btn-primary" type=submit value="Save">
+</form>
 </div>
-
 {% endblock %}
