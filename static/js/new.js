@@ -95,10 +95,10 @@ function checkCanSubmit() {
   if (document.getElementById('policies-agree').checked) {
     // We agreed, enable the submit button.
     $('#submit').removeAttr('disabled');
-    $('#submit').css('color', '#000000');
+    $('#submit').removeClass('disabled');
   } else {
     // We did not agree, disable the submit button.
     $('#submit').attr('disabled', 'disabled')
-    $('#submit').css('color', '#C3C3C3');
+    $('#submit').addClass('disabled');
   }
 };

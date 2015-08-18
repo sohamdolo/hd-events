@@ -1,15 +1,14 @@
 body { font-family: Verdana,Arial,sans-serif; margin: 0px;}
-#wrapper, #top > div { margin-left: auto; margin-right: auto; width: 700px; position: relative;}
+#wrapper, #top > div { margin-left: auto; margin-right: auto; width: 1000px; position: relative;}
 
 #top a:visited { color: blue;}
 #top { height: 20px; border-bottom: 1px solid #ccc; text-align: right; font-size: 12px; padding-right: 5px; padding-top: 4px; }
 
-#header { margin-left: auto; margin-right: auto; width: 670px; height: 125px;}
+#header { margin-left: auto; margin-right: auto; width: 970px; height: 125px;}
 #header img { margin-right: 10px;}
 #header h1 { font-size: 42px; margin-top: 20px; padding-top: 10px; margin-bottom: 0px; padding-bottom: 0px;}
 #header h2 { font-size: x-large; margin: 0px; }
-#new-event-link {position: absolute; right: 0px; padding: 2px 2px; background-color:#d50025;}
-#new-event-link a {color: #fff; text-decoration: none;}
+#new-event-link {position: absolute; right: 0px;}
 #contact-link {float:left; margin-left: 10px;}
 body.new #new-event-link {display: none;}
 
@@ -29,6 +28,11 @@ table td.first { width: 110px; padding-right: 20px; }
 #terms ol { padding-left: 25px;}
 #terms li { margin-top: 10px;}
 nobr label { display: inline;}
+td.event-check {width: 40px;}
+a.event-link {font-size: 18px; line-height: 18px;}
+.status-badge {color: white; font-size: small; padding: 3px 6px; background: gray; margin-left: 6px; border-radius: 2px;}
+.status-badge.not_approved-badge, .status-badge.canceled-badge {background: red;}
+.status-badge.onhold-badge {background: green;}
 
 #log-list {width:100%;}
 #log-list th {text-align: left;}
@@ -36,19 +40,19 @@ nobr label { display: inline;}
 
 form div { margin-top: 10px; }
 
-label { display: block; font-size: smaller;}
+label { display: block;}
 
 a:visited { color: blue;}
 h3 a {text-decoration: none; color:#0000bb;}
 
-#content { border-top: 3px solid #d50025; background: #eee; padding: 10px; }
+#content { border-top: 3px solid #d50025; background: #F5F5F5; padding: 10px; }
 #primary { background: white; width: 100%; padding: 10px; line-height: 1.5;}
 #secondary {font-size: 80%;}
 
 h4 { font-size: smaller; }
 
 .b-block {overflow: auto;}
-.b-label {float: left; width: 150px; font-weight: bold;}
+.b-label {float: left; width: 260px; font-weight: bold;}
 .b-data {float: left; width: 500px;}
 
 .thin-border, .thinner-border {background-color: #ff0000; margin: 10px 0px;}
@@ -56,6 +60,55 @@ h4 { font-size: smaller; }
 .thinner-border {height: 1px;}
 
 .room-listing {font-size: 90%;}
+
+form h4 {
+  color: #29A1E6;
+  font-size: 24px;
+}
+form nobr {
+  min-width: 180px;
+  display: inline-block;
+}
+form input[type=checkbox], form input[type=radio] {
+  margin: 4px 8px 4px 0;
+}
+input#event_name, input#other_member, td textarea, input#contact_phone, input#contact_name, input#event_url {
+  width: 480px;
+}
+input#start_date, input#end_date, input#event_name, input#other_member, input#contact_phone, input#contact_name, input#event_url, input#fee, input#estimated_size, .input-wide, .input-narrow, td textarea {
+  font-size: 16px;
+}
+
+.inline-label {
+  width: 110px;
+}
+.input-wide {
+  width: 366px;
+}
+#estimated_size, #fee, .input-narrow {
+  width: 40px;
+}
+
+label span {
+  font-weight: normal;
+}
+
+input[type="text"], textarea {
+  border: 2px solid #eee;
+  box-sizing: border-box;
+}
+input:focus, textarea:focus {
+  outline: none;
+  border: 2px solid #ADD8E6;
+}
+
+.room-list {
+  width: 550px;
+}
+.room-list label {
+  width: 160px;
+  font-weight: normal;
+}
 
 .clearer {clear: both;}
 

@@ -1,6 +1,6 @@
 <tr id="{{ event.key.id }}-row" class="event-row">
     {% if is_admin and not hide_checkboxes %}
-    <td width="75">
+    <td class="event-check">
         <input type="checkbox" class="checkbox-big bulk-select",
             id="{{ event.key.id }}-box">
     </td>
@@ -8,18 +8,14 @@
 
     <td width="75">{% if event.is_continued %}(Contd){% else %}{{event.start_time|date:"g:iA"|lower}}{% endif %}</td>
   <td>
-    <a {% if event.is_canceled %}style="text-decoration: line-through;"{% endif %} {% ifnotequal event.status "approved" %}rel="nofollow"{% endifnotequal %} href="/event/{{event.key.id}}-{{event.name|slugify}}">
+    <a class="event-link" {% if event.is_canceled %}style="text-decoration: line-through;"{% endif %} {% ifnotequal event.status "approved" %}rel="nofollow"{% endifnotequal %} href="/event/{{event.key.id}}-{{event.name|slugify}}">
       {{event.name|safe}}
-    </a><span
+    </a>
         {% ifequal event.status "approved" %}
-        style="color: white; font-size: x-small; padding: 2px; background: gray;
-               display: none"
         {% else %}
-        style="color: white; font-size: x-small; padding: 2px; background: gray;"
+        <span class="badge status-badge {{ event.status }}-badge" id="{{ event.key.id }}-badge">{{ event.status }}</span>
         {% endifequal %}
-        id="{{ event.key.id }}-badge">{{ event.status }}
-    </span>
     {% if event.is_past %}(<a href="/feedback/new/{{event.key.id}}">Give your feedback</a>){% endif %}
-  <div style="font-size:80%">Hosted by <a href="mailto:{{event.member.email}}">{{event.owner}}</a>
+  <div>Hosted by <a href="mailto:{{event.member.email}}">{{event.owner}}</a>
   {% if event.roomlist %}in {{event.roomlist}}{% endif %}</div></td>
 </tr>

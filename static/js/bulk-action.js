@@ -296,6 +296,7 @@ bulkAction.BulkActionHandler = function() {
       } else {
         badge.fadeIn();
         badge.text(text);
+        badge.removeClass('pending-badge').addClass(text+'-badge')
       }
     }
   };
