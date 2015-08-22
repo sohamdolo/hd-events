@@ -80,8 +80,10 @@ times for a particular event. These are the events that we are checking if we
 can create.
 ignore_admin: Forces it to always perform the check as if the user were a
 regular user. Defaults to False.
-start_time: When the proposed event starts. """
-def _check_user_can_create(user, event_times, ignore_admin=False):
+editing: The event that we are editing, if we are editing one. Defaults to
+None. """
+def _check_user_can_create(user, event_times, ignore_admin=False,
+                           editing=None):
   logging.debug("User wants to add %d events." % (len(event_times)))
 
   # If they are an admin, they can do whatever they want.
@@ -97,6 +99,10 @@ def _check_user_can_create(user, event_times, ignore_admin=False):
   num_events = events_query.count()
   logging.debug("User has %d events." % (num_events))
   num_events += len(event_times)
+  # If we're editing events, subtract one so that we don't count the same event
+  # twice.
+  if editing:
+    num_events -= 1
 
   conf = Config()
   if num_events > conf.USER_MAX_FUTURE_EVENTS:
@@ -124,6 +130,10 @@ def _check_user_can_create(user, event_times, ignore_admin=False):
       if (event[0] >= earliest_start and event[0] <= latest_start):
         possible_pending_violators.append(event[0])
 
+    logging.debug("Have %d possible violators." % (possible_violators.count()))
+    logging.debug("Have %d possible pending violators." % \
+                  (len(possible_pending_violators)))
+
     if (possible_violators.count() + len(possible_pending_violators)) <= \
         conf.USER_MAX_FOUR_WEEKS:
       # There's no way we could be violating this rule.
@@ -132,7 +142,12 @@ def _check_user_can_create(user, event_times, ignore_admin=False):
     # Group the possible violators into those before and after the event.
     before_event = []
     after_event = []
-    for event in possible_violators.run():
+    for event in possible_violators:
+      # If we are editing an event, ignore it, so that it doesn't get
+      # double-counted.
+      if (editing and event.key().id() == editing.key().id()):
+        continue
+
       # Split it into groups of events that happen before and after our proposed
       # event.
       if event.start_time < start_time:
@@ -148,7 +163,7 @@ def _check_user_can_create(user, event_times, ignore_admin=False):
         after_event.append(pending_start)
 
     # If we have extraneous events, it means that the rule was already violated,
-    # or that it will be violated just by addind recurring events.
+    # or that it will be violated just by adding recurring events.
     if (len(before_event) > conf.USER_MAX_FOUR_WEEKS or \
         len(after_event) > conf.USER_MAX_FOUR_WEEKS):
       raise ValueError("You may only have %d events within a 4-week period." % \
@@ -165,7 +180,7 @@ def _check_user_can_create(user, event_times, ignore_admin=False):
     # every group we come up with will contain the event we are trying to add.)
     event_group = []
     for event_time in possible_violators:
-      if len(event_group) < conf.USER_MAX_FOUR_WEEKS:
+      if len(event_group) < (conf.USER_MAX_FOUR_WEEKS + 1):
         # We don't have enough events yet to do anything.
         event_group.append(event_time)
         continue
@@ -245,11 +260,15 @@ def _validate_event(handler, editing_event_id=0, ignore_admin=False,
   event_length = end_time - start_time
   logging.debug("Length of event: %s" % (event_length))
 
+  editing_event = None
+  if editing_event_id:
+    editing_event = Event.get_by_id(editing_event_id)
+
   for i in range(0, repetitions):
     logging.debug("Next event starting at: %s" % (start_time))
 
-    _check_one_event_per_day(user, start_time, editing_event_id=editing_event_id,
-                            ignore_admin=ignore_admin)
+    _check_one_event_per_day(user, start_time, editing=editing_event,
+                             ignore_admin=ignore_admin)
 
     if conflicts:
       if ("Deck" in handler.request.get_all('rooms') or \
@@ -268,7 +287,7 @@ def _validate_event(handler, editing_event_id=0, ignore_admin=False,
     if (end_time-start_time).days < 0:
       raise ValueError('End time must be after start time')
     if (handler.request.get('contact_phone') and not is_phone_valid(handler.request.get('contact_phone'))):
-      raise ValueError('Phone number does not appear to be valid' )
+      raise ValueError('Phone number does not appear to be valid')
     if not handler.request.get_all('rooms'):
       raise ValueError('You must select a room to reserve.')
 
@@ -323,7 +342,8 @@ def _validate_event(handler, editing_event_id=0, ignore_admin=False,
       event_times.append((start_time, end_time))
 
 
-  _check_user_can_create(user, event_times, ignore_admin=ignore_admin)
+  _check_user_can_create(user, event_times, ignore_admin=ignore_admin,
+                         editing=editing_event)
 
   return event_times
 
@@ -335,8 +355,8 @@ user: The user that is creating this event.
 start_time: The proposed start time of the event.
 ignore_admin: Forces it to always perform the check as if the user were a normal
 user. Defaults to False.
-editing_event_id: The id of the event we are editing, if we are editing. """
-def _check_one_event_per_day(user, start_time, editing_event_id=0,
+editing: The event we are editing, if we are editing. """
+def _check_one_event_per_day(user, start_time, editing=None,
                              ignore_admin=False):
   # If we're an admin, we can do anything we want.
   user_status = UserRights(user)
@@ -371,10 +391,9 @@ def _check_one_event_per_day(user, start_time, editing_event_id=0,
   found_events = event_query.count()
   logging.debug("Found %d events." % (found_events))
 
-  if editing_event_id:
-    old_event = Event.get_by_id(editing_event_id)
-    if (old_event.start_time >= earliest_start and \
-        old_event.start_time <= latest_start):
+  if editing:
+    if (editing.start_time >= earliest_start and \
+        editing.start_time <= latest_start):
       # In this case, our old event is going to show up in the query and cause
       # it to register one too many events.
       logging.debug("Removing old event from event count.")
