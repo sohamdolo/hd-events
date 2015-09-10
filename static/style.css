@@ -122,7 +122,7 @@ a.dp-choose-date {
 	display: block;
 	text-indent: -2000px;
 	overflow: hidden;
-	background: url(/static/calendar.png) no-repeat; 
+	background: url(/static/calendar.png) no-repeat;
 }
 a.dp-choose-date.dp-disabled {
 	background-position: 0 -20px;
@@ -156,4 +156,12 @@ input.dp-applied {
     border-radius: 0px;
     vertical-align: baseline;
     padding-top: 6px;
+}
+
+.no-new-message {
+  position: absolute;
+  right: 275px;
+  font-size: 12px;
+  white-space: nowrap;
+  padding-top: 25px;
 }

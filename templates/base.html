@@ -30,14 +30,21 @@
     <div id="wrapper">
       <div id="header">
 
-        {% if wait_days %}
-        <a style="position: absolute; right: 100px; font-size: 12px;
-                  white-space: nowrap; padding-top: 15px;">
-            {{ wait_days }} days until you can create an event.</a>
+        {% if wait_days != 0 %}
+          {% if wait_days == None %}
+          <a class="no-new-message">
+              Your plan does not allow you to create events.
+          </a>
+          {% else %}
+          <a class="no-new-message">
+              {{ wait_days }} days until you can create an event.
+          </a>
+          {% endif %}
         <form action="/new" method="get">
           <div id='new-event-link'>
-            <button type="submit" id="nav_new" class="emph"
-                style="color: #C3C3C3;" disabled>New Event
+            <button type="submit" id="nav_new"
+                class="btn btn-primary btn-lg disabled" disabled>
+                Submit New Event Request
             </button>
           </div>
         </form>

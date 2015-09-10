@@ -409,9 +409,11 @@ def _check_one_event_per_day(user, start_time, editing=None,
                      " any inconvenience.")
 
 
-""" Figure out how many days a user must wait before they can create an event.
+""" Figure out how many days a user must wait before they can create an event,
+or if they can't create an event at all.
 user: The user we are getting information for.
-Returns: How many more days the user must wait to create an event. """
+Returns: How many more days the user must wait to create an event, or None if
+they are on a plan that does not allow event creation. """
 def _get_user_wait_time(user):
   conf = Config()
   if not conf.is_prod:
@@ -425,7 +427,8 @@ def _get_user_wait_time(user):
   # Make an API request to the signup app to get this information about the
   # user.
   base_url = conf.SIGNUP_URL + "/api/v1/user"
-  query_str = urllib.urlencode({"email": user.email(), "properties": "created"})
+  query_str = urllib.urlencode({"email": user.email(),
+                                "properties[]": ["created", "plan"]}, True)
   response = urlfetch.fetch("%s?%s" % (base_url, query_str),
                             follow_redirects=False)
   logging.debug("Got response from signup app: %s" % (response.content))
@@ -437,6 +440,13 @@ def _get_user_wait_time(user):
     return conf.NEW_EVENT_WAIT_PERIOD
 
   result = json.loads(response.content)
+
+  # Check if we're on a plan that allows event creation.
+  if (result["plan"] == "supporter" or result["plan"] == "lite"):
+    # They cannot create events.
+    logging.info("People on plan '%s' cannot create events." % (result["plan"]))
+    return None
+
   created = pickle.loads(str(result["created"]))
   logging.debug("User created at %s." % (created))
 
