@@ -539,10 +539,10 @@ class EditHandlerTest(BaseTest):
   def test_no_double_count(self):
     # Make exactly the limit for number of events. (We have one in there to
     # begin with.)
-    events = self._make_events(Config().USER_MAX_FOUR_WEEKS - 1, offset=2)
+    self._make_events(Config().USER_MAX_FOUR_WEEKS - 1, offset=2)
 
     # Now, it should let us edit one of them.
-    response = self.test_app.post("/edit/%d" % (events[0].key().id()),
+    response = self.test_app.post("/edit/%d" % (self.event.key().id()),
                                   self.params)
     self.assertEqual(200, response.status_int)
 
