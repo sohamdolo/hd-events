@@ -18,13 +18,14 @@
   </head>
   <body>
     <div id="top">
-      <div>
-        <span id="contact-link"><a href="http://wiki.hackerdojo.com/w/page/40789209/Contacting-Events-Team">Contact Events Team</a></span>
-        {% if user %}
-          <strong>{{user.email}}</strong> | <a href="/myevents">My Events</a> | <a href="{{logout_url}}">Logout</a>
-        {% else %}
-          <a style="font-weight: bold;" href="{{login_url}}">Login</a> | <a href="http://signup.hackerdojo.com/upgrade/needaccount">Need an account?</a>
-        {% endif %}
+      <div id="contact-link"><a href="http://wiki.hackerdojo.com/w/page/40789209/Contacting-Events-Team">Contact Events Team</a></div>
+      <div class="header--centered">Feeds: <a href="/events.ics">iCal</a> | <a href="/events.rss">RSS</a> | <a href="/events.json">JSON</a> (as of {{ today|date }})</div>
+      <div class="header--right">
+      {% if user %}
+        <strong>{{user.email}}</strong> | <a href="/myevents">My Events</a> | <a href="{{logout_url}}">Logout</a>
+      {% else %}
+        <a style="font-weight: bold;" href="{{login_url}}">Login</a> | <a href="http://signup.hackerdojo.com/upgrade/needaccount">Need an account?</a>
+      {% endif %}
       </div>
     </div>
     <div id="wrapper">

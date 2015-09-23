@@ -1,8 +1,26 @@
 body { font-family: Verdana,Arial,sans-serif; margin: 0px;}
-#wrapper, #top > div { margin-left: auto; margin-right: auto; width: 1000px; position: relative;}
+#wrapper, #top { margin-left: auto; margin-right: auto; width: 1000px; position: relative;}
 
 #top a:visited { color: blue;}
-#top { height: 20px; border-bottom: 1px solid #ccc; text-align: right; font-size: 12px; padding-right: 5px; padding-top: 4px; }
+#top {
+  height: 20px;
+  border-bottom: 1px solid #ccc; 
+  text-align: left; 
+  font-size: 12px; 
+  padding-right: 5px; 
+  padding-top: 4px; 
+  display: flex;
+}
+#top div {
+  flex: 1;
+}
+.header--centered {
+  text-align: center;
+}
+.header--right {
+  min-width: 250px;
+  text-align: right !important;
+}
 
 #header { margin-left: auto; margin-right: auto; width: 970px; height: 125px;}
 #header img { margin-right: 10px;}
