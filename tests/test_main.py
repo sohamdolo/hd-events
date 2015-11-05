@@ -124,6 +124,25 @@ class NewHandlerTest(BaseTest):
 
     self._check_new_event_in_datastore()
 
+  """ Tests that it handles missing event names and details correctly. """
+  def test_no_name_or_details(self):
+    # No name.
+    params = self.params.copy()
+    params["name"] = ""
+
+    # It should give us an error.
+    response = self.test_app.post("/new", params, expect_errors=True)
+    self.assertEqual(400, response.status_int)
+    self.assertIn("name is required", response.body)
+
+    # No details.
+    params = self.params.copy()
+    params["details"] = ""
+
+    response = self.test_app.post("/new", params, expect_errors=True)
+    self.assertEqual(400, response.status_int)
+    self.assertIn("details are required", response.body)
+
   """ Tests that it properly requires members hosting long events to specify the
   name of another member. """
   def test_second_member_requirement(self):

@@ -1026,6 +1026,21 @@ class NewHandler(webapp2.RequestHandler):
         self.response.out.write(template.render('templates/new.html', locals()))
 
     def post(self):
+      name = self.request.get("name")
+      details = self.request.get("details")
+      error = None
+      if not name:
+        # We need an event name.
+        error = "Event name is required."
+      if not details:
+        # We need event details.
+        error = "Event details are required."
+      if error:
+        self.response.set_status(400)
+        self.response.out.write(template.render("templates/error.html",
+                                                locals()))
+        return
+
       # Whether we want to submit the event as a regular member.
       ignore_admin = self.request.get("regular_user", None)
       if ignore_admin:
@@ -1056,14 +1071,14 @@ class NewHandler(webapp2.RequestHandler):
         first_event = None
         for start_time, end_time in event_times:
           event = Event(
-              name=cgi.escape(self.request.get('name')),
+              name=cgi.escape(name),
               start_time=start_time,
               end_time=end_time,
               type=cgi.escape(self.request.get('type')),
               estimated_size=cgi.escape(self.request.get('estimated_size')),
               contact_name=cgi.escape(self.request.get('contact_name')),
               contact_phone=cgi.escape(self.request.get('contact_phone')),
-              details=cgi.escape(self.request.get('details')),
+              details=cgi.escape(details),
               url=cgi.escape(self.request.get('url')),
               fee=cgi.escape(self.request.get('fee')),
               notes=cgi.escape(self.request.get('notes')),
