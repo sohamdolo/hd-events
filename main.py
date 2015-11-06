@@ -159,7 +159,10 @@ def _check_user_can_create(user, event_times, ignore_admin=False,
     for pending_start in possible_pending_violators:
       if pending_start < start_time:
         before_event.append(pending_start)
-      else:
+      # It's actually possible to get an event that is at the same time, if we
+      # were editing and didn't change the start time. If that happens, we don't
+      # want to randomly add it to the after_event list.
+      elif pending_start > start_time:
         after_event.append(pending_start)
 
     # If we have extraneous events, it means that the rule was already violated,
@@ -175,6 +178,8 @@ def _check_user_can_create(user, event_times, ignore_admin=False,
     possible_violators.append(start_time)
     possible_violators.extend(after_event)
 
+    possible_violators.sort()
+
     # Now look through every possible combination of USER_MAX_FOUR_WEEKS + 1
     # consecutive events and see if it violates our rule. (The + 1 is so that
     # every group we come up with will contain the event we are trying to add.)
@@ -183,11 +188,8 @@ def _check_user_can_create(user, event_times, ignore_admin=False,
       if len(event_group) < (conf.USER_MAX_FOUR_WEEKS + 1):
         # We don't have enough events yet to do anything.
         event_group.append(event_time)
+      if len(event_group) < (conf.USER_MAX_FOUR_WEEKS + 1):
         continue
-
-      # On to the next group...
-      event_group.pop(0)
-      event_group.append(event_time)
 
       # Check that our current event group is valid.
       if event_group[len(event_group) - 1] - event_group[0] <= \
@@ -196,6 +198,10 @@ def _check_user_can_create(user, event_times, ignore_admin=False,
         # in a four week period, meaning that this event violates the rule.
         raise ValueError("You may only have %d events within a 4-week period." % \
                         (conf.USER_MAX_FOUR_WEEKS))
+
+      # On to the next group...
+      event_group.pop(0)
+      event_group.append(event_time)
 
 
 """ Makes sure that a proposed event is valid.
