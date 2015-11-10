@@ -729,6 +729,12 @@ class EditHandler(webapp2.RequestHandler):
             self.response.out.write("Access denied")
 
     def post(self, id):
+        # Make sure that we are still logged in.
+        if not users.get_current_user():
+          # Redirect to the login page.
+          self.redirect(users.create_login_url(self.request.uri))
+          return
+
         event = Event.get_by_id(int(id))
         user = users.get_current_user()
         access_rights = UserRights(user, event)
@@ -1032,6 +1038,12 @@ class NewHandler(webapp2.RequestHandler):
         self.response.out.write(template.render('templates/new.html', locals()))
 
     def post(self):
+      # Make sure that we are still logged in.
+      if not users.get_current_user():
+        # Redirect to the login page.
+        self.redirect(users.create_login_url(self.request.uri))
+        return
+
       name = self.request.get("name")
       details = self.request.get("details")
       error = None
