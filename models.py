@@ -20,6 +20,8 @@ ROOM_OPTIONS = (
 
 # GUESTS_PER_STAFF = 25
 PENDING_LIFETIME = 30 # days
+# Minimum number of hours before event start during which we can RSVP.
+RSVP_DEADLINE = 3
 
 class Event(db.Model):
     status  = db.StringProperty(required=True, default='pending', choices=set(
@@ -263,7 +265,7 @@ class Event(db.Model):
           return False
         time_till_event = self.start_time.replace(tzinfo=pytz.timezone('US/Pacific')) - datetime.now(pytz.timezone('US/Pacific'))
         hours = time_till_event.seconds/3600+time_till_event.days*24
-        return (hours > 48)
+        return (hours > RSVP_DEADLINE)
 
     def cancel(self):
         user = users.get_current_user()
