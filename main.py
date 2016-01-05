@@ -323,7 +323,7 @@ def _validate_event(handler, editing_event_id=0, ignore_admin=False,
           years += 1
 
         next_month = start_time.replace(year=years, month=months,
-                                        day=(day_number - 1) * 7)
+                                        day=max((day_number - 1) * 7, 1))
         # Find the specified weekday.
         start_time = find_next_weekday(next_month, day_name)
 

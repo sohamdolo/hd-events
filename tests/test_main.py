@@ -104,7 +104,7 @@ class BaseTest(unittest.TestCase):
 
     # Make a fake dictionary detailing a basic recurring event.
     self.recurring_data = {"frequency": "monthly", "repetitions": 5,
-                           "dayNumber": "3rd", "monthDay": "Monday",
+                           "dayNumber": "1st", "monthDay": "Monday",
                            "weekdaysOnly": False}
 
 
