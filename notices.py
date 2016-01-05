@@ -139,7 +139,13 @@ events@hackerdojo.com
         html=html)
 
 
-def notify_event_change(event,modification=0):
+def notify_event_change(event, modification=False, repeat="Never"):
+  """ Send an email to the event owner when it changes.
+  Args:
+    event: The event that was created/changed.
+    modification: Whether it was modified instead of created.
+    repeat: A description of when the event repeats. The default it 'never'.
+  """
   if (modification):
     subject = "[Event Modified]"
   else:
@@ -148,6 +154,7 @@ def notify_event_change(event,modification=0):
   body="""Event: %s
 Member: %s
 When: %s
+Repeats: %s
 Type: %s
 Size: %s
 Rooms: %s
@@ -164,6 +171,7 @@ http://events.hackerdojo.com/event/%s-%s
     event.name,
     event.member.email(),
     event.human_time(),
+    repeat,
     event.type,
     event.estimated_size,
     event.roomlist(),

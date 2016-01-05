@@ -213,7 +213,8 @@ perform all checks as if they were a normal user. Defaults to False.
 recurring: Whether this is a recurring event or not. Defaults to False.
 Raises a ValueError if it detects a problem.
 Returns: A list of tuples, one for each individual event. Each tuple
-contains the event start time and event end time. """
+contains the event start time and event end time. The second item returned is a
+quick description of the event repetition. """
 def _validate_event(handler, editing_event_id=0, ignore_admin=False,
                     recurring=False):
   """ Find the next weekday after a given date.
@@ -304,6 +305,7 @@ def _validate_event(handler, editing_event_id=0, ignore_admin=False,
         break
 
       frequency = recurrence_data["frequency"]
+      recurring_description = "%d repetitions %s." % (repetitions, frequency)
       if frequency == "monthly":
         day_number = recurrence_data["dayNumber"]
         day_name = recurrence_data["monthDay"]
@@ -347,11 +349,14 @@ def _validate_event(handler, editing_event_id=0, ignore_admin=False,
       end_time = start_time + event_length
       event_times.append((start_time, end_time))
 
+    else:
+      # No repetitions.
+      recurring_description = "Never."
 
   _check_user_can_create(user, event_times, ignore_admin=ignore_admin,
                          editing=editing_event)
 
-  return event_times
+  return event_times, recurring_description
 
 
 """ Makes sure that adding this event won't violate a rule against having more
@@ -740,7 +745,7 @@ class EditHandler(webapp2.RequestHandler):
         access_rights = UserRights(user, event)
         if access_rights.can_edit:
           try:
-            event_times = _validate_event(self, editing_event_id=int(id))
+            event_times, _ = _validate_event(self, editing_event_id=int(id))
             start_time, end_time = event_times[0]
 
             other_member = _get_other_member(self, start_time, end_time)
@@ -1069,8 +1074,8 @@ class NewHandler(webapp2.RequestHandler):
         logging.debug("Submitting recurring event.")
 
       try:
-        event_times = _validate_event(self, ignore_admin=ignore_admin,
-                                      recurring=recurring)
+        event_times, description = _validate_event(self, ignore_admin=ignore_admin,
+                                                   recurring=recurring)
 
         # Since this check is just based on the duration, it doesn't really
         # matter which start and end times we use.
@@ -1118,7 +1123,8 @@ class NewHandler(webapp2.RequestHandler):
         # For obvious reasons, we only notify people about the first event in a
         # recurring series.
         notify_owner_confirmation(first_event)
-        notify_event_change(first_event)
+        notify_event_change(first_event, repeat=description)
+
       set_cookie(self.response.headers, 'formvalues', None)
 
       rules = memcache.get("rules")
