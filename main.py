@@ -435,6 +435,11 @@ def _get_user_wait_time(user):
     # We'll perform the check when they are logged in.
     return 0
 
+  if UserRights(user).is_admin:
+    # If they're an admin, they can do whatever they want.
+    logging.debug("Ignoring 30 day requirement for admin.")
+    return 0
+
   # Make an API request to the signup app to get this information about the
   # user.
   base_url = conf.SIGNUP_URL + "/api/v1/user"
