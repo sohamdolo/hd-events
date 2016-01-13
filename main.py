@@ -1034,11 +1034,11 @@ class NewHandler(webapp2.RequestHandler):
           except Exception, e:
             rules = "Error fetching rules.  Please report this error to internal-dev@hackerdojo.com."
 
-        to_wait = _get_user_wait_time(user)
-        if to_wait:
+        wait_days = _get_user_wait_time(user)
+        if wait_days != 0:
           # They can't create an event yet.
           error = "You must wait %d days before creating an event." % \
-                  (to_wait)
+                  (wait_days)
           logging.warning(error)
           self.response.set_status(401)
           self.response.out.write(template.render('templates/error.html', locals()))
