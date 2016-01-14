@@ -860,6 +860,11 @@ class EventHandler(webapp2.RequestHandler):
             self.response.out.write(template.render('templates/event.html', locals()))
 
     def post(self, id):
+        user = users.get_current_user()
+        # Check that user is still logged in.
+        if not user:
+          self.redirect(users.create_login_url(self.request.uri))
+
         event = Event.get_by_id(int(id))
         action = self.request.get('state')
 
@@ -868,6 +873,8 @@ class EventHandler(webapp2.RequestHandler):
         event.details = db.Text(event.details.replace('\n','<br/>'))
         show_all_nav = users.get_current_user()
         event.notes = db.Text(event.notes.replace('\n','<br/>'))
+
+        wait_days = _get_user_wait_time()
         self.response.out.write(template.render('templates/event.html', locals()))
 
 class ApprovedHandler(webapp2.RequestHandler):
