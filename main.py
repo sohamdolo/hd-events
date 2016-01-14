@@ -1042,7 +1042,8 @@ class NewHandler(webapp2.RequestHandler):
 
     def post(self):
       # Make sure that we are still logged in.
-      if not users.get_current_user():
+      user = users.get_current_user()
+      if not user:
         # Redirect to the login page.
         self.redirect(users.create_login_url(self.request.uri))
         return
@@ -1132,23 +1133,8 @@ class NewHandler(webapp2.RequestHandler):
               memcache.add("rules", rules, 86400)
           except Exception, e:
               rules = "Error fetching rules.  Please report this error to internal-dev@hackerdojo.com."
-      self.response.out.write(template.render('templates/confirmation.html', locals()))
-
-
-class ConfirmationHandler(webapp2.RequestHandler):
-    def get(self, id):
-      event = Event.get_by_id(int(id))
-      rules = memcache.get("rules")
-      if(rules is None):
-          try:
-              rules = urlfetch.fetch("http://wiki.hackerdojo.com/api_v2/op/GetPage/page/Event+Policies/_type/html", "GET").content
-              memcache.add("rules", rules, 86400)
-          except Exception, e:
-              rules = "Error fetching rules.  Please report this error to internal-dev@hackerdojo.com."
-      logout_url = users.create_logout_url('/')
 
       wait_days = _get_user_wait_time()
-
       self.response.out.write(template.render('templates/confirmation.html', locals()))
 
 class LogsHandler(webapp2.RequestHandler):
@@ -1311,7 +1297,6 @@ app = webapp2.WSGIApplication([
         ('/myevents', MyEventsHandler),
         ('/not_approved', NotApprovedHandler),
         ('/new', NewHandler),
-        ('/confirm/(\d+).*', ConfirmationHandler),
         ('/edit/(\d+).*', EditHandler),
         # single event views
         ('/event/(\d+).*', EventHandler),
