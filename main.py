@@ -437,30 +437,40 @@ def _get_user_wait_time():
     logging.debug("Ignoring 30 day requirement for admin.")
     return 0
 
-  # Make an API request to the signup app to get this information about the
-  # user.
-  base_url = conf.SIGNUP_URL + "/api/v1/user"
-  query_str = urllib.urlencode({"email": user.email(),
-                                "properties[]": ["created", "plan"]}, True)
-  response = urlfetch.fetch("%s?%s" % (base_url, query_str),
-                            follow_redirects=False)
-  logging.debug("Got response from signup app: %s" % (response.content))
+  # Check for cached data, which might allow us to avoid an API call.
+  created = memcache.get("created.%s" % user.user_id())
 
-  if response.status_code != 200:
-    logging.error("Failed to fetch user data, status %d." % \
-                  (response.status_code))
-    # Disable it to be safe.
-    return conf.NEW_EVENT_WAIT_PERIOD
+  if not created:
+    # Make an API request to the signup app to get this information about the
+    # user.
+    base_url = conf.SIGNUP_URL + "/api/v1/user"
+    query_str = urllib.urlencode({"email": user.email(),
+                                  "properties[]": ["created", "plan"]}, True)
+    response = urlfetch.fetch("%s?%s" % (base_url, query_str),
+                              follow_redirects=False)
+    logging.debug("Got response from signup app: %s" % (response.content))
 
-  result = json.loads(response.content)
+    if response.status_code != 200:
+      logging.error("Failed to fetch user data, status %d." % \
+                    (response.status_code))
+      # Disable it to be safe.
+      return conf.NEW_EVENT_WAIT_PERIOD
 
-  # Check if we're on a plan that allows event creation.
-  if (result["plan"] == "supporter" or result["plan"] == "lite"):
-    # They cannot create events.
-    logging.info("People on plan '%s' cannot create events." % (result["plan"]))
-    return None
+    result = json.loads(response.content)
 
-  created = pickle.loads(str(result["created"]))
+    # Check if we're on a plan that allows event creation.
+    if (result["plan"] == "supporter" or result["plan"] == "lite"):
+      # They cannot create events.
+      logging.info("People on plan '%s' cannot create events." % (result["plan"]))
+      return None
+
+    created = pickle.loads(str(result["created"]))
+
+    # Cache it for next time.
+    memcache.add("created.%s" % (user.user_id()), created)
+  else:
+    logging.debug("Cache hit for user %s creation time." % (user.email()))
+
   logging.debug("User created at %s." % (created))
 
   # Check to see how long we have left.
