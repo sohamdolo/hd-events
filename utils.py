@@ -84,13 +84,15 @@ def user_is_admin():
     return access_rights.is_admin
 
 class UserRights(object):
-    def __init__(self, user=None, event=None):
-        """Constructor.
+    def __init__(self, event=None):
+        """Constructor
+
+        Keeps track of the things the current logged-on user can and can't do.
 
         Args:
-            user: User() object that you want to perform the check on.
             event: Event() object that you want to perform the check against if applicable.
         """
+        user = users.get_current_user()
 
         self.quick_edit = False
         self.user = user
@@ -105,15 +107,7 @@ class UserRights(object):
         self.can_staff = False
         self.can_unstaff = False
 
-        if Config().is_prod:
-          if self.user:
-              events_users = dojo('/groups/events', force=False)
-              if not events_users:
-                logging.error("Failed to load events group data.")
-              self.is_admin = username(self.user) in events_users
-        else:
-          # Don't make outside requests if we are running unit tests.
-          self.is_admin = users.is_current_user_admin()
+        self.is_admin = users.is_current_user_admin()
 
         if self.event:
             """ Allow people 30 minutes to do quick edits, like deletion. """

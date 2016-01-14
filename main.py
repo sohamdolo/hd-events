@@ -74,7 +74,6 @@ def _get_other_member(handler, start_time, end_time):
 
 """ Checks that this particular user is clear to create an event. Mainly, this
 means that they don't have too many future events already scheduled.
-user: The user we are checking for. (GAE User() object.)
 event_times: A list of tuples, with each tuple containing the start and end
 times for a particular event. These are the events that we are checking if we
 can create.
@@ -82,12 +81,12 @@ ignore_admin: Forces it to always perform the check as if the user were a
 regular user. Defaults to False.
 editing: The event that we are editing, if we are editing one. Defaults to
 None. """
-def _check_user_can_create(user, event_times, ignore_admin=False,
-                           editing=None):
+def _check_user_can_create(event_times, ignore_admin=False, editing=None):
   logging.debug("User wants to add %d events." % (len(event_times)))
 
   # If they are an admin, they can do whatever they want.
-  user_status = UserRights(user)
+  user = users.get_current_user()
+  user_status = UserRights()
   if (not ignore_admin and user_status.is_admin):
     logging.info("User %s is admin, not performing checks." % (user.email()))
     return
@@ -235,7 +234,6 @@ def _validate_event(handler, editing_event_id=0, ignore_admin=False,
       days_ahead += 7
     return date + timedelta(days_ahead)
 
-  user = users.get_current_user()
   start_time = datetime.strptime('%s %s:%s %s' % (
       handler.request.get('start_date'),
       handler.request.get('start_time_hour'),
@@ -274,7 +272,7 @@ def _validate_event(handler, editing_event_id=0, ignore_admin=False,
   for i in range(0, repetitions):
     logging.debug("Next event starting at: %s" % (start_time))
 
-    _check_one_event_per_day(user, start_time, editing=editing_event,
+    _check_one_event_per_day(start_time, editing=editing_event,
                              ignore_admin=ignore_admin)
 
     if conflicts:
@@ -353,7 +351,7 @@ def _validate_event(handler, editing_event_id=0, ignore_admin=False,
       # No repetitions.
       recurring_description = "Never."
 
-  _check_user_can_create(user, event_times, ignore_admin=ignore_admin,
+  _check_user_can_create(event_times, ignore_admin=ignore_admin,
                          editing=editing_event)
 
   return event_times, recurring_description
@@ -362,17 +360,15 @@ def _validate_event(handler, editing_event_id=0, ignore_admin=False,
 """ Makes sure that adding this event won't violate a rule against having more
 than one event per day during Dojo hours. There are, of course, exceptions to
 this rule for anyone on the @events team.
-user: The user that is creating this event.
 start_time: The proposed start time of the event.
 ignore_admin: Forces it to always perform the check as if the user were a normal
 user. Defaults to False.
 editing: The event we are editing, if we are editing. """
-def _check_one_event_per_day(user, start_time, editing=None,
-                             ignore_admin=False):
+def _check_one_event_per_day(start_time, editing=None, ignore_admin=False):
   # If we're an admin, we can do anything we want.
-  user_status = UserRights(user)
+  user_status = UserRights()
   if (not ignore_admin and user_status.is_admin):
-    logging.info("User %s is admin, not performing check." % (user.email()))
+    logging.info("User is admin, not performing check.")
     return
 
   # If it is on a weekend, we shouldn't check either.
@@ -421,21 +417,22 @@ def _check_one_event_per_day(user, start_time, editing=None,
 
 
 """ Figure out how many days a user must wait before they can create an event,
-or if they can't create an event at all.
-user: The user we are getting information for.
+or if they can't create an event at all. It performs this check for the current
+logged-on user.
 Returns: How many more days the user must wait to create an event, or None if
 they are on a plan that does not allow event creation. """
-def _get_user_wait_time(user):
+def _get_user_wait_time():
   conf = Config()
   if not conf.is_prod:
     # Don't do this check if we're not on the production server.
     return 0
 
+  user = users.get_current_user()
   if not user:
     # We'll perform the check when they are logged in.
     return 0
 
-  if UserRights(user).is_admin:
+  if UserRights().is_admin:
     # If they're an admin, they can do whatever they want.
     logging.debug("Ignoring 30 day requirement for admin.")
     return 0
@@ -477,13 +474,13 @@ def _get_user_wait_time(user):
 """ Performs an action on a single event.
 event: The event object that we are working with.
 action: A string specifying the action to perform.
-user: The user who is performing this action. (User() object.)
 check: If True, the it will check whether the action can be run, but won't
 actually run it.
 Returns: True if the action is performed or can be performed, False otherwise.
 """
-def _do_event_action(event, action, user, check=False):
-  access_rights = UserRights(user, event)
+def _do_event_action(event, action, check=False):
+  user = users.get_current_user()
+  access_rights = UserRights(event)
 
   desc = ''
   todo = None
@@ -724,30 +721,28 @@ class ExportHandler(webapp2.RequestHandler):
 class EditHandler(webapp2.RequestHandler):
     def get(self, id):
         event = Event.get_by_id(int(id))
-        user = users.get_current_user()
-        show_all_nav = user
-        access_rights = UserRights(user, event)
+        show_all_nav = users.get_current_user()
+        access_rights = UserRights(event)
         if access_rights.can_edit:
             logout_url = users.create_logout_url('/')
             rooms = ROOM_OPTIONS
             hours = [1,2,3,4,5,6,7,8,9,10,11,12]
 
-            wait_days = _get_user_wait_time(user)
+            wait_days = _get_user_wait_time()
 
             self.response.out.write(template.render('templates/edit.html', locals()))
         else:
             self.response.out.write("Access denied")
 
     def post(self, id):
-        # Make sure that we are still logged in.
-        if not users.get_current_user():
-          # Redirect to the login page.
+        user = users.get_current_user()
+        # Check login.
+        if not user:
           self.redirect(users.create_login_url(self.request.uri))
           return
 
         event = Event.get_by_id(int(id))
-        user = users.get_current_user()
-        access_rights = UserRights(user, event)
+        access_rights = UserRights(event)
         if access_rights.can_edit:
           try:
             event_times, _ = _validate_event(self, editing_event_id=int(id))
@@ -825,7 +820,6 @@ class EditHandler(webapp2.RequestHandler):
           log = HDLog(event=event,description="Event edited<br />"+log_desc)
           log.put()
           show_all_nav = user
-          access_rights = UserRights(user, event)
           if access_rights.can_edit:
             logout_url = users.create_logout_url('/')
             rooms = ROOM_OPTIONS
@@ -852,28 +846,27 @@ class EventHandler(webapp2.RequestHandler):
         else:
             user = users.get_current_user()
             if user:
-                access_rights = UserRights(user, event)
+                access_rights = UserRights(event)
                 logout_url = users.create_logout_url('/')
-
             else:
                 login_url = users.create_login_url('/')
+
             event.details = db.Text(event.details.replace('\n','<br/>'))
             show_all_nav = user
             event.notes = db.Text(event.notes.replace('\n','<br/>'))
 
-            wait_days = _get_user_wait_time(user)
+            wait_days = _get_user_wait_time()
 
             self.response.out.write(template.render('templates/event.html', locals()))
 
     def post(self, id):
         event = Event.get_by_id(int(id))
-        user = users.get_current_user()
         action = self.request.get('state')
 
-        _do_event_action(event, action, user)
+        _do_event_action(event, action)
 
         event.details = db.Text(event.details.replace('\n','<br/>'))
-        show_all_nav = user
+        show_all_nav = users.get_current_user()
         event.notes = db.Text(event.notes.replace('\n','<br/>'))
         self.response.out.write(template.render('templates/event.html', locals()))
 
@@ -892,9 +885,9 @@ class ApprovedHandler(webapp2.RequestHandler):
         if self.request.get('base'):
             whichbase = self.request.get('base') + '.html'
 
-        wait_days = _get_user_wait_time(user)
+        wait_days = _get_user_wait_time()
 
-        user_rights = UserRights(user)
+        user_rights = UserRights()
         is_admin = user_rights.is_admin
         hide_checkboxes = True
         self.response.out.write(template.render('templates/approved.html', locals()))
@@ -913,7 +906,7 @@ class MyEventsHandler(webapp2.RequestHandler):
         today = local_today()
         tomorrow = today + timedelta(days=1)
 
-        wait_days = _get_user_wait_time(user)
+        wait_days = _get_user_wait_time()
 
         hide_checkboxes = True
         self.response.out.write(template.render('templates/myevents.html', locals()))
@@ -931,7 +924,7 @@ class PastHandler(webapp2.RequestHandler):
         events = db.GqlQuery("SELECT * FROM Event WHERE start_time < :1 ORDER" \
                              " BY start_time DESC LIMIT 100", today)
 
-        wait_days = _get_user_wait_time(user)
+        wait_days = _get_user_wait_time()
 
         self.response.out.write(template.render('templates/past.html', locals()))
 
@@ -948,9 +941,9 @@ class NotApprovedHandler(webapp2.RequestHandler):
         show_all_nav = user
         events = Event.get_recent_not_approved_list()
 
-        wait_days = _get_user_wait_time(user)
+        wait_days = _get_user_wait_time()
 
-        user_rights = UserRights(user)
+        user_rights = UserRights()
         is_admin = user_rights.is_admin
         self.response.out.write(template.render('templates/not_approved.html', locals()))
 
@@ -974,9 +967,9 @@ class AllFutureHandler(webapp2.RequestHandler):
         today = local_today()
         tomorrow = today + timedelta(days=1)
 
-        wait_days = _get_user_wait_time(user)
+        wait_days = _get_user_wait_time()
 
-        user_rights = UserRights(user)
+        user_rights = UserRights()
         is_admin = user_rights.is_admin
         self.response.out.write(template.render('templates/all_future.html', locals()))
 
@@ -992,7 +985,7 @@ class LargeHandler(webapp2.RequestHandler):
         today = local_today()
         tomorrow = today + timedelta(days=1)
 
-        wait_days = _get_user_wait_time(user)
+        wait_days = _get_user_wait_time()
 
         self.response.out.write(template.render('templates/large.html', locals()))
 
@@ -1009,9 +1002,9 @@ class PendingHandler(webapp2.RequestHandler):
         today = local_today()
         tomorrow = today + timedelta(days=1)
 
-        wait_days = _get_user_wait_time(user)
+        wait_days = _get_user_wait_time()
 
-        user_rights = UserRights(user)
+        user_rights = UserRights()
         is_admin = user_rights.is_admin
         self.response.out.write(template.render('templates/pending.html', locals()))
 
@@ -1034,7 +1027,7 @@ class NewHandler(webapp2.RequestHandler):
           except Exception, e:
             rules = "Error fetching rules.  Please report this error to internal-dev@hackerdojo.com."
 
-        wait_days = _get_user_wait_time(user)
+        wait_days = _get_user_wait_time()
         if wait_days != 0:
           # They can't create an event yet.
           error = "You must wait %d days before creating an event." % \
@@ -1044,7 +1037,7 @@ class NewHandler(webapp2.RequestHandler):
           self.response.out.write(template.render('templates/error.html', locals()))
           return
 
-        is_admin = UserRights(user).is_admin
+        is_admin = UserRights().is_admin
         self.response.out.write(template.render('templates/new.html', locals()))
 
     def post(self):
@@ -1152,10 +1145,9 @@ class ConfirmationHandler(webapp2.RequestHandler):
               memcache.add("rules", rules, 86400)
           except Exception, e:
               rules = "Error fetching rules.  Please report this error to internal-dev@hackerdojo.com."
-      user = users.get_current_user()
       logout_url = users.create_logout_url('/')
 
-      wait_days = _get_user_wait_time(user)
+      wait_days = _get_user_wait_time()
 
       self.response.out.write(template.render('templates/confirmation.html', locals()))
 
@@ -1170,21 +1162,17 @@ class LogsHandler(webapp2.RequestHandler):
             login_url = users.create_login_url('/')
         show_all_nav = user
 
-        wait_days = _get_user_wait_time(user)
+        wait_days = _get_user_wait_time()
 
         self.response.out.write(template.render('templates/logs.html', locals()))
 
 class FeedbackHandler(webapp2.RequestHandler):
     @util.login_required
     def get(self, id):
-        user = users.get_current_user()
         event = Event.get_by_id(int(id))
-        if user:
-            logout_url = users.create_logout_url('/')
-        else:
-            login_url = users.create_login_url('/')
+        logout_url = users.create_logout_url('/')
 
-        wait_days = _get_user_wait_time(user)
+        wait_days = _get_user_wait_time()
 
         self.response.out.write(template.render('templates/feedback.html', locals()))
 
@@ -1273,12 +1261,10 @@ class BulkActionHandler(BulkActionCommon):
 
     events = self._get_events()
 
-    user = users.get_current_user()
-
     # Perform the action on all the events.
     logging.debug("Performing bulk action: %s" % (action))
     for event in events:
-      if not _do_event_action(event, action, user):
+      if not _do_event_action(event, action):
         logging.warning("Performing action '%s' failed." % (action))
         self.response.set_status(400)
         return
@@ -1296,15 +1282,13 @@ class BulkActionCheckHandler(BulkActionCommon):
   def post(self):
     events = self._get_events()
 
-    user = users.get_current_user()
-
     # See what actions can be performed on all the events.
     possible_actions = ["approve", "notapproved", "onhold", "delete"]
     bad_actions = []
     for event in events:
       to_remove = []
       for action in possible_actions:
-        if not _do_event_action(event, action, user, check=True):
+        if not _do_event_action(event, action, check=True):
           # This action cannot be performed.
           bad_actions.append(action)
           to_remove.append(action)
