@@ -51,15 +51,19 @@ class BaseTest(unittest.TestCase):
   events: How many events to create.
   offset: Specify how many days beyond the current day to create the first
   event.
+  time: Specify the hour at which the events start.
   Returns: A list of the events created. """
-  def _make_events(self, events, offset=1):
-    start = datetime.datetime.now() + datetime.timedelta(days=offset)
+  def _make_events(self, events, offset=1, time=12):
+    start = datetime.datetime.now()
+    start.replace(hour=time)
+    start += datetime.timedelta(days=offset)
     made_events = []
     for i in range(0, events):
       event = models.Event(name="Test Event", start_time=start,
                            end_time=start + datetime.timedelta(hours=1),
                            type="Meetup", estimated_size="10", setup=15,
-                           teardown=15, details="This is a test event.")
+                           teardown=15, details="This is a test event.",
+                           rooms = [models.ROOM_OPTIONS[0][0]])
       event.put()
       made_events.append(event)
 
@@ -95,7 +99,7 @@ class BaseTest(unittest.TestCase):
                    "end_time_ampm": "PM",
                    "setup": "15",
                    "teardown": "15",
-                   "rooms": "Classroom",
+                   "rooms": models.ROOM_OPTIONS[0][0],
                    "details": "This is a test event.",
                    "estimated_size": "10",
                    "name": "Test Event",
@@ -470,6 +474,24 @@ class NewHandlerTest(BaseTest):
 
     self.assertIn("within a 4-week period", response.body)
 
+  """ Tests that it properly detects room conflicts with recurring events. """
+  def test_recurring_event_conflicts(self):
+    # Put some events in the datastore for it to conflict with.
+    self._make_events(2, offset=1, time=18)
+
+    recurring_data = self.recurring_data.copy()
+    params = self.params.copy()
+    recurring_data["repetitions"] = 2
+    recurring_data["frequency"] = "daily"
+    params["recurring-data"] = json.dumps(recurring_data)
+    params["recurring"] = True
+    params["start_time_hour"] = 6
+    params["end_time_hour"] = 8
+
+    response = self.test_app.post("/new", params, expect_errors=True)
+    self.assertEqual(400, response.status_int)
+
+    self.assertIn("Room conflict", response.body)
 
 """ Tests that the edit event handler works properly. """
 class EditHandlerTest(BaseTest):

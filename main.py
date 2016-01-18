@@ -244,13 +244,19 @@ def _validate_event(handler, editing_event_id=0, ignore_admin=False,
       handler.request.get('end_time_hour'),
       handler.request.get('end_time_minute'),
       handler.request.get('end_time_ampm')), '%m/%d/%Y %I:%M %p')
-  conflicts = Event.check_conflict(
-      start_time,end_time,
-      handler.request.get('setup'),
-      handler.request.get('teardown'),
-      handler.request.get_all('rooms'),
-      optional_existing_event_id=editing_event_id
-  )
+
+  if not handler.request.get('details'):
+    raise ValueError('You must provide a description of the event')
+  if not handler.request.get('estimated_size').isdigit():
+    raise ValueError('Estimated number of people must be a number')
+  if not int(handler.request.get('estimated_size')) > 0:
+    raise ValueError('Estimated number of people must be greater then zero')
+  if (end_time-start_time).days < 0:
+    raise ValueError('End time must be after start time')
+  if (handler.request.get('contact_phone') and not is_phone_valid(handler.request.get('contact_phone'))):
+    raise ValueError('Phone number does not appear to be valid')
+  if not handler.request.get_all('rooms'):
+    raise ValueError('You must select a room to reserve.')
 
   # Get the number of times it repeats.
   if recurring:
@@ -274,27 +280,6 @@ def _validate_event(handler, editing_event_id=0, ignore_admin=False,
 
     _check_one_event_per_day(start_time, editing=editing_event,
                              ignore_admin=ignore_admin)
-
-    if conflicts:
-      if ("Deck" in handler.request.get_all('rooms') or \
-          "Savanna" in handler.request.get_all('rooms')):
-        raise ValueError('Room conflict detected <small>(Note: Deck &amp;' \
-                          ' Savanna share the same area, two events cannot take' \
-                          ' place at the same time in these rooms.)</small>')
-      else:
-        raise ValueError('Room conflict detected')
-    if not handler.request.get('details'):
-      raise ValueError('You must provide a description of the event')
-    if not handler.request.get('estimated_size').isdigit():
-      raise ValueError('Estimated number of people must be a number')
-    if not int(handler.request.get('estimated_size')) > 0:
-      raise ValueError('Estimated number of people must be greater then zero')
-    if (end_time-start_time).days < 0:
-      raise ValueError('End time must be after start time')
-    if (handler.request.get('contact_phone') and not is_phone_valid(handler.request.get('contact_phone'))):
-      raise ValueError('Phone number does not appear to be valid')
-    if not handler.request.get_all('rooms'):
-      raise ValueError('You must select a room to reserve.')
 
     # Figure out the start and end time of the next event.
     if recurring:
@@ -350,6 +335,25 @@ def _validate_event(handler, editing_event_id=0, ignore_admin=False,
     else:
       # No repetitions.
       recurring_description = "Never."
+
+  # Check that none of the events have conflicts.
+  for start_time, end_time in event_times:
+    conflicts = Event.check_conflict(
+      start_time,end_time,
+      handler.request.get('setup'),
+      handler.request.get('teardown'),
+      handler.request.get_all('rooms'),
+      optional_existing_event_id=editing_event_id
+    )
+
+    if conflicts:
+      if ("Deck" in handler.request.get_all('rooms') or \
+          "Savanna" in handler.request.get_all('rooms')):
+        raise ValueError('Room conflict detected <small>(Note: Deck &amp;' \
+                          ' Savanna share the same area, two events cannot take' \
+                          ' place at the same time in these rooms.)</small>')
+      else:
+        raise ValueError('Room conflict detected')
 
   _check_user_can_create(event_times, ignore_admin=ignore_admin,
                          editing=editing_event)
