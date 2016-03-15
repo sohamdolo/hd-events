@@ -11,7 +11,7 @@ from google.appengine.ext import db
 import webapp2
 
 from config import Config
-from models import Event
+from models import Event, HDLog
 
 
 """ Generic superclass for all API Handlers. """
@@ -110,6 +110,13 @@ class StatusChangeHandler(ApiHandlerBase):
       event_future = db.put_async(event)
       future_puts.append(event_future)
 
+      # Write a log of it.
+      log_entry = HDLog(event=event,
+                        description="Put event on hold \
+                                     because owner was suspended.")
+      log_entry_future = db.put_async(log_entry)
+      future_puts.append(log_entry_future)
+
     # Wait for all the writes to finish.
     logging.debug("Waiting for all writes to finish...")
     for future_put in future_puts:
@@ -130,6 +137,13 @@ class StatusChangeHandler(ApiHandlerBase):
       event.owner_suspended_time = None
       event_future = db.put_async(event)
       future_puts.append(event_future)
+
+      # Write a log of it.
+      log_entry = HDLog(event=event,
+                        description="Restoring event because \
+                                    owner is now active.")
+      log_entry_future = db.put_async(log_entry)
+      future_puts.append(log_entry_future)
 
     # Wait for all the writes to finish.
     logging.debug("Waiting for all writes to finish...")

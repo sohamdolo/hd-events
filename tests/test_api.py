@@ -48,6 +48,13 @@ class StatusChangeHandlerTest(BaseTest):
 
     self.event_id = event.key().id()
 
+  """ Gets the most recent log pertaining to this event.
+  Args:
+    event: The event that we want logs pertaining to. """
+  def __get_latest_log(self, event):
+    return db.GqlQuery("SELECT * FROM HDLog WHERE event = :1 \
+                        ORDER BY created DESC", event).get()
+
   """ Tests that it correctly puts the event on hold and restores it. """
   def test_hold_and_restore(self):
     # Put the event on hold.
@@ -59,6 +66,10 @@ class StatusChangeHandlerTest(BaseTest):
     self.assertNotEqual(None, event.owner_suspended_time)
     self.assertEqual("pending", event.original_status)
 
+    # Check that it was logged.
+    log_event = self.__get_latest_log(event)
+    self.assertIn("event on hold", log_event.description)
+
     # Restore the event.
     params = self.params.copy()
     params["status"] = "active"
@@ -69,6 +80,9 @@ class StatusChangeHandlerTest(BaseTest):
     self.assertEqual("pending", event.status)
     self.assertEqual(None, event.owner_suspended_time)
     self.assertEqual(None, event.original_status)
+
+    log_event = self.__get_latest_log(event)
+    self.assertIn("Restoring event", log_event.description)
 
   """ Tests that it ignores certain status changes. """
   def test_ignore_status(self):
