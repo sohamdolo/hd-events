@@ -1040,13 +1040,6 @@ class NewHandler(webapp2.RequestHandler):
         else:
             login_url = users.create_login_url('/')
         rooms = ROOM_OPTIONS
-        rules = memcache.get("rules")
-        if(rules is None):
-          try:
-            rules = urlfetch.fetch("http://wiki.hackerdojo.com/api_v2/op/GetPage/page/Event+Policies/_type/html", "GET").content
-            memcache.add("rules", rules, 86400)
-          except Exception, e:
-            rules = "Error fetching rules.  Please report this error to internal-dev@hackerdojo.com."
 
         wait_days = _get_user_wait_time()
         if wait_days != 0:
@@ -1146,14 +1139,6 @@ class NewHandler(webapp2.RequestHandler):
         notify_event_change(first_event, repeat=description)
 
       set_cookie(self.response.headers, 'formvalues', None)
-
-      rules = memcache.get("rules")
-      if(rules is None):
-          try:
-              rules = urlfetch.fetch("http://wiki.hackerdojo.com/api_v2/op/GetPage/page/Event+Policies/_type/html", "GET").content
-              memcache.add("rules", rules, 86400)
-          except Exception, e:
-              rules = "Error fetching rules.  Please report this error to internal-dev@hackerdojo.com."
 
       wait_days = _get_user_wait_time()
       self.response.out.write(template.render('templates/confirmation.html', locals()))
