@@ -49,9 +49,11 @@
 
     {% include 'recurring_event.html' %}
 
-    <h4>Event Name</h4>
+    <div>Mandatory fields are indicated with *</div>
+
+    <h4>Event Name*</h4>
     <input type="text" name="name" id="event_name" />
-    <h4>When</h4>
+    <h4>When*</h4>
     <table style="margin-bottom: 20px;">
       <tr>
         <td>
@@ -66,13 +68,13 @@
     <table style="margin: 0px;">
       <tr>
         <td>
-          <label class="inline-label" for="start_date">Start Date</label>
+          <label class="inline-label" for="start_date">Start Date*</label>
           <input name="start_date" id="start_date" placeholder="Select start date..." readonly="readonly"/>
         </td>
       </tr>
       <tr>
         <td>
-          <label class="inline-label" for="start_time">Start Time</label>
+          <label class="inline-label" for="start_time">Start Time*</label>
           <select name="start_time_hour">
             <option>1</option>
             <option>2</option>
@@ -101,13 +103,13 @@
       </tr>
       <tr>
         <td>
-          <label class="inline-label" for="end_date">End Date</label>
+          <label class="inline-label" for="end_date">End Date*</label>
           <input name="end_date" id="end_date" placeholder="Select end date..." class="datepicker" readonly="readonly"/>
         </td>
       </tr>
       <tr>
         <td>
-          <label class="inline-label" for="end_time">End Time</label>
+          <label class="inline-label" for="end_time">End Time*</label>
           <select name="end_time_hour">
             <option>1</option>
             <option>2</option>
@@ -136,7 +138,7 @@
       </tr>
       <tr>
         <td>
-          <label class="inline-label">Setup Time</label>
+          <label class="inline-label">Setup Time*</label>
           <select name="setup" id="setup">
             <option {{event.setup|select:15}}>15</option>
             <option {{event.setup|select:30}}>30</option>
@@ -147,7 +149,7 @@
       </tr>
       <tr>
         <td>
-          <label class="inline-label">Teardown Time</label>
+          <label class="inline-label">Teardown Time*</label>
           <select name="teardown" id="teardown">
             <option {{event.setup|select:15}}>15</option>
             <option {{event.setup|select:30}}>30</option>
@@ -158,11 +160,11 @@
       </tr>
     </table>
 
-    <h4>Where</h4>
+    <h4>Where*</h4>
     <table>
       <tr>
         <td>
-          <label for="details">Requested Rooms</label>
+          <label for="details">Requested Rooms*</label>
           <span>(Capacity in parentheses)</span><br />
           {% for room in rooms %}
           <nobr><input type="checkbox" id="room-{{room.0|strip_spaces}}" name="rooms" value="{{room.0}}" /><label for="room-{{room.0}}">{{room.0|title}} ({{room.1}})</label></nobr>
@@ -171,11 +173,11 @@
       </tr>
     </table>
 
-    <h4>Type of Event</h4>
+    <h4>Type of Event*</h4>
     <table style="margin: 0px;">
       <tr>
         <td>
-          <label for="type">Category</label><br>
+          <label for="type">Category*</label><br>
           <select name="type" id="type-select" onchange="if(this.value=='Other...'){showOther();$('#type-text').focus()}">
             <option>Meetup</option>
             <option>Hackathon</option>
@@ -192,7 +194,7 @@
       </tr>
       <tr>
         <td>
-          <label for="estimated_size" title="This will become a HARD LIMIT on your event.">Max estimated persons attending</label><br>
+          <label for="estimated_size" title="This will become a HARD LIMIT on your event.">Max estimated persons attending*</label><br>
           <input type="text" name="estimated_size" id="estimated_size" style="text-align: right;" />
         </td>
       </tr>
@@ -224,7 +226,7 @@
       <table style="margin: 0px;">
         <tr>
           <td id="details">
-            <label for="details">Event details<br/>
+            <label for="details">Event details*<br/>
               <span>Since all events are open to attendance by Hacker Dojo members, please describe your event.</span>
             </label>
             <textarea rows="5" name="details"></textarea>
