@@ -10,10 +10,10 @@ import re
 from config import Config
 
 ROOM_OPTIONS = (
-    ('Maker Space', 12),
+    # ('Maker Space', 12),
     ('Classroom', 16),
-    ('Conference Room', 10),
-    ('Large Event Room', 60),
+    # ('Conference Room', 10),
+    ('Large Event Room', 80),
     ('Loungey', 30),
   )
 

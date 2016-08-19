@@ -56,9 +56,10 @@ class BaseTest(unittest.TestCase):
   def _make_events(self, events, offset=1, time=12):
     start = datetime.datetime.now()
     start.replace(hour=time)
-    start += datetime.timedelta(days=offset)
+    # start += datetime.timedelta(days=offset)
     made_events = []
     for i in range(0, events):
+      start += datetime.timedelta(days=offset)
       event = models.Event(name="Test Event", start_time=start,
                            end_time=start + datetime.timedelta(hours=1),
                            type="Meetup", estimated_size="10", setup=15,

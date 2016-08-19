@@ -1,289 +1,336 @@
 {% extends 'base.html' %}
 {% block content %}
-<script type="text/javascript" src="/static/js/new.js?v=2"></script>
+    <script type="text/javascript" src="/static/js/new.js?v=2"></script>
 
-<div id="primary">
-  <h3>New Event Request</h3>
+    <div id="primary">
+        <h3>New Event Request</h3>
 
-  <div id="warn" class="alert alert-warning"><b>{{human}}</b> will be held personally responsible for this event. You must show up and ensure the rules below are followed.  Failure to make a good faith effort will result in suspension of event hosting privileges for 45 days.<br><br>Requests <b>should not be considered approved</b> until visible on the publicHacker Dojo Events Calendar.</div>
-  <div style="margin:4px; margin-bottom:1.5em; padding:8px; color: black; display:none; border:1px solid red; background:#fee;  " id="error"></div>
+        <div id="warn" class="alert alert-warning"><b>{{ human }}</b> will be held personally responsible for this event. You must show up and ensure
+            the rules below are followed. Failure to make a good faith effort will result in suspension of event hosting privileges for 45
+            days.<br><br>Requests <b>should not be considered approved</b> until visible on the publicHacker Dojo Events Calendar.
+        </div>
+        <div style="margin:4px; margin-bottom:1.5em; padding:8px; color: black; display:none; border:1px solid red; background:#fee;  "
+             id="error"></div>
 
-  <div style="width: 46%; float: right; font-size: smaller; padding: 8px; -moz-border-radius: 8px; -webkit-border-radius: 8px; background: #eee; line-height: normal;" id="terms">
+        <div style="width: 46%; float: right; font-size: smaller; padding: 8px; -moz-border-radius: 8px; -webkit-border-radius: 8px; background: #eee; line-height: normal;"
+             id="terms">
 
-<p><strong>Before the Event:</strong></p>
-<ol><li><span style="text-decoration:underline;">Approval.</span> The event must be approved by events@ (a member run group). Please do not advertise your event externally until it has been approved.</li>
-<li><span style="text-decoration:underline;">Set up.</span>&nbsp; It is up to you to locate the location of projectors or other supplies you may need to run your event. Additionally, if you want the room arranged in a specific way that is something you need to do yourself. If you need a large chunk of set up time, it is suggested that you create a separate event to do so.</li>
-<li><span style="text-decoration:underline;">RSVP.</span>&nbsp;Members can RSVP to an event host at least up to 48 hours in advance to reserve space to attend. If an event has space left after considering RSVPs, members can be in it with or without a reservation.</li>
-<li><span style="text-decoration:underline;">Cancellation.</span> If you need to cancel your event for whatever reason, it is your responsibility to do so both in the Hacker Dojo event system, as well as any external event systems.</li>
-<li><span style="text-decoration:underline;">Dojo Branding.</span> Any event with the name “Hacker Dojo” in the title must be approved by the board of directors.</li>
-<li><span style="text-decoration:underline;">NDAs.</span> <span style="color:#222222;font-family:arial, sans-serif;">Events may not require an NDA to attend.</span>&nbsp;</li>
-</ol><p>&nbsp;</p>
-<p><strong>During the Event:</strong></p>
-<ol><li><span style="text-decoration:underline;">Parking.</span> We have strict parking rules that you need to convey to your guests. If your event is large enough you may need a staff member to direct parking.</li>
-<li><span style="text-decoration:underline;">Sign-in.</span> All event attendees are required to sign in at the front desk for liability reasons.</li>
-<li><span style="text-decoration:underline;">Presence.</span> You must be present during your entire event.</li>
-<li><span style="text-decoration:underline;">Right to Charge.</span> Event hosts may charge for events and materials provided, provided they understand that Dojo members may sit in without paying.</li>
-<li><span style="text-decoration:underline;">Member Rights.</span> No portion of the Dojo is ever closed to members, and they have the right to attend your event for free. This does not mean that they are entitled to tangible resources such as food, class supplies, etc.</li>
-</ol><p>&nbsp;</p>
-<p><strong>After the Event:</strong></p>
-<ol><li><span style="text-decoration:underline;">Cleanup.</span> You must leave Hacker Dojo in the condition you found it in. This includes hauling away excess garbage that does not fit in the dumpster. South Bay Haul Away (408-661-1743) is a company event hosts have enjoyed working with in the the past.</li>
-<li><span style="text-decoration:underline;">Damages.</span> You are held responsible for any damages to Dojo facilities during your event.</li>
-<li><span style="text-decoration:underline;">Supplies.</span> Please refill supplies consumed, especially if yours is a large event as your guests will be using shared resources such as toilet paper, paper towels, and more.</li>
-<li><span style="text-decoration:underline;">Structured Layout Rooms.</span> A structured layout room is a room where the furniture is a) recommended not be moved and b) the layout of the room (furniture and similar) must be returned to how it was after use. These rooms include the Electronics Lab and the Gaming Nook in Savanna.</li>
-</ol>
-  </div>
+            <p><strong>Before the Event:</strong></p>
+            <ol>
+                <li><span style="text-decoration:underline;">Approval.</span> The event must be approved by events@ (a member run group). Please do
+                    not advertise your event externally until it has been approved.
+                </li>
+                <li><span style="text-decoration:underline;">Set up.</span>&nbsp; It is up to you to locate the location of projectors or other
+                    supplies you may need to run your event. Additionally, if you want the room arranged in a specific way that is something you need
+                    to do yourself. If you need a large chunk of set up time, it is suggested that you create a separate event to do so.
+                </li>
+                <li><span style="text-decoration:underline;">RSVP.</span>&nbsp;Members can RSVP to an event host at least up to 48 hours in advance to
+                    reserve space to attend. If an event has space left after considering RSVPs, members can be in it with or without a reservation.
+                </li>
+                <li><span style="text-decoration:underline;">Cancellation.</span> If you need to cancel your event for whatever reason, it is your
+                    responsibility to do so both in the Hacker Dojo event system, as well as any external event systems.
+                </li>
+                <li><span style="text-decoration:underline;">Dojo Branding.</span> Any event with the name “Hacker Dojo” in the title must be approved
+                    by the board of directors.
+                </li>
+                <li><span style="text-decoration:underline;">NDAs.</span> <span style="color:#222222;font-family:arial, sans-serif;">Events may not require an NDA to attend.</span>&nbsp;
+                </li>
+            </ol>
+            <p>&nbsp;</p>
+            <p><strong>During the Event:</strong></p>
+            <ol>
+                <li><span style="text-decoration:underline;">Parking.</span> We have strict parking rules that you need to convey to your guests. If
+                    your event is large enough you may need a staff member to direct parking.
+                </li>
+                <li><span style="text-decoration:underline;">Sign-in.</span> All event attendees are required to sign in at the front desk for
+                    liability reasons.
+                </li>
+                <li><span style="text-decoration:underline;">Presence.</span> You must be present during your entire event.</li>
+                <li><span style="text-decoration:underline;">Right to Charge.</span> Event hosts may charge for events and materials provided,
+                    provided they understand that Dojo members may sit in without paying.
+                </li>
+                <li><span style="text-decoration:underline;">Member Rights.</span> No portion of the Dojo is ever closed to members, and they have the
+                    right to attend your event for free. This does not mean that they are entitled to tangible resources such as food, class supplies,
+                    etc.
+                </li>
+            </ol>
+            <p>&nbsp;</p>
+            <p><strong>After the Event:</strong></p>
+            <ol>
+                <li><span style="text-decoration:underline;">Cleanup.</span> You must leave Hacker Dojo in the condition you found it in. This
+                    includes hauling away excess garbage that does not fit in the dumpster. South Bay Haul Away (408-661-1743) is a company event
+                    hosts have enjoyed working with in the the past.
+                </li>
+                <li><span style="text-decoration:underline;">Damages.</span> You are held responsible for any damages to Dojo facilities during your
+                    event.
+                </li>
+                <li><span style="text-decoration:underline;">Supplies.</span> Please refill supplies consumed, especially if yours is a large event as
+                    your guests will be using shared resources such as toilet paper, paper towels, and more.
+                </li>
+                <li><span style="text-decoration:underline;">Structured Layout Rooms.</span> A structured layout room is a room where the furniture is
+                    a) recommended not be moved and b) the layout of the room (furniture and similar) must be returned to how it was after use. These
+                    rooms include the Electronics Lab and the Gaming Nook in Savanna.
+                </li>
+            </ol>
+        </div>
 
-  <form method="post" style="width: 49%;">
-    {% if is_admin %}
-    <table style="margin-bottom: 20px;">
-      <tr>
-        <td>
-          <input type="checkbox" name="regular_user" />
-        </td>
-        <td>
-          <label for="regular_user" style="margin-left: 8px;">Submit event as regular user. (Will not be saved.)</label>
-        </td>
-      </tr>
-    </table>
-    {% endif %}
+        <form method="post" style="width: 49%;">
+            {% if is_admin %}
+                <table style="margin-bottom: 20px;">
+                    <tr>
+                        <td>
+                            <input type="checkbox" name="regular_user"/>
+                        </td>
+                        <td>
+                            <label for="regular_user" style="margin-left: 8px;">Submit event as regular user. (Will not be saved.)</label>
+                        </td>
+                    </tr>
+                </table>
+            {% endif %}
 
-    {% include 'recurring_event.html' %}
+            {% include 'recurring_event.html' %}
 
-    <div>Mandatory fields are indicated with *</div>
+            <h4>Your event</h4>
+            <div>Mandatory fields are indicated with *</div>
 
-    <h4>Event Name*</h4>
-    <input type="text" name="name" id="event_name" />
-    <h4>When*</h4>
-    <table style="margin-bottom: 20px;">
-      <tr>
-        <td>
-          <input type="checkbox" name="recurring" id="recurring" />
-        </td>
-        <td>
-          <label for="recurring">Repeating Event (max 6 sessions) <a style="display: none;" href="#" id="edit-repeat">Edit</a></label>
-        </td>
-      </tr>
-    </table>
-
-    <table style="margin: 0px;">
-      <tr>
-        <td>
-          <label class="inline-label" for="start_date">Start Date*</label>
-          <input name="start_date" id="start_date" placeholder="Select start date..." readonly="readonly"/>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          <label class="inline-label" for="start_time">Start Time*</label>
-          <select name="start_time_hour">
-            <option>1</option>
-            <option>2</option>
-            <option>3</option>
-            <option>4</option>
-            <option>5</option>
-            <option>6</option>
-            <option>7</option>
-            <option>8</option>
-            <option>9</option>
-            <option>10</option>
-            <option>11</option>
-            <option>12</option>
-          </select>:
-          <select name="start_time_minute">
-            <option>00</option>
-            <option>15</option>
-            <option>30</option>
-            <option>45</option>
-          </select>
-          <select name="start_time_ampm">
-            <option>pm</option>
-            <option>am</option>
-          </select>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          <label class="inline-label" for="end_date">End Date*</label>
-          <input name="end_date" id="end_date" placeholder="Select end date..." class="datepicker" readonly="readonly"/>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          <label class="inline-label" for="end_time">End Time*</label>
-          <select name="end_time_hour">
-            <option>1</option>
-            <option>2</option>
-            <option>3</option>
-            <option>4</option>
-            <option>5</option>
-            <option>6</option>
-            <option>7</option>
-            <option>8</option>
-            <option>9</option>
-            <option>10</option>
-            <option>11</option>
-            <option>12</option>
-          </select>:
-          <select name="end_time_minute">
-            <option>00</option>
-            <option>15</option>
-            <option>30</option>
-            <option>45</option>
-          </select>
-          <select name="end_time_ampm">
-            <option>pm</option>
-            <option>am</option>
-          </select>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          <label class="inline-label">Setup Time*</label>
-          <select name="setup" id="setup">
-            <option {{event.setup|select:15}}>15</option>
-            <option {{event.setup|select:30}}>30</option>
-            <option {{event.setup|select:45}}>45</option>
-            <option {{event.setup|select:60}}>60</option>
-          </select> <span> (15 minutes minimum)</span>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          <label class="inline-label">Teardown Time*</label>
-          <select name="teardown" id="teardown">
-            <option {{event.setup|select:15}}>15</option>
-            <option {{event.setup|select:30}}>30</option>
-            <option {{event.setup|select:45}}>45</option>
-            <option {{event.setup|select:60}}>60</option>
-          </select> <span> (15 minutes minimum)</span>
-        </td>
-      </tr>
-    </table>
-
-    <h4>Where*</h4>
-    <table>
-      <tr>
-        <td>
-          <label for="details">Requested Rooms*</label>
-          <span>(Capacity in parentheses)</span><br />
-          {% for room in rooms %}
-          <nobr><input type="checkbox" id="room-{{room.0|strip_spaces}}" name="rooms" value="{{room.0}}" /><label for="room-{{room.0}}">{{room.0|title}} ({{room.1}})</label></nobr>
-          {% endfor %}
-        </td>
-      </tr>
-    </table>
-
-    <h4>Type of Event*</h4>
-    <table style="margin: 0px;">
-      <tr>
-        <td>
-          <label for="type">Category*</label><br>
-          <select name="type" id="type-select" onchange="if(this.value=='Other...'){showOther();$('#type-text').focus()}">
-            <option>Meetup</option>
-            <option>Hackathon</option>
-            <option>Conference</option>
-            <option>Workshop</option>
-            <option>Lecture</option>
-            <option>Social</option>
-            <option>Setup Time</option>
-            <option>Dojo Admin</option>
-            <option>Other...</option>
-         </select>
-         <input type="text" id="type-text" onblur="$('#type-select').append('<option>'+this.value+'</option>');$('#type-select').val(this.value);hideOther();" style="display: none;" size="15">
-       </td>
-      </tr>
-      <tr>
-        <td>
-          <label for="estimated_size" title="This will become a HARD LIMIT on your event.">Max estimated persons attending*</label><br>
-          <input type="text" name="estimated_size" id="estimated_size" style="text-align: right;" />
-        </td>
-      </tr>
-    </table>
-
-    <h4>Member email</h4>
-    <label for="other_member">
-      <span>If your event lasts 24h or longer, enter the email(s) of at least one additional member who will co-host and share responsibility for the event.</span>
-    </label>
-    <input type="text" name="other_member" id="other_member" size="16" />
-
-    <h4>External Contact (if applicable)</h4>
-    <table style="margin: 0px;">
-      <tr>
-        <td>
-          <label for="contact_name">Name</label><br>
-          <input type="text" name="contact_name" id="contact_name" />
-        </td>
-      </tr>
-      <tr>
-        <td>
-          <label for="contact_phone">Phone Number</label><br>
-          <input type="text" name="contact_phone" id="contact_phone" />
-        </td>
-      </tr>
-    </table>
-
-    <h4>More Info</h4>
-      <table style="margin: 0px;">
-        <tr>
-          <td id="details">
+            <label for="name">Event Name*</label><input type="text" name="name" id="event_name"/>
+            <br/><br/>
             <label for="details">Event details*<br/>
-              <span>Since all events are open to attendance by Hacker Dojo members, please describe your event.</span>
+                <span>Since all events are open to attendance by Hacker Dojo members, please describe your event.</span>
             </label>
-            <textarea rows="5" name="details"></textarea>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <label for="url">Event URL (optional)</label><br>
-            <input type="text" name="url" id="event_url" />
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <label for="fee">Entry Fee (optional)</label><br>
-            <input type="text" name="fee" id="fee" /> <span style="color: gray;">Leave blank if free</span>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding-top: 8px;">
-            <label for="details">Special notes</label>
-            <textarea rows="3" name="notes"></textarea>
-          </td>
-        </tr>
-      </tr>
-    </table>
+            <textarea rows="5" name="details" style="width: 100%"></textarea>
+            <h4>When</h4>
+            <table style="margin-bottom: 20px;">
+                <tr>
+                    <td>
+                        <input type="checkbox" name="recurring" id="recurring"/>
+                    </td>
+                    <td>
+                        <label for="recurring">Repeating Event (max 6 sessions) <a style="display: none;" href="#" id="edit-repeat">Edit</a></label>
+                    </td>
+                </tr>
+            </table>
 
-    {% if is_admin %}
-    <h4>Admin</h4>
-    <table style="margin: 0px;">
-      <tr>
-        <td>
-          <label for="details">Admin Notes</label><br>
-          <textarea rows="3" name="admin_notes"></textarea>
-        </td>
-      </tr>
-    </table>
-    {% endif %}
+            <table style="margin: 0px;">
+                <tr>
+                    <td>
+                        <label class="inline-label" for="start_date">Start Date*</label>
+                        <input name="start_date" id="start_date" placeholder="Select start date..." readonly="readonly"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label class="inline-label" for="start_time">Start Time*</label>
+                        <select name="start_time_hour">
+                            <option>1</option>
+                            <option>2</option>
+                            <option>3</option>
+                            <option>4</option>
+                            <option>5</option>
+                            <option>6</option>
+                            <option>7</option>
+                            <option>8</option>
+                            <option>9</option>
+                            <option>10</option>
+                            <option>11</option>
+                            <option>12</option>
+                        </select>:
+                        <select name="start_time_minute">
+                            <option>00</option>
+                            <option>15</option>
+                            <option>30</option>
+                            <option>45</option>
+                        </select>
+                        <select name="start_time_ampm">
+                            <option>pm</option>
+                            <option>am</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label class="inline-label" for="end_date">End Date*</label>
+                        <input name="end_date" id="end_date" placeholder="Select end date..." class="datepicker" readonly="readonly"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label class="inline-label" for="end_time">End Time*</label>
+                        <select name="end_time_hour">
+                            <option>1</option>
+                            <option>2</option>
+                            <option>3</option>
+                            <option>4</option>
+                            <option>5</option>
+                            <option>6</option>
+                            <option>7</option>
+                            <option>8</option>
+                            <option>9</option>
+                            <option>10</option>
+                            <option>11</option>
+                            <option>12</option>
+                        </select>:
+                        <select name="end_time_minute">
+                            <option>00</option>
+                            <option>15</option>
+                            <option>30</option>
+                            <option>45</option>
+                        </select>
+                        <select name="end_time_ampm">
+                            <option>pm</option>
+                            <option>am</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label class="inline-label">Setup Time*</label>
+                        <select name="setup" id="setup">
+                            <option {{ event.setup|select:15}}>15</option>
+                            <option {{ event.setup|select:30}}>30</option>
+                            <option {{ event.setup|select:45}}>45</option>
+                            <option {{ event.setup|select:60}}>60</option>
+                        </select> <span> (15 minutes minimum)</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label class="inline-label">Teardown Time*</label>
+                        <select name="teardown" id="teardown">
+                            <option {{ event.setup|select:15}}>15</option>
+                            <option {{ event.setup|select:30}}>30</option>
+                            <option {{ event.setup|select:45}}>45</option>
+                            <option {{ event.setup|select:60}}>60</option>
+                        </select> <span> (15 minutes minimum)</span>
+                    </td>
+                </tr>
+            </table>
 
-    <p style="font-size:smaller;">You have 30 days for approval before your event application expires. The primary bottleneck to quick approval is getting staff to opt in. You will be notified either way.</p>
+            <h4>Where</h4>
+            <table>
+                <tr>
+                    <td>
+                        <label for="details">Requested Rooms*</label>
+                        <span>(Capacity in parentheses)</span><br/>
+                        {% for room in rooms %}
+                            <nobr><input type="checkbox" id="room-{{ room.0|strip_spaces }}" name="rooms" value="{{ room.0 }}"/><label
+                                    for="room-{{ room.0 }}">{{ room.0|title }} ({{ room.1 }})</label></nobr>
+                        {% endfor %}
+                    </td>
+                </tr>
+            </table>
 
-    <table>
-      <tr>
-        <td>
-          <input type="checkbox" id="policies-agree" />
-        </td>
-        <td>
-          <label for="policies-agree" style="font-weight: bold;">I agree to the responsibilities listed to the right.</label>
-        </td>
-      </tr>
-    </table>
+            <h4>Type of Event</h4>
+            <table style="margin: 0px;">
+                <tr>
+                    <td>
+                        <label for="type">Category*</label><br>
+                        <select name="type" id="type-select" onchange="if(this.value=='Other...'){showOther();$('#type-text').focus()}">
+                            <option>Meetup</option>
+                            <option>Hackathon</option>
+                            <option>Conference</option>
+                            <option>Workshop</option>
+                            <option>Lecture</option>
+                            <option>Social</option>
+                            <option>Setup Time</option>
+                            <option>Dojo Admin</option>
+                            <option>Other...</option>
+                        </select>
+                        <input type="text" id="type-text"
+                               onblur="$('#type-select').append('<option>'+this.value+'</option>');$('#type-select').val(this.value);hideOther();"
+                               style="display: none;" size="15">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label for="estimated_size" title="This will become a HARD LIMIT on your event.">Max estimated persons attending*</label><br>
+                        <input type="text" name="estimated_size" id="estimated_size" style="text-align: right;"/>
+                    </td>
+                </tr>
+            </table>
 
-    <div id="submit-link">
-      <input type="submit" value="Submit event for approval" id="submit" class="btn btn-primary btn=lg" disabled />
+            <h4>Member email</h4>
+            <label for="other_member">
+                <span>If your event lasts 24h or longer, enter the email(s) of at least one additional member who will co-host and share responsibility for the event.</span>
+            </label>
+            <input type="text" name="other_member" id="other_member" size="16"/>
+
+            <h4>External Contact (if applicable)</h4>
+            <table style="margin: 0px;">
+                <tr>
+                    <td>
+                        <label for="contact_name">Name</label><br>
+                        <input type="text" name="contact_name" id="contact_name"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label for="contact_phone">Phone Number</label><br>
+                        <input type="text" name="contact_phone" id="contact_phone"/>
+                    </td>
+                </tr>
+            </table>
+
+            <h4>More Info</h4>
+            <table style="margin: 0px;">
+                <tr>
+                    <td id="details">
+
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label for="url">Event URL (optional)</label><br>
+                        <input type="text" name="url" id="event_url"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label for="fee">Entry Fee (optional)</label><br>
+                        <input type="text" name="fee" id="fee"/> <span style="color: gray;">Leave blank if free</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding-top: 8px;">
+                        <label for="details">Special notes</label>
+                        <textarea rows="3" name="notes"></textarea>
+                    </td>
+                </tr>
+                </tr>
+            </table>
+
+            {% if is_admin %}
+                <h4>Admin</h4>
+                <table style="margin: 0px;">
+                    <tr>
+                        <td>
+                            <label for="details">Admin Notes</label><br>
+                            <textarea rows="3" name="admin_notes"></textarea>
+                        </td>
+                    </tr>
+                </table>
+            {% endif %}
+
+            <p style="font-size:smaller;">You have 30 days for approval before your event application expires. The primary bottleneck to quick
+                approval is getting staff to opt in. You will be notified either way.</p>
+
+            <table>
+                <tr>
+                    <td>
+                        <input type="checkbox" id="policies-agree"/>
+                    </td>
+                    <td>
+                        <label for="policies-agree" style="font-weight: bold;">I agree to the responsibilities listed to the right.</label>
+                    </td>
+                </tr>
+            </table>
+
+            <div id="submit-link">
+                <input type="submit" value="Submit event for approval" id="submit" class="btn btn-primary btn=lg" disabled/>
+            </div>
+        </form>
+
     </div>
-  </form>
-
-</div>
 
 
 {% endblock %}
