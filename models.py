@@ -63,6 +63,8 @@ class Event(db.Model):
     # When the member who owns this event was suspended, if they are.
     owner_suspended_time = db.DateTimeProperty()
 
+    wifi_password = db.StringProperty(default="")
+
     @classmethod
     def check_conflict(cls,
                        proposed_start_time, proposed_end_time,
@@ -115,6 +117,13 @@ class Event(db.Model):
         return cls.all() \
             .filter('start_time >', local_today()) \
             .filter('status IN', ['approved', 'canceled']) \
+            .order('start_time')
+
+    @classmethod
+    def get_by_wifi_password(cls, password):
+        return cls.all() \
+            .filter('wifi_password =', password) \
+            .filter('status IN', ['approved']) \
             .order('start_time')
 
     @classmethod

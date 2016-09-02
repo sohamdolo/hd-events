@@ -1,0 +1,66 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>{% block title %}Welcome to HD-Events wifi Access{% endblock %}</title>
+    <link href="/static/css/foundation.min.css" type="text/css" rel="stylesheet"/>
+</head>
+<body>
+
+<div class="row center" style="margin-top: 30px;">
+    <div class="medium-6 medium-centered large-4 large-centered columns" style="vertical-align: middle;">
+        <img src="/static/logo_long.png" style="display: inline-block; width: 100px; margin-right: 80px"/>
+        HD-Events Wifi Access
+    </div>
+    <hr class="medium-6 medium-centered large-4 large-centered"/>
+</div>
+
+
+<div class="row">
+  <div class="medium-6 medium-centered large-4 large-centered columns">
+    <p>Welcome to the Hacker Dojo!</p> You can use this wifi access for the full duration of the event you are attending.
+      If you are a member, please disconnect from this SSID and choose HD-Members.
+    <form method="post">
+      <div class="row column" style="margin-top: 20px">
+        <label>Please enter the event wifi password
+{#            <input type="hidden" value="{{ base_grant_url }}">#}
+{#            <input type="hidden" value="user_continue_url">#}
+          <input type="text" placeholder="Event wifi password" name="wifi" onkeypress="enableSubmit(this)">
+        </label>
+        <p><button type="submit" id="submitpassword" class="button expanded" disabled>Login</button></p>
+      </div>
+    </form>
+
+  </div>
+</div>
+
+</body>
+<script type="text/javascript">
+
+    function enableSubmit(element){
+        console.log(element.value);
+        if (element.value != ""){
+            document.getElementById("submitpassword").removeAttribute("disabled");
+        }else {
+            document.getElementById("submitpassword").setAttribute("disabled", "disabled");
+        }
+    }
+
+
+
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-27117910-3']);
+    _gaq.push(['_setDomainName', '.hackerdojo.com']);
+    _gaq.push(['_trackPageview']);
+
+    (function () {
+        var ga = document.createElement('script');
+        ga.type = 'text/javascript';
+        ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0];
+        s.parentNode.insertBefore(ga, s);
+    })();
+
+</script>
+</html>
