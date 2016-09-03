@@ -49,12 +49,6 @@ indexes:
 - kind: Event
   properties:
   - name: status
-  - name: wifi_password
-  - name: start_time
-
-- kind: Event
-  properties:
-  - name: status
   - name: end_time
 
 - kind: Event
@@ -73,3 +67,8 @@ indexes:
   - name: type
   - name: start_time
 
+- kind: Event
+  properties:
+  - name: status
+  - name: wifi_password
+  - name: start_time
