@@ -197,6 +197,7 @@ Friendly Reminder: You must be present at the event and make sure Dojo policies 
 Note: If you cancel or reschedule the event, please log in to our system and cancel the event!
 
 Organisers and attendees will be able to connect to HD-Events wifi during the event to get internet access.
+
 Here is the password we generated for you: <b>%s</b>.
 Don't forget to give it to your attendees. They will be able to connect 15 min before and until 15 min after your event.
 
@@ -206,7 +207,7 @@ Cheers,
 Hacker Dojo Events Team
 events@hackerdojo.com
 
-""" % (event.key().id(), slugify(event.name), event.wifi_password)
+""" % (event.wifi_password, event.key().id(), slugify(event.name))
 
   html = to_html(body)
 
@@ -278,6 +279,7 @@ def notify_wifi_password_added(event):
   body="""A password for HD-Events has been generated for your events!
 
 Organisers and attendees will be able to connect to HD-Events wifi during the event to get internet access.
+
 Here is the password we generated for you: <b>%s</b>.
 Don't forget to give it to your attendees. They will be able to connect 15 min before and until 15 min after your event.
 
@@ -291,9 +293,9 @@ Cheers,
 Hacker Dojo Events Team
 events@hackerdojo.com
 
-""" % (event.key().id(), slugify(event.name), event.wifi_password)
+""" % (event.wifi_password, event.key().id(), slugify(event.name))
 
   html = to_html(body)
 
   deferred.defer(mail.send_mail,sender=FROM_ADDRESS, to=event.member.email(),
-      subject="[HD-Events Password Generated] %s" % event.name, body=body, html=html)
+      subject="[HD-Events Wifi Password Generated] %s" % event.name, body=body, html=html)

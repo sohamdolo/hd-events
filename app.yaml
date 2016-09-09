@@ -40,9 +40,6 @@ handlers:
   login: admin
 - url: /api/v1/.*
   script: api.app
-- url: /migrate/.*
-  login: admin
-  script: migrate.app
 - url: .*
   script: main.app
 

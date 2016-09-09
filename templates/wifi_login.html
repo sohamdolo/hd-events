@@ -23,9 +23,7 @@
     <form method="post">
       <div class="row column" style="margin-top: 20px">
         <label>Please enter the event wifi password
-{#            <input type="hidden" value="{{ base_grant_url }}">#}
-{#            <input type="hidden" value="user_continue_url">#}
-          <input type="text" placeholder="Event wifi password" name="wifi" onkeypress="enableSubmit(this)">
+          <input type="text" placeholder="Event wifi password" name="wifi" onkeyup="enableSubmit(this)">
         </label>
         <p><button type="submit" id="submitpassword" class="button expanded" disabled>Login</button></p>
       </div>
@@ -36,7 +34,6 @@
 
 </body>
 <script type="text/javascript">
-
     function enableSubmit(element){
         console.log(element.value);
         if (element.value != ""){
@@ -45,9 +42,6 @@
             document.getElementById("submitpassword").setAttribute("disabled", "disabled");
         }
     }
-
-
-
     var _gaq = _gaq || [];
     _gaq.push(['_setAccount', 'UA-27117910-3']);
     _gaq.push(['_setDomainName', '.hackerdojo.com']);

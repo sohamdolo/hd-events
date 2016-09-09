@@ -12,7 +12,7 @@ import cPickle as pickle
 from datetime import datetime, timedelta
 
 from models import Event, Feedback, HDLog, ROOM_OPTIONS, PENDING_LIFETIME
-from utils import username, human_username, set_cookie, local_today, is_phone_valid, UserRights, dojo
+from utils import username, human_username, set_cookie, local_today, local_now, is_phone_valid, UserRights, dojo, generate_wifi_password
 from notices import *
 
 import PyRSS2Gen
@@ -32,11 +32,6 @@ template.register_template_library("templatefilters.templatefilters")
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-
-
-def generate_wifi_password():
-    num = ''.join(random.SystemRandom().choice(string.ascii_lowercase + string.digits) for _ in range(6))
-    return num
 
 def slugify(str):
     str = unicodedata.normalize('NFKD', str.lower()).encode('ascii','ignore')
@@ -514,6 +509,7 @@ def _do_event_action(event, action, check=False):
   if action.lower() == 'approve':
     if not access_rights.can_approve:
       return False
+    event.check_wifi_password()
     if not check:
       notify_owner_approved(event)
     todo = event.approve
@@ -1304,20 +1300,36 @@ class BulkActionCheckHandler(BulkActionCommon):
     response = {"valid": possible_actions, "invalid": bad_actions}
     self.response.out.write(json.dumps(response))
 
+
 class WifiLoginHandler(webapp2.RequestHandler):
     """
-    Handler for Wifi login for Event attendees and organisers
-
+    Handler that serves the Splash page for HD-Events SSID
+    Every time you connect to HD-Events the wifi login page is requested (get).
+    User has to enter a password corresponding to a current Event to access the wifi.
     """
     def get(self):
-        # base_grant_url = self.request.get('base_grant_url', None)
-        # user_continue_url = self.request.get('user_continue_url', None)
-        # # client_ip = self.request.get('client_ip', None)
-        # # client_mac = self.request.get('client_mac', None)
+        """
+        Handler that returns the login page to access HD-Events wifi.
+        Returns:
+
+        """
+        base_grant_url = self.request.get('base_grant_url', None)
+        user_continue_url = self.request.get('user_continue_url', None)
+
+        if not base_grant_url or not user_continue_url:
+            logger.error("access refused, missing parameters")
+            data = {'error': "Error with wifi access point. Please contact the front desk to resolve the issue. Thank you!" }
+            self.response.write(template.render('templates/wifi_login_error.html', data))
+            return
+
         self.response.out.write(template.render('templates/wifi_login.html', locals()))
+        return
 
     def post(self):
+        """
+        Handler that validates the password entered on the login and grant access to the wifi.
 
+        """
         base_grant_url = self.request.get('base_grant_url', None)
         user_continue_url = self.request.get('user_continue_url', None)
 
@@ -1327,7 +1339,8 @@ class WifiLoginHandler(webapp2.RequestHandler):
             grant_url = "%s?continue_url=%s" % (base_grant_url, user_continue_url)
         else:
             logger.error("access refused, missing parameters")
-            self.response.write(template.render('templates/wifi_login_notauth.html', locals()))
+            data = {'error': "Error with wifi access point. Please contact the front desk to resolve the issue. Thank you!"}
+            self.response.write(template.render('templates/wifi_login_error.html', data))
             return
 
         logger.debug("Grant url received is: %s" % base_grant_url)
@@ -1339,14 +1352,14 @@ class WifiLoginHandler(webapp2.RequestHandler):
             logger.debug("password typed is: %s" % password)
         else:
             logger.error("access try again, missing password")
-            self.response.write(template.render('templates/wifi_login.html', locals()))
+            data = {'error': "The password is missing. Please try again!"}
+            self.response.write(template.render('templates/wifi_login_error.html', data))
             return
 
         events_list = Event.get_by_wifi_password(password)
-
+        logger.debug(events_list)
         if events_list:
-            now = local_today()
-            # now = datetime(hour=16, minute=16, day=2, month=9, year=2016)
+            now = local_now()
             logger.debug(now)
             for event in events_list:
                 logger.debug(event.name)
@@ -1359,13 +1372,21 @@ class WifiLoginHandler(webapp2.RequestHandler):
                     logger.debug("access granted")
                     self.response.write(template.render('templates/wifi_login_auth.html', locals()))
                     return
+                else:
+                    logger.debug("access refused")
+                    data = {'error': "You are not authorized to access this wifi. Event not started yet or already expired."}
+                    self.response.write(template.render('templates/wifi_login_error.html', data))
+                    return
         else:
             logger.error("access refused - no event with received password")
-            self.response.write(template.render('templates/wifi_login_notauth.html', locals()))
+            data = {'error': "Event associated to this password not found or Wrong password. Please check your password."}
+            self.response.write(template.render('templates/wifi_login_error.html', data))
             return
+
         # not authorized
         logger.debug("access refused")
-        self.response.write(template.render('templates/wifi_login_notauth.html', locals()))
+        data = {'error': "You are not authorized to access this wifi. Please contact the front desk to resolve this issue. Thank you!"}
+        self.response.write(template.render('templates/wifi_login_error.html', data))
         return
 
 app = webapp2.WSGIApplication([
