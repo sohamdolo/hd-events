@@ -1319,6 +1319,7 @@ class WifiLoginHandler(webapp2.RequestHandler):
         if not base_grant_url or not user_continue_url:
             logger.error("access refused, missing parameters")
             data = {'error': "Error with wifi access point. Please contact the front desk to resolve the issue. Thank you!" }
+            self.response.set_status(401)
             self.response.write(template.render('templates/wifi_login_error.html', data))
             return
 
@@ -1340,6 +1341,7 @@ class WifiLoginHandler(webapp2.RequestHandler):
         else:
             logger.error("access refused, missing parameters")
             data = {'error': "Error with wifi access point. Please contact the front desk to resolve the issue. Thank you!"}
+            self.response.set_status(401)
             self.response.write(template.render('templates/wifi_login_error.html', data))
             return
 
@@ -1353,6 +1355,7 @@ class WifiLoginHandler(webapp2.RequestHandler):
         else:
             logger.error("access try again, missing password")
             data = {'error': "The password is missing. Please try again!"}
+            self.response.set_status(401)
             self.response.write(template.render('templates/wifi_login_error.html', data))
             return
 
@@ -1375,11 +1378,13 @@ class WifiLoginHandler(webapp2.RequestHandler):
                 else:
                     logger.debug("access refused")
                     data = {'error': "You are not authorized to access this wifi. Event not started yet or already expired."}
+                    self.response.set_status(403)
                     self.response.write(template.render('templates/wifi_login_error.html', data))
                     return
         else:
             logger.error("access refused - no event with received password")
             data = {'error': "Event associated to this password not found or Wrong password. Please check your password."}
+            self.response.set_status(401)
             self.response.write(template.render('templates/wifi_login_error.html', data))
             return
 
