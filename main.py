@@ -12,7 +12,7 @@ import cPickle as pickle
 from datetime import datetime, timedelta
 
 from models import Event, Feedback, HDLog, ROOM_OPTIONS, PENDING_LIFETIME
-from utils import username, human_username, set_cookie, local_today, is_phone_valid, UserRights, dojo
+from utils import username, human_username, set_cookie, local_today, local_now, is_phone_valid, UserRights, dojo, generate_wifi_password
 from notices import *
 
 import PyRSS2Gen
@@ -24,7 +24,14 @@ from config import Config
 import re
 import keymaster
 
+import string
+import random
+
 template.register_template_library("templatefilters.templatefilters")
+
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 def slugify(str):
     str = unicodedata.normalize('NFKD', str.lower()).encode('ascii','ignore')
@@ -502,6 +509,7 @@ def _do_event_action(event, action, check=False):
   if action.lower() == 'approve':
     if not access_rights.can_approve:
       return False
+    event.check_wifi_password()
     if not check:
       notify_owner_approved(event)
     todo = event.approve
@@ -1123,7 +1131,8 @@ class NewHandler(webapp2.RequestHandler):
               setup=int(self.request.get('setup') or 0),
               teardown=int(self.request.get('teardown') or 0),
               other_member=other_member,
-              admin_notes=self.request.get('admin_notes')
+              admin_notes=self.request.get('admin_notes'),
+              wifi_password=generate_wifi_password()
           )
 
           if not first_event:
@@ -1292,6 +1301,99 @@ class BulkActionCheckHandler(BulkActionCommon):
     self.response.out.write(json.dumps(response))
 
 
+class WifiLoginHandler(webapp2.RequestHandler):
+    """
+    Handler that serves the Splash page for HD-Events SSID
+    Every time you connect to HD-Events the wifi login page is requested (get).
+    User has to enter a password corresponding to a current Event to access the wifi.
+    """
+    def get(self):
+        """
+        Handler that returns the login page to access HD-Events wifi.
+        Returns:
+
+        """
+        base_grant_url = self.request.get('base_grant_url', None)
+        user_continue_url = self.request.get('user_continue_url', None)
+
+        if not base_grant_url or not user_continue_url:
+            logger.error("access refused, missing parameters")
+            data = {'error': "Error with wifi access point. Please contact the front desk to resolve the issue. Thank you!" }
+            self.response.set_status(401)
+            self.response.write(template.render('templates/wifi_login_error.html', data))
+            return
+
+        self.response.out.write(template.render('templates/wifi_login.html', locals()))
+        return
+
+    def post(self):
+        """
+        Handler that validates the password entered on the login and grant access to the wifi.
+
+        """
+        base_grant_url = self.request.get('base_grant_url', None)
+        user_continue_url = self.request.get('user_continue_url', None)
+
+        if base_grant_url and user_continue_url:
+            base_grant_url = cgi.escape(base_grant_url)
+            user_continue_url = cgi.escape(user_continue_url)
+            grant_url = "%s?continue_url=%s" % (base_grant_url, user_continue_url)
+        else:
+            logger.error("access refused, missing parameters")
+            data = {'error': "Error with wifi access point. Please contact the front desk to resolve the issue. Thank you!"}
+            self.response.set_status(401)
+            self.response.write(template.render('templates/wifi_login_error.html', data))
+            return
+
+        logger.debug("Grant url received is: %s" % base_grant_url)
+        logger.debug("Continue url received is: %s" % user_continue_url)
+
+        password = self.request.get('wifi', None)
+        if password:
+            password = cgi.escape(password)
+            logger.debug("password typed is: %s" % password)
+        else:
+            logger.error("access try again, missing password")
+            data = {'error': "The password is missing. Please try again!"}
+            self.response.set_status(401)
+            self.response.write(template.render('templates/wifi_login_error.html', data))
+            return
+
+        events_list = Event.get_by_wifi_password(password)
+        logger.debug(events_list)
+        if events_list:
+            now = local_now()
+            logger.debug(now)
+            for event in events_list:
+                logger.debug(event.name)
+                start_time = event.start_time - timedelta(minutes=15)
+                end_time = event.end_time + timedelta(minutes=15)
+                logger.debug(start_time)
+                logger.debug(end_time)
+                if start_time <= now <= end_time:
+                    # user can access wifi for x hours
+                    logger.debug("access granted")
+                    self.response.write(template.render('templates/wifi_login_auth.html', locals()))
+                    return
+                else:
+                    logger.debug("access refused")
+                    data = {'error': "You are not authorized to access this wifi. Event not started yet or already expired."}
+                    self.response.set_status(403)
+                    self.response.write(template.render('templates/wifi_login_error.html', data))
+                    return
+        else:
+            logger.error("access refused - no event with received password")
+            data = {'error': "Event associated to this password not found or Wrong password. Please check your password."}
+            self.response.set_status(401)
+            self.response.write(template.render('templates/wifi_login_error.html', data))
+            return
+
+        # not authorized
+        logger.debug("access refused")
+        data = {'error': "You are not authorized to access this wifi. Please contact the front desk to resolve this issue. Thank you!"}
+        self.response.write(template.render('templates/wifi_login_error.html', data))
+        return
+
 app = webapp2.WSGIApplication([
         ('/', ApprovedHandler),
         ('/all_future', AllFutureHandler),
@@ -1315,4 +1417,5 @@ app = webapp2.WSGIApplication([
         ('/expire_suspended', ExpireSuspendedCronHandler),
         ('/bulk_action', BulkActionHandler),
         ('/bulk_action_check', BulkActionCheckHandler),
+        ('/wifilogin', WifiLoginHandler),
         ],debug=True)

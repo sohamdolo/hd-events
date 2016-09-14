@@ -2,6 +2,8 @@ from google.appengine.ext import db
 from google.appengine.api import urlfetch, memcache, users, mail
 from datetime import datetime, timedelta, time
 from copy import copy
+
+import utils
 from utils import human_username, local_today, to_sentence_list
 import logging
 import pytz
@@ -63,6 +65,8 @@ class Event(db.Model):
     # When the member who owns this event was suspended, if they are.
     owner_suspended_time = db.DateTimeProperty()
 
+    wifi_password = db.StringProperty(default="")
+
     @classmethod
     def check_conflict(cls,
                        proposed_start_time, proposed_end_time,
@@ -118,6 +122,13 @@ class Event(db.Model):
             .order('start_time')
 
     @classmethod
+    def get_by_wifi_password(cls, password):
+        return cls.all() \
+            .filter('wifi_password =', password) \
+            .filter('status IN', ['approved']) \
+            .order('start_time').fetch(10)
+
+    @classmethod
     def get_approved_list_with_multiday(cls):
         events = list(cls.all() \
             .filter('end_time >', local_today()) \
@@ -134,8 +145,6 @@ class Event(db.Model):
                     clone.start_time = datetime.combine(event.start_date(), time()) + timedelta(days=day)
                     clone.is_continued = True
                     events.append(clone)
-
-
         events.sort(key = lambda event: event.start_time)
 
         return events
@@ -242,6 +251,15 @@ class Event(db.Model):
             self.status = 'understaffed'
             logging.info('%s approved %s but it is still understaffed' % (user.nickname, self.name))
         self.put()
+
+    def check_wifi_password(self):
+        """
+        Check and add a wifi password to an event.
+        """
+        if not self.wifi_password:
+            password = utils.generate_wifi_password()
+            logging.info("Adding wifi password to event %s" % self.name)
+            self.wifi_password = password
 
     def rsvp(self):
         user = users.get_current_user()

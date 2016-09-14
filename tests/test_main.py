@@ -17,6 +17,8 @@ from google.appengine.ext import testbed
 
 import webtest
 
+import utils
+
 # This has to go before we import the main module so that the correct settings
 # get loaded.
 os.environ["DJANGO_SETTINGS_MODULE"] = "settings"
@@ -54,9 +56,8 @@ class BaseTest(unittest.TestCase):
   time: Specify the hour at which the events start.
   Returns: A list of the events created. """
   def _make_events(self, events, offset=1, time=12):
-    start = datetime.datetime.now()
-    start.replace(hour=time)
-    # start += datetime.timedelta(days=offset)
+    start = utils.local_now()
+    start = start.replace(hour=time, minute=0)
     made_events = []
     for i in range(0, events):
       start += datetime.timedelta(days=offset)
@@ -69,6 +70,35 @@ class BaseTest(unittest.TestCase):
       made_events.append(event)
 
     return made_events
+
+  def get_params(self, offset_days=1):
+    """
+    Create a dict of data to create a new event with the specified offset
+    Args:
+        offset_days:
+
+    Returns: params for new event
+
+    """
+    date = utils.local_now() + datetime.timedelta(days=offset_days)
+    event_date = "%d/%d/%d" % (date.month, date.day, date.year)
+    params = {"start_date": event_date,
+                   "start_time_hour": "12",
+                   "start_time_minute": "0",
+                   "start_time_ampm": "PM",
+                   "end_date": event_date,
+                   "end_time_hour": "2",
+                   "end_time_minute": "0",
+                   "end_time_ampm": "PM",
+                   "setup": "15",
+                   "teardown": "15",
+                   "rooms": models.ROOM_OPTIONS[0][0],
+                   "details": "This is a test event.",
+                   "estimated_size": "10",
+                   "name": "Test Event",
+                   "type": "Meetup",
+                   }
+    return params
 
   def setUp(self):
     # Set up GAE testbed.
@@ -88,7 +118,7 @@ class BaseTest(unittest.TestCase):
                            user_is_admin="0", overwrite=True)
 
     # Default parameters for putting in the form.
-    date = datetime.date.today() + datetime.timedelta(days=1)
+    date = utils.local_now() +  datetime.timedelta(days=1)
     event_date = "%d/%d/%d" % (date.month, date.day, date.year)
     self.params = {"start_date": event_date,
                    "start_time_hour": "12",
@@ -288,39 +318,46 @@ class NewHandlerTest(BaseTest):
   you are an admin. """
   def test_regular_member_validation(self):
     params = self.params.copy()
-    self._make_events(Config().USER_MAX_FUTURE_EVENTS)
+    events = self._make_events(Config().USER_MAX_FUTURE_EVENTS)
+    print params
+    # for e in events:
+    #   print e.to_dict()
 
     # Make sure it doesn't show the box when we're not an admin.
     response = self.test_app.get("/new")
+    #
     self.assertEqual(200, response.status_int)
     self.assertNotIn("regular_user", response.body)
 
     # Login as admin.
     self.testbed.setup_env(user_is_admin="1", overwrite=True)
-
-    # Make sure the box is there.
+    #
+    # # Make sure the box is there.
     response = self.test_app.get("/new")
     self.assertEqual(200, response.status_int)
     self.assertIn("regular_user", response.body)
 
-    # Check the box.
+    #
+    # # Check the box.
     params["regular_user"] = True
-
-    # It should not let us.
+    #
+    # # It should not let us.
     response = self.test_app.post("/new", params, expect_errors=True)
     self.assertEqual(400, response.status_int)
-
-    # Make sure it didn't put it in the datastore.
+    #
+    # # Make sure that previous request did not save events
     events = Event.all().count()
     self.assertEqual(Config().USER_MAX_FUTURE_EVENTS, events)
-
-    # If we uncheck the box, it should let us because we are an admin.
+    #
+    # # If we uncheck the box, it should let us because we are an admin.
     del params["regular_user"]
-
-    response = self.test_app.post("/new", params)
+    #
+    # add event 12 days later
+    new_event = self.get_params(offset_days=12)
+    response = self.test_app.post("/new", new_event)
     self.assertEqual(200, response.status_int)
-
-    # It should have gone in the datastore.
+    #
+    # # It should have gone in the datastore.
     events = Event.all().count()
     self.assertEqual(Config().USER_MAX_FUTURE_EVENTS + 1, events)
 
@@ -482,7 +519,7 @@ class NewHandlerTest(BaseTest):
 
     recurring_data = self.recurring_data.copy()
     params = self.params.copy()
-    recurring_data["repetitions"] = 2
+    recurring_data["repetitions"] = 3
     recurring_data["frequency"] = "daily"
     params["recurring-data"] = json.dumps(recurring_data)
     params["recurring"] = True
@@ -491,7 +528,6 @@ class NewHandlerTest(BaseTest):
 
     response = self.test_app.post("/new", params, expect_errors=True)
     self.assertEqual(400, response.status_int)
-
     self.assertIn("Room conflict", response.body)
 
 """ Tests that the edit event handler works properly. """

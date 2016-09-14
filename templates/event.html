@@ -53,8 +53,9 @@
   <br />
   <div class='b-block'><div class='b-label'>Details:</div><div class='b-data'>{{event.details|safe}}</div></div>
   <br />
-  <div class='b-block'><div class='b-label'>Notes:</div><div class='b-data'>{{event.notes|safe}}</div></div>
+  <div class='b-block'><div class='b-label'>Notes:</div><div class='b-data'>{{event.notes|safe}}</div></div><br/>
   {% if access_rights.is_admin %}
+      <div class='b-block'><div class='b-label'>Wifi password:</div><div class='b-data'>{{event.wifi_password|safe}}</div></div>
   <div class='b-block'><div class='b-label'>Admin Notes:</div>
       <div class='b-data'>{{event.admin_notes|safe}}</div></div>
   {% endif %}

@@ -3,6 +3,8 @@ from datetime import datetime, timedelta
 import re
 import pytz
 
+import random
+import string
 from shared.api import domain
 import json
 import logging
@@ -50,6 +52,23 @@ def local_today():
     utc_now = pytz.utc.localize(datetime.utcnow())
     local_now = utc_now.astimezone(pytz.timezone(LOCAL_TZ))
     return datetime(*local_now.timetuple()[:3])
+
+
+def local_now():
+    """Return a datetime object representing now in local time."""
+    utc_now = pytz.utc.localize(datetime.now())
+    now = utc_now.astimezone(pytz.timezone(LOCAL_TZ))
+    time_tuple =now.timetuple()
+    return datetime(year=time_tuple.tm_year, month=time_tuple.tm_mon, day=time_tuple.tm_mday, hour=time_tuple.tm_hour, minute=time_tuple.tm_min)
+
+
+def generate_wifi_password():
+    """
+        Generate a random lower case string with numbers used as wifi password for HD-Events SSID
+        Returns: 6 digits lower case string
+    """
+    num = ''.join(random.SystemRandom().choice(string.ascii_lowercase + string.digits) for _ in range(6))
+    return num
 
 
 def get_phone_parts( in_phone, international_okay=False ):
