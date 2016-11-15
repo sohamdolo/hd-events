@@ -43,7 +43,7 @@ class Config:
     self.USER_MAX_FOUR_WEEKS = 6
     # How long we have to wait after we sign up before we can create an event.
     # (days)
-    self.NEW_EVENT_WAIT_PERIOD = 30
+    self.NEW_EVENT_WAIT_PERIOD = 0
     # How long we will keep an event on hold when a user is suspended before it
     # expires. (days)
     self.SUSPENDED_EVENT_EXPIRY = 72
