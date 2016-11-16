@@ -31,29 +31,20 @@
     </div>
     <div id="wrapper">
       <div id="header">
-
-        {% if wait_days != 0 %}
-          {% if wait_days == None %}
-          <a class="no-new-message">
+          {% if user and wait_days == None  %}
+          <span class="no-new-message">
               Your plan does not allow you to create events.
-          </a>
-          {% else %}
-          <a class="no-new-message">
-              {{ wait_days }} days until you can create an event.
-          </a>
+          </span>
           {% endif %}
-        <form action="/new" method="get">
-          <div id='new-event-link'>
-            <button type="submit" id="nav_new"
-                class="btn btn-primary btn-lg disabled" disabled>
-                Submit New Event Request
-            </button>
-          </div>
-        </form>
-        {% else %}
-        <form action="/new" method="get"><div id='new-event-link'>
+      {% if wait_days != None and wait_days != 0 %}
+          <span class="no-new-message">
+              {{ wait_days }} days until you can create an event.
+          </span>
+          {% endif %}
+        {%  if wait_days == 0 %}
+          <form action="/new" method="get"><div id='new-event-link'>
           <button type="submit" id="nav_new" class="btn btn-primary btn-lg">Submit New Event Request</button></div>
-        </form>
+            </form>
         {% endif %}
 
         <div onclick="document.location.href='/';" style="cursor:pointer">
