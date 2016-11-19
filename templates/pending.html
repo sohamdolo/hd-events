@@ -1,30 +1,33 @@
 {% extends 'base.html' %}
 {% block content %}
-{% include 'nav_menu.html' %}
+    {% include 'disclaimer_parking.html' %}
+    {% include 'nav_menu.html' %}
 
-<head>
-<script type="text/javascript" src="/static/js/bulk-action.js"></script>
+    <head>
+        <script type="text/javascript" src="/static/js/bulk-action.js"></script>
 
-<script>bulkAction.setEventType('pending');</script>
-</head>
+        <script>bulkAction.setEventType('pending');</script>
+    </head>
 
-{% include 'bulk_action_bar.html' %}
-{% include 'bulk_action_modal.html' %}
+    {% include 'bulk_action_bar.html' %}
+    {% include 'bulk_action_modal.html' %}
 
-<div id="primary">
-  <h3>Pending Events</h3>
-  {% regroup events by start_date as grouped_events %}
-  {% for events in grouped_events %}
-    {% ifchanged events.grouper|date:"F" %}
-        <h3 class="month-divider">{{events.grouper|date:"F Y" }}</h3>
-    {% endifchanged %}
-    <h4 class="date-divider">{% ifequal events.grouper today.date %}<span style="text-decoration:underline;">Today</span> - {% endifequal %}{% ifequal events.grouper tomorrow.date %}<span style="text-decoration:underline;">Tomorrow</span> - {% endifequal %}{{events.grouper|date:"l, F j"}}</h4>
-    <table>
-      {% for event in events.list %}
-        {% include 'list_event.html' %}
-      {% endfor %}
-    </table>
-  {% endfor %}
-</div>
+    <div id="primary">
+        <h3>Pending Events</h3>
+        {% regroup events by start_date as grouped_events %}
+        {% for events in grouped_events %}
+            {% ifchanged events.grouper|date:"F" %}
+                <h3 class="month-divider">{{ events.grouper|date:"F Y" }}</h3>
+            {% endifchanged %}
+            <h4 class="date-divider">{% ifequal events.grouper today.date %}<span style="text-decoration:underline;">Today</span> - {% endifequal %}
+                {% ifequal events.grouper tomorrow.date %}<span style="text-decoration:underline;">Tomorrow</span>
+                    - {% endifequal %}{{ events.grouper|date:"l, F j"}}</h4>
+            <table>
+                {% for event in events.list %}
+                    {% include 'list_event.html' %}
+                {% endfor %}
+            </table>
+        {% endfor %}
+    </div>
 
 {% endblock %}

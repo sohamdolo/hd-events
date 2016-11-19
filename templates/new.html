@@ -4,7 +4,7 @@
 
     <div id="primary">
         <h3>New Event Request</h3>
-
+        {% include 'disclaimer_parking.html' %}
         <div id="warn" class="alert alert-warning"><b>{{ human }}</b> will be held personally responsible for this event. You must show up and ensure
             the rules below are followed. Failure to make a good faith effort will result in suspension of event hosting privileges for 45
             days.<br><br>Requests <b>should not be considered approved</b> until visible on the publicHacker Dojo Events Calendar.
@@ -213,8 +213,15 @@
                         <label for="details">Requested Rooms*</label>
                         <span>(Capacity in parentheses)</span><br/>
                         {% for room in rooms %}
+                            {% if room.0 == "Main Space" and is_admin %}
                             <nobr><input type="checkbox" id="room-{{ room.0|strip_spaces }}" name="rooms" value="{{ room.0 }}"/><label
                                     for="room-{{ room.0 }}">{{ room.0|title }} ({{ room.1 }})</label></nobr>
+                            {% endif %}
+                            {% if room.0 != "Main Space" %}
+                            <nobr><input type="checkbox" id="room-{{ room.0|strip_spaces }}" name="rooms" value="{{ room.0 }}"/><label
+                                    for="room-{{ room.0 }}">{{ room.0|title }} ({{ room.1 }})</label></nobr>
+                            {% endif %}
+
                         {% endfor %}
                     </td>
                 </tr>

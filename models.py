@@ -14,13 +14,14 @@ from config import Config
 ROOM_OPTIONS = (
     ('Maker Space', 10),
     ('Classroom', 40),
-    # ('Conference Room', 10),
+    ('Quiet Room', 8),
+    # ('Flex Room', 10),
     ('Large Event Room', 80),
-    ('Loungey', 30),
+    ('Main Space', 100),
   )
 
 # GUESTS_PER_STAFF = 25
-PENDING_LIFETIME = 30 # days
+PENDING_LIFETIME = 30  # days
 # Minimum number of hours before event start during which we can RSVP.
 RSVP_DEADLINE = 3
 
