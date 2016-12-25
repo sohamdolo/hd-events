@@ -133,8 +133,7 @@ class UserRights(object):
             if (datetime.now() - event.created) <= timedelta(minutes=30):
                 self.quick_edit = True
             self.is_owner = (self.user == self.event.member)
-            self.can_approve = ((self.event.status in ['pending'] or self.event.status in ['onhold'] or self.event.status in ['not_approved'] ) and self.is_admin
-                                and not self.is_owner)
+            self.can_approve = ((self.event.status in ['pending'] or self.event.status in ['onhold'] or self.event.status in ['not_approved'] ) and self.is_admin)
             self.can_not_approve = self.event.status not in ['not_approved'] and self.is_admin
             self.can_cancel = self.is_admin or self.is_owner
             self.can_delete = self.is_admin or ( self.is_owner and self.quick_edit )
