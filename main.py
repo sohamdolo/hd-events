@@ -441,7 +441,8 @@ def _get_user_wait_time():
   user = users.get_current_user()
   if not user:
     # We'll perform the check when they are logged in.
-    return 0
+    # return None to avoid user to access the page
+    return None
 
   if UserRights().is_admin:
     # If they're an admin, they can do whatever they want.
@@ -462,10 +463,9 @@ def _get_user_wait_time():
     logging.debug("Got response from signup app: %s" % (response.content))
 
     if response.status_code != 200:
-      logging.error("Failed to fetch user data, status %d." % \
-                    (response.status_code))
+      logging.error("Failed to fetch user data, status %d." % response.status_code)
       # Disable it to be safe.
-      return conf.NEW_EVENT_WAIT_PERIOD
+      return None
 
     result = json.loads(response.content)
 
@@ -478,7 +478,7 @@ def _get_user_wait_time():
     created = pickle.loads(str(result["created"]))
 
     # Cache it for next time.
-    memcache.add("created.%s" % (user.user_id()), created)
+    memcache.add("created.%s" % user.user_id(), created)
   else:
     logging.debug("Cache hit for user %s creation time." % (user.email()))
 
@@ -915,6 +915,7 @@ class ApprovedHandler(webapp2.RequestHandler):
             whichbase = self.request.get('base') + '.html'
 
         wait_days = _get_user_wait_time()
+        logging.debug("wait days are %s" % wait_days)
 
         user_rights = UserRights()
         is_admin = user_rights.is_admin
@@ -1030,6 +1031,7 @@ class PendingHandler(webapp2.RequestHandler):
         show_all_nav = user
         today = local_today()
         tomorrow = today + timedelta(days=1)
+        date_after = today + timedelta(days=2)
 
         wait_days = _get_user_wait_time()
 

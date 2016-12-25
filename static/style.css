@@ -155,9 +155,10 @@ input.dp-applied {
 }
 
 /* menu */
-#menu {float: right; margin: 10px; font-size: smaller;}
+#menu {margin: 10px; font-size: smaller;
+    text-align: right;}
 .emph {font-weight: bold;}
-#menu .current {text-decoration: none; color: #000; cursor: tex;}
+#menu .current {text-decoration: none; color: #000; cursor: text;}
 
 #edit-approve-btns, #cancel-delete-btns {
   display: inline;
@@ -182,4 +183,16 @@ input.dp-applied {
   font-size: 12px;
   white-space: nowrap;
   padding-top: 25px;
+    text-decoration: none;
+    color: red;
+}
+.no-new-message:visited {
+    text-decoration: none;
+    color: red;
+}
+
+.no-new-message:hover, .no-new-message:visited:hover {
+    text-decoration: none;
+    cursor: auto;
+    color: red;
 }

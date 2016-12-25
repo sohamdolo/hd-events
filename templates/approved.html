@@ -1,26 +1,31 @@
 {% extends whichbase %}
-{% block refresh %}<meta http-equiv="refresh" content="3600">{% endblock %}
+{% block refresh %}
+    <meta http-equiv="refresh" content="3600">{% endblock %}
 {% block content %}
-{% include 'nav_menu.html' %}
+    {% include 'disclaimer_parking.html' %}
 
-<div id="primary">
-  {% ifnotequal whichbase "mini.html" %}<h3>Upcoming Events</h3>{% endifnotequal %}
+    {% include 'nav_menu.html' %}
 
-  {% regroup events by start_date as grouped_events %}
-  {% for events in grouped_events %}
-    {% ifchanged events.grouper|date:"F" %}
-        <h3>{{events.grouper|date:"F Y" }}</h3>
-    {% endifchanged %}
-    <h4>{% ifequal events.grouper today.date %}<span style="text-decoration:underline;">Today</span> - {% endifequal %}{% ifequal events.grouper tomorrow.date %}<span style="text-decoration:underline;">Tomorrow</span> - {% endifequal %}{{events.grouper|date:"l, F j"}}</h4>
-    <table>
-      {% for event in events.list %}
-        {% include 'list_event.html' %}
-      {% endfor %}
-    </table>
-  {% endfor %}
+    <div id="primary">
+        {% ifnotequal whichbase "mini.html" %}<h3>Upcoming Events</h3>{% endifnotequal %}
 
-  <p><a href="/past" style="font-size: smaller;">&larr; Past Events</a></p>
-</div>
+        {% regroup events by start_date as grouped_events %}
+        {% for events in grouped_events %}
+            {% ifchanged events.grouper|date:"F" %}
+                <h3>{{ events.grouper|date:"F Y" }}</h3>
+            {% endifchanged %}
+            <h4>{% ifequal events.grouper today.date %}<span style="text-decoration:underline;">Today</span> - {% endifequal %}
+                {% ifequal events.grouper tomorrow.date %}<span style="text-decoration:underline;">Tomorrow</span>
+                    - {% endifequal %}{{ events.grouper|date:"l, F j"}}</h4>
+            <table>
+                {% for event in events.list %}
+                    {% include 'list_event.html' %}
+                {% endfor %}
+            </table>
+        {% endfor %}
+
+        <p><a href="/past" style="font-size: smaller;">&larr; Past Events</a></p>
+    </div>
 
 
 {% endblock %}
