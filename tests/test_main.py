@@ -594,8 +594,8 @@ class EditHandlerTest(BaseTest):
         response = self.test_app.get("/event/%d" % (self.event.key().id()))
         self.assertEqual(200, response.status_int)
 
-    """ Tests that we can reasonably edit the event. """
 
+    """ Tests that we can reasonably edit the event. """
     def test_post(self):
         response = self.test_app.post("/edit/%d" % (self.event.key().id()),
                                       self.params)
@@ -674,6 +674,24 @@ class EditHandlerTest(BaseTest):
                                       self.params)
         self.assertEqual(200, response.status_int)
 
+    def test_admin_can_approve_own_event(self):
+        # Login as admin.
+        self.testbed.setup_env(user_is_admin="1", overwrite=True)
+        response = self.test_app.get("/event/%d" % (self.event.key().id()))
+        self.assertEqual(200, response.status_int)
+        self.assertIn('type="submit" name="state" value="Approve"', response.body)
+
+    def test_admin_can_approve_event(self):
+        # Login as admin.
+        self.testbed.setup_env(user_email="admin@gmail.com", user_is_admin="1", overwrite=True)
+        response = self.test_app.get("/event/%d" % (self.event.key().id()))
+        self.assertEqual(200, response.status_int)
+        self.assertIn('type="submit" name="state" value="Approve"', response.body)
+
+    def test_member_can_not_approve(self):
+        response = self.test_app.get("/event/%d" % (self.event.key().id()))
+        self.assertEqual(200, response.status_int)
+        self.assertNotIn('type="submit" name="state" value="Approve"', response.body)
 
 """ Tests for the ExpireSuspended cron job. """
 
