@@ -20,18 +20,20 @@ ROOM_OPTIONS = (
     ('Main Space', 100),
   )
 
+EVENT_STATUS = set(
+    ['suspended', 'pending', 'understaffed', 'approved', 'not_approved', 'canceled', 'onhold', 'expired', 'deleted'])
+
+
 # GUESTS_PER_STAFF = 25
 PENDING_LIFETIME = 30  # days
 # Minimum number of hours before event start during which we can RSVP.
 RSVP_DEADLINE = 3
 
 class Event(db.Model):
-    status  = db.StringProperty(required=True, default='pending', choices=set(
-                ['pending', 'understaffed', 'approved', 'not_approved', 'canceled', 'onhold', 'expired', 'deleted']))
+    status  = db.StringProperty(required=True, default='pending', choices=EVENT_STATUS)
     # If the member who created the event is now suspended, what the previous
     # event status was.
-    original_status  = db.StringProperty(default=None, choices=set(
-                ['pending', 'understaffed', 'approved', 'not_approved', 'canceled', 'onhold', 'expired', 'deleted']))
+    original_status  = db.StringProperty(default=None, choices=EVENT_STATUS)
     member  = db.UserProperty(auto_current_user_add=True)
     name        = db.StringProperty(required=True)
     start_time  = db.DateTimeProperty(required=True)
@@ -97,6 +99,22 @@ class Event(db.Model):
                 if e not in conflicts:
                   conflicts.append(e)
       return conflicts
+
+    @classmethod
+    def get_future_events_by_member(cls, member):
+        return cls.all() \
+            .filter('start_time >', local_today()) \
+            .filter('status IN', ['approved', 'not_approved', 'pending', 'onhold']) \
+            .filter('member = ', member)\
+            .order('start_time')
+
+    @classmethod
+    def get_future_suspended_events_by_member(cls, member):
+        return cls.all() \
+            .filter('start_time >', local_today()) \
+            .filter('member = ', member) \
+            .filter('status IN ', ['suspended'])\
+            .order('start_time')
 
 
     @classmethod
@@ -168,7 +186,7 @@ class Event(db.Model):
     def get_pending_list(cls):
         return cls.all() \
             .filter('start_time >', local_today()) \
-            .filter('status IN', ['pending', 'understaffed', 'onhold', 'expired']) \
+            .filter('status IN', ['pending', 'understaffed', 'onhold', 'expired', 'suspended']) \
             .order('start_time')
 
     @classmethod
@@ -198,7 +216,7 @@ class Event(db.Model):
         return len(self.staff) >= self.staff_needed()
 
     def staff_needed(self):
-      return 0
+        return 0
 #      if self.estimated_size.isdigit():
 #        return int(self.estimated_size) / GUESTS_PER_STAFF
 #      else:
@@ -385,9 +403,9 @@ class Event(db.Model):
         return "http://"+self.url
 
 class Feedback(db.Model):
-    user    = db.UserProperty(auto_current_user_add=True)
-    event   = db.ReferenceProperty(Event)
-    rating  = db.IntegerProperty()
+    user = db.UserProperty(auto_current_user_add=True)
+    event = db.ReferenceProperty(Event)
+    rating = db.IntegerProperty()
     comment = db.StringProperty(multiline=True)
     created = db.DateTimeProperty(auto_now_add=True)
 
