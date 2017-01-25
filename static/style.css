@@ -51,6 +51,7 @@ a.event-link {font-size: 18px; line-height: 18px;}
 .status-badge {color: white; font-size: small; padding: 3px 6px; background: gray; margin-left: 6px; border-radius: 2px;}
 .status-badge.not_approved-badge, .status-badge.canceled-badge {background: red;}
 .status-badge.onhold-badge {background: green;}
+.status-badge.suspended-badge {background: darkorange;}
 
 #log-list {width:100%;}
 #log-list th {text-align: left;}

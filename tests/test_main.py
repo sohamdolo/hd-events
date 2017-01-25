@@ -143,6 +143,37 @@ class BaseTest(unittest.TestCase):
                                "weekdaysOnly": False}
 
 
+class WifiHandlerTest(BaseTest):
+    """
+    Tests for wifi handlers
+    """
+
+    def test_get(self):
+        """
+        test get not allowed
+        :return:
+        """
+        response = self.test_app.get("/check/wifi", expect_errors=True)
+        self.assertEqual(405, response.status_int)
+
+    def test_post(self):
+        """
+        test get not allowed
+        :return:
+        """
+        response = self.test_app.post("/check/wifi", params={"event": "euwi"})
+        self.assertEqual(200, response.status_int)
+
+    def test_post_no_param(self):
+        """
+        test post without params not allowed
+        :return:
+        """
+        response = self.test_app.post("/check/wifi", params={}, expect_errors=True)
+        self.assertEqual(401, response.status_int)
+
+
+
 """ Tests that the new event handler works properly. """
 
 
