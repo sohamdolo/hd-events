@@ -9,12 +9,12 @@ from shared.api import domain
 import json
 import logging
 
-from config import Config
 
 LOCAL_TZ = 'America/Los_Angeles'
 
 # TODO: replace use of dojo function with directly using domain from shared lib
 dojo = domain
+
 
 def to_sentence_list(lst):
     lst = map(str, lst)

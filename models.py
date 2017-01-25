@@ -400,7 +400,7 @@ class Event(db.Model):
         protocol = re.compile("^https?:\/\/")
         if protocol.search(self.url):
             return self.url
-        return "http://"+self.url
+        return "https://"+self.url
 
 class Feedback(db.Model):
     user = db.UserProperty(auto_current_user_add=True)

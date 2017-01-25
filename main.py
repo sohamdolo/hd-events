@@ -458,9 +458,8 @@ def _get_user_wait_time():
     base_url = conf.SIGNUP_URL + "/api/v1/user"
     query_str = urllib.urlencode({"email": user.email(),
                                   "properties[]": ["created", "plan"]}, True)
-    response = urlfetch.fetch("%s?%s" % (base_url, query_str),
-                              follow_redirects=False)
-    logging.debug("Got response from signup app: %s" % (response.content))
+    response = urlfetch.fetch("%s?%s" % (base_url, query_str))
+    logging.debug("Got response from signup app: %s" % response.content)
 
     if response.status_code != 200:
       logging.error("Failed to fetch user data, status %d." % response.status_code)
@@ -487,7 +486,7 @@ def _get_user_wait_time():
   # Check to see how long we have left.
   since_creation = datetime.now() - created
   to_wait = max(0, conf.NEW_EVENT_WAIT_PERIOD - since_creation.days)
-  logging.debug("Days to wait: %d" % (to_wait))
+  logging.debug("Days to wait: %d" % to_wait)
 
   return to_wait
 

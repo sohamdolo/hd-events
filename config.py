@@ -31,7 +31,7 @@ class Config:
     Config.is_prod = not (Config.is_dev or Config.is_testing)
 
     # The URL of the signup app.
-    self.SIGNUP_URL = "http://hd-signup-hrd.appspot.com"
+    self.SIGNUP_URL = "https://hd-signup-hrd.appspot.com"
 
     # The minimum amount of time that must be left between consecutive events,
     # in minutes.
