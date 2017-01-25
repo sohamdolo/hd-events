@@ -62,13 +62,13 @@ class StatusChangeHandlerTest(BaseTest):
     self.assertEqual(200, response.status_int)
 
     event = Event.get_by_id(self.event_id)
-    self.assertEqual("onhold", event.status)
+    self.assertEqual("suspended", event.status)
     self.assertNotEqual(None, event.owner_suspended_time)
     self.assertEqual("pending", event.original_status)
 
     # Check that it was logged.
     log_event = self.__get_latest_log(event)
-    self.assertIn("event on hold", log_event.description)
+    self.assertIn("Suspended event", log_event.description)
 
     # Restore the event.
     params = self.params.copy()

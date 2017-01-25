@@ -34,7 +34,7 @@ def bug_owner_pending(e):
 Event: %s
 Owner: %s
 Date: %s
-URL: http://%s/event/%s-%s
+URL: https://%s/event/%s-%s
 """ % (
     e.name,
     str(e.member),
@@ -70,7 +70,7 @@ def schedule_reminder_email(e):
 Event: %s
 Owner: %s
 Date: %s
-URL: http://%s/event/%s-%s
+URL: https://%s/event/%s-%s
 """ % (
     e.name,
     str(e.owner()),
@@ -106,7 +106,7 @@ on %s
 has been submitted to be approved. You will be notified as soon as it's
 approved and on the calendar. Here is a link to the event page:
 
-http://events.hackerdojo.com/event/%s-%s
+https://events.hackerdojo.com/event/%s-%s
 
 Again, your event is NOT YET APPROVED and not on the calendar.
 
@@ -166,7 +166,7 @@ Details: %s
 
 Notes: %s
 
-http://events.hackerdojo.com/event/%s-%s
+https://events.hackerdojo.com/event/%s-%s
 """ % (
     event.name,
     event.member.email(),
@@ -201,7 +201,7 @@ Organisers and attendees will be able to connect to HD-Events wifi during the ev
 Here is the password we generated for you: <b>%s</b>.
 Don't forget to give it to your attendees. They will be able to connect 15 min before and until 15 min after your event.
 
-http://events.hackerdojo.com/event/%s-%s
+https://events.hackerdojo.com/event/%s-%s
 
 Cheers,
 Hacker Dojo Events Team
@@ -221,7 +221,7 @@ Friendly Reminder: As per policy, all members are welcome to sit in on any event
 
 As a courtesy, the Event RSVP system was built such that event hosts won't be surprised by the number of members attending their event.  Members can RSVP up to 48 hours before the event, after that the RSVP list is locked.
 
-http://events.hackerdojo.com/event/%s-%s
+https://events.hackerdojo.com/event/%s-%s
 
 Cheers,
 Hacker Dojo Events Team
@@ -237,7 +237,7 @@ events@hackerdojo.com
 def notify_deletion(event,user):
   body="""This event has been deleted.
 
-http://events.hackerdojo.com/event/%s-%s
+https://events.hackerdojo.com/event/%s-%s
 
 Cheers,
 Hacker Dojo Events Team
@@ -287,7 +287,7 @@ Friendly Reminder: You must be present at the event and make sure Dojo policies 
 
 Note: If you cancel or reschedule the event, please log in to our system and cancel the event!
 
-http://events.hackerdojo.com/event/%s-%s
+https://events.hackerdojo.com/event/%s-%s
 
 Cheers,
 Hacker Dojo Events Team

@@ -40,8 +40,10 @@ handlers:
   login: admin
 - url: /api/v1/.*
   script: api.app
+  secure: optional
 - url: .*
   script: main.app
+  secure: always
 
 libraries:
 - name: django

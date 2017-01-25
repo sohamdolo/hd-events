@@ -1,24 +1,24 @@
 import cgi
+
 from google.appengine.ext import db
 from google.appengine.ext.webapp import util, template
-from google.appengine.api import urlfetch, memcache, users, mail
+from google.appengine.api import urlfetch, memcache, users
 
 import json
-import unicodedata
 from icalendar import Calendar, Event as CalendarEvent
-import logging, urllib, os
-from pprint import pprint
+import logging, urllib
 import cPickle as pickle
 from datetime import datetime, timedelta
 
 from models import Event, Feedback, HDLog, ROOM_OPTIONS, PENDING_LIFETIME
-from utils import username, human_username, set_cookie, local_today, local_now, is_phone_valid, UserRights, dojo, generate_wifi_password
+from utils import human_username, set_cookie, local_today, local_now, is_phone_valid, UserRights, dojo, generate_wifi_password
 from notices import *
 
 import PyRSS2Gen
 import pytz
 
 import webapp2
+from webapp2_extras import jinja2
 
 from config import Config
 import re
@@ -458,9 +458,8 @@ def _get_user_wait_time():
     base_url = conf.SIGNUP_URL + "/api/v1/user"
     query_str = urllib.urlencode({"email": user.email(),
                                   "properties[]": ["created", "plan"]}, True)
-    response = urlfetch.fetch("%s?%s" % (base_url, query_str),
-                              follow_redirects=False)
-    logging.debug("Got response from signup app: %s" % (response.content))
+    response = urlfetch.fetch("%s?%s" % (base_url, query_str))
+    logging.debug("Got response from signup app: %s" % response.content)
 
     if response.status_code != 200:
       logging.error("Failed to fetch user data, status %d." % response.status_code)
@@ -487,7 +486,7 @@ def _get_user_wait_time():
   # Check to see how long we have left.
   since_creation = datetime.now() - created
   to_wait = max(0, conf.NEW_EVENT_WAIT_PERIOD - since_creation.days)
-  logging.debug("Days to wait: %d" % (to_wait))
+  logging.debug("Days to wait: %d" % to_wait)
 
   return to_wait
 
@@ -588,6 +587,15 @@ def _do_event_action(event, action, check=False):
   return True
 
 
+class BaseHandler(webapp2.RequestHandler):
+
+    @webapp2.cached_property
+    def jinja2(self):
+        # Returns a Jinja2 renderer cached in the app registry.
+        return jinja2.get_jinja2(app=self.app)
+
+
+
 class DomainCacheCron(webapp2.RequestHandler):
     def get(self):
         noop = dojo('/groups/events',force=True)
@@ -654,7 +662,7 @@ class ExportHandler(webapp2.RequestHandler):
 
     def export_ics(self):
         events = Event.get_recent_past_and_future()
-        url_base = 'http://' + self.request.headers.get('host', 'events.hackerdojo.com')
+        url_base = 'https://' + self.request.headers.get('host', 'events.hackerdojo.com')
         cal = Calendar()
         for event in events:
             iev = CalendarEvent()
@@ -687,7 +695,7 @@ class ExportHandler(webapp2.RequestHandler):
 
     def export_large_ics(self):
         events = Event.get_recent_past_and_future()
-        url_base = 'http://' + self.request.headers.get('host', 'events.hackerdojo.com')
+        url_base = 'https://' + self.request.headers.get('host', 'events.hackerdojo.com')
         cal = Calendar()
         for event in events:
             iev = CalendarEvent()
@@ -719,12 +727,12 @@ class ExportHandler(webapp2.RequestHandler):
         return 'text/calendar', cal.as_string()
 
     def export_rss(self):
-        url_base = 'http://' + self.request.headers.get('host', 'events.hackerdojo.com')
+        url_base = 'https://' + self.request.headers.get('host', 'events.hackerdojo.com')
         events = Event.get_recent_past_and_future_approved()
         rss = PyRSS2Gen.RSS2(
             title = "Hacker Dojo Events Feed",
             link = url_base,
-            description = "Upcoming events at the Hacker Dojo in Mountain View, CA",
+            description = "Upcoming events at the Hacker Dojo in Santa Clara View, CA",
             lastBuildDate = datetime.now(),
             items = [PyRSS2Gen.RSSItem(
                         title = "%s @ %s: %s" % (
@@ -745,6 +753,8 @@ class EditHandler(webapp2.RequestHandler):
         event = Event.get_by_id(int(id))
         show_all_nav = users.get_current_user()
         access_rights = UserRights(event)
+
+
         if access_rights.can_edit:
             logout_url = users.create_logout_url('/')
             rooms = ROOM_OPTIONS
@@ -899,6 +909,7 @@ class EventHandler(webapp2.RequestHandler):
         wait_days = _get_user_wait_time()
         self.response.out.write(template.render('templates/event.html', locals()))
 
+
 class ApprovedHandler(webapp2.RequestHandler):
     def get(self):
         user = users.get_current_user()
@@ -923,7 +934,8 @@ class ApprovedHandler(webapp2.RequestHandler):
         self.response.out.write(template.render('templates/approved.html', locals()))
 
 
-class MyEventsHandler(webapp2.RequestHandler):
+class MyEventsHandler(BaseHandler):
+
     @util.login_required
     def get(self):
         user = users.get_current_user()
@@ -1396,6 +1408,45 @@ class WifiLoginHandler(webapp2.RequestHandler):
         self.response.write(template.render('templates/wifi_login_error.html', data))
         return
 
+
+class CheckWifiHandler(webapp2.RequestHandler):
+    """
+
+    """
+    def post(self):
+        """
+        handler that check if the given password is valid and return the duration of the event
+        :return:
+        """
+        given_password = self.request.get('event', None)
+        event_validation = {'valid': False, 'duration_session': 0, 'start_time': 0}
+
+        if not given_password:
+            self.response.set_status(401)
+            return
+
+        given_password = cgi.escape(given_password)
+        logging.info("Given password is: %s" % given_password)
+        events_list = Event.get_by_wifi_password(given_password)
+        if events_list:
+            now_time = local_now()
+            for event in events_list:
+                logging.info("Found event %s with correct password" % event.name)
+                start_time = event.start_time - timedelta(minutes=30)
+                end_time = event.end_time + timedelta(minutes=30)
+                duration = (end_time - now_time).total_seconds()
+
+                if start_time <= now_time <= end_time:
+                    logging.info("Valid event started at %s, session allowed for %s sec" % (event.start_time, duration))
+                    event_validation['valid'] = True
+                    event_validation['start_time'] = str(event.start_time)
+                    event_validation['duration_session'] = duration
+                else:
+                    logging.info("Event not valid")
+        logging.info(event_validation)
+        self.response.write(json.dumps(event_validation))
+        return
+
 app = webapp2.WSGIApplication([
         ('/', ApprovedHandler),
         ('/all_future', AllFutureHandler),
@@ -1420,4 +1471,5 @@ app = webapp2.WSGIApplication([
         ('/bulk_action', BulkActionHandler),
         ('/bulk_action_check', BulkActionCheckHandler),
         ('/wifilogin', WifiLoginHandler),
+        ('/check/wifi',  CheckWifiHandler)
         ],debug=True)
