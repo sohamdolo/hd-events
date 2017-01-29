@@ -190,6 +190,28 @@ class NewHandlerTest(BaseTest):
 
     """ Tests that we can actually create a new event. """
 
+    def test_create_event_less_48hours(self):
+        params = self.params.copy()
+        print params
+        date = local_today()
+        print local_today()
+        params["start_date"] = "%d/%d/%d" % (date.month, date.day, date.year)
+        params["end_date"] = "%d/%d/%d" % (date.month, date.day, date.year)
+        print params
+        response = self.test_app.post("/new", params, expect_errors=True)
+        self.assertEqual(400, response.status_int)
+        self.assertIn("cannot start", response.body)
+
+    def test_no_48hours_for_admin(self):
+        params = self.params.copy()
+        date = local_today()
+        params["start_date"] = "%d/%d/%d" % (date.month, date.day, date.year)
+        params["end_date"] = "%d/%d/%d" % (date.month, date.day, date.year)
+        self.testbed.setup_env(user_is_admin="1", overwrite=True)
+        response = self.test_app.post("/new", params, expect_errors=True)
+        self.assertEqual(200, response.status_int)
+
+
     def test_post(self):
         response = self.test_app.post("/new", self.params)
         self.assertEqual(200, response.status_int)
