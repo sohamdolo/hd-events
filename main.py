@@ -526,8 +526,12 @@ def _do_event_action(event, action, check=False):
     todo = None
     args = []
     if action.lower() == 'approve':
+        # check if the events is in more than 5 weeks
+        fiveweeks = local_today() + timedelta(weeks=5)
+        if event.start_time >= fiveweeks:
+            return False, "This event cannot be approved because the date is in more than 5 weeks."
         if not access_rights.can_approve:
-            return False
+            return False, "only admin can approve events"
         event.check_wifi_password()
         if not check:
             notify_owner_approved(event)
@@ -536,46 +540,46 @@ def _do_event_action(event, action, check=False):
 
     elif action.lower() == 'notapproved':
         if not access_rights.can_not_approve:
-            return False
+            return False, "You are not allowed to unapprove this event."
         todo = event.not_approved
         desc = 'Event marked not approved'
 
     elif action.lower() == 'rsvp':
         if not user:
-            return False
+            return False, "Please login"
         todo = event.rsvp
         if not check:
             notify_owner_rsvp(event, user)
 
     elif action.lower() == 'staff':
         if not access_rights.can_staff:
-            return False
+            return False, "You are not allowed to staff this event ."
         todo = event.add_staff
         args.append(user)
         desc = 'added self as staff'
 
     elif action.lower() == 'unstaff':
         if not access_rights.can_unstaff:
-            return False
+            return False, "You are not allowed to unstaff this event."
         todo = event.remove_staff
         args.append(user)
         desc = 'Removed self as staff'
 
     elif action.lower() == 'onhold':
         if not access_rights.can_cancel:
-            return False
+            return False, "You are not allowed to put this event on hold."
         todo = event.on_hold
         desc = 'Put event on hold'
 
     elif action.lower() == 'cancel':
         if not access_rights.can_cancel:
-            return False
+            return False, "You are not allowed to cancel this event"
         todo = event.cancel
         desc = 'Cancelled event'
 
     elif action.lower() == 'delete':
         if not access_rights.can_delete:
-            return False
+            return False, "You are not allowed to delete this event."
         todo = event.delete
         desc = 'Deleted event'
         if not check:
@@ -583,7 +587,7 @@ def _do_event_action(event, action, check=False):
 
     elif action.lower() == 'undelete':
         if not access_rights.can_undelete:
-            return False
+            return False, "You are not allowed to put this event back on schedule."
         todo = event.undelete
         desc = 'Undeleted event'
 
@@ -595,7 +599,7 @@ def _do_event_action(event, action, check=False):
         logging.warning("Action '%s' was not recognized." % (action))
 
     if check:
-        return True
+        return True, ""
 
     if desc != '':
         log = HDLog(event=event, description=desc)
@@ -604,7 +608,7 @@ def _do_event_action(event, action, check=False):
     if todo:
         todo(*args)
 
-    return True
+    return True, ""
 
 
 class BaseHandler(webapp2.RequestHandler):
@@ -921,8 +925,9 @@ class EventHandler(webapp2.RequestHandler):
         event = Event.get_by_id(int(id))
         action = self.request.get('state')
 
-        _do_event_action(event, action)
-
+        okay, message = _do_event_action(event, action)
+        if not okay:
+            error_message = message
         event.details = db.Text(event.details.replace('\n', '<br/>'))
         show_all_nav = users.get_current_user()
         event.notes = db.Text(event.notes.replace('\n', '<br/>'))
@@ -1070,6 +1075,8 @@ class PendingHandler(webapp2.RequestHandler):
 
         user_rights = UserRights()
         is_admin = user_rights.is_admin
+
+        fiveweeks_limit = local_today() + timedelta(weeks=5)
         self.response.out.write(template.render('templates/pending.html', locals()))
 
 
@@ -1315,7 +1322,8 @@ class BulkActionHandler(BulkActionCommon):
         # Perform the action on all the events.
         logging.debug("Performing bulk action: %s" % (action))
         for event in events:
-            if not _do_event_action(event, action):
+            okay, message = _do_event_action(event, action)
+            if not okay:
                 logging.warning("Performing action '%s' failed." % (action))
                 self.response.set_status(400)
                 return
@@ -1342,7 +1350,8 @@ class BulkActionCheckHandler(BulkActionCommon):
         for event in events:
             to_remove = []
             for action in possible_actions:
-                if not _do_event_action(event, action, check=True):
+                okay, message = _do_event_action(event, action, check=True)
+                if not okay:
                     # This action cannot be performed.
                     bad_actions.append(action)
                     to_remove.append(action)
