@@ -5,11 +5,11 @@
 
 import datetime
 import json
-import logging
 import os
 import unittest
 
 import webtest
+from datetime import timedelta
 from google.appengine.api import users
 from google.appengine.ext import db
 from google.appengine.ext import testbed
@@ -18,6 +18,8 @@ import utils
 
 # This has to go before we import the main module so that the correct settings
 # get loaded.
+from utils import local_today, local_now
+
 os.environ["DJANGO_SETTINGS_MODULE"] = "settings"
 
 from config import Config
@@ -56,7 +58,7 @@ class BaseTest(unittest.TestCase):
     Returns: A list of the events created. """
 
     def _make_events(self, events, offset=1, time=12):
-        start = utils.local_now()
+        start = utils.local_now() + timedelta(days=2)
         start = start.replace(hour=time, minute=0)
         made_events = []
         for i in range(0, events):
@@ -71,7 +73,7 @@ class BaseTest(unittest.TestCase):
 
         return made_events
 
-    def get_params(self, offset_days=1):
+    def get_params(self, offset_days=2):
         """
         Create a dict of data to create a new event with the specified offset
         Args:
@@ -80,7 +82,7 @@ class BaseTest(unittest.TestCase):
         Returns: params for new event
 
         """
-        date = utils.local_now() + datetime.timedelta(days=offset_days)
+        date = utils.local_now() + datetime.timedelta(days=offset_days+2)
         event_date = "%d/%d/%d" % (date.month, date.day, date.year)
         params = {"start_date": event_date,
                   "start_time_hour": "12",
@@ -118,7 +120,7 @@ class BaseTest(unittest.TestCase):
                                user_is_admin="0", overwrite=True)
 
         # Default parameters for putting in the form.
-        date = utils.local_now() + datetime.timedelta(days=1)
+        date = utils.local_today() + datetime.timedelta(days=2)
         event_date = "%d/%d/%d" % (date.month, date.day, date.year)
         self.params = {"start_date": event_date,
                        "start_time_hour": "12",
@@ -188,6 +190,28 @@ class NewHandlerTest(BaseTest):
 
     """ Tests that we can actually create a new event. """
 
+    def test_create_event_less_48hours(self):
+        params = self.params.copy()
+        print params
+        date = local_today()
+        print local_today()
+        params["start_date"] = "%d/%d/%d" % (date.month, date.day, date.year)
+        params["end_date"] = "%d/%d/%d" % (date.month, date.day, date.year)
+        print params
+        response = self.test_app.post("/new", params, expect_errors=True)
+        self.assertEqual(400, response.status_int)
+        self.assertIn("cannot start", response.body)
+
+    def test_no_48hours_for_admin(self):
+        params = self.params.copy()
+        date = local_today()
+        params["start_date"] = "%d/%d/%d" % (date.month, date.day, date.year)
+        params["end_date"] = "%d/%d/%d" % (date.month, date.day, date.year)
+        self.testbed.setup_env(user_is_admin="1", overwrite=True)
+        response = self.test_app.post("/new", params, expect_errors=True)
+        self.assertEqual(200, response.status_int)
+
+
     def test_post(self):
         response = self.test_app.post("/new", self.params)
         self.assertEqual(200, response.status_int)
@@ -219,11 +243,12 @@ class NewHandlerTest(BaseTest):
 
     def test_second_member_requirement(self):
         params = self.params.copy()
-        date = datetime.date.today() + datetime.timedelta(days=2)
+        date = utils.local_today() + datetime.timedelta(days=3)
         # Make it last 24 hours or more.
         params["end_date"] = "%d/%d/%d" % (date.month, date.day, date.year)
 
         response = self.test_app.post("/new", params, expect_errors=True)
+        print response
         self.assertEqual(400, response.status_int)
 
         # It should give us an error about specifying the email address.
@@ -254,9 +279,13 @@ class NewHandlerTest(BaseTest):
     def test_four_week_limit(self):
         # Make one fewer than the limit events.
         events = self._make_events(Config().USER_MAX_FOUR_WEEKS - 1)
+        print events
+        for event in events:
+            print event.start_time
         # The start time of our last event.
-        last_start = datetime.datetime.now() + \
-                     datetime.timedelta(days=Config().USER_MAX_FOUR_WEEKS)
+        # add 2 days to avoid being rejected by the 48hours limit
+        last_start = local_today() + datetime.timedelta(days=2) + datetime.timedelta(days=Config().USER_MAX_FOUR_WEEKS)
+        print last_start
 
         # Now, it should let us create a last one.
         event_date = "%d/%d/%d" % (last_start.month, last_start.day,
@@ -264,7 +293,7 @@ class NewHandlerTest(BaseTest):
         params = self.params.copy()
         params["start_date"] = event_date
         params["end_date"] = event_date
-
+        print params
         response = self.test_app.post("/new", params)
         self.assertEqual(200, response.status_int)
 
@@ -293,24 +322,28 @@ class NewHandlerTest(BaseTest):
     Dojo hours. """
 
     def test_one_per_day(self):
-        start = datetime.datetime.now() + datetime.timedelta(days=1)
+        # move 48hours to avoid being denied
+        limit = local_today() + timedelta(days=2)
+        start = limit
         # For this test to work, the event initially has to be scheduled on a
         # weekday.
         if start.weekday() > 4:
+            # weekend so move 2 days again
             start += datetime.timedelta(days=2)
         self.assertLess(start.weekday(), 5)
 
-        start = start.replace(hour=11)
+        start = start.replace(hour=10)
         event = models.Event(name="Test Event", start_time=start,
                              end_time=start + datetime.timedelta(minutes=30),
                              type="Meetup", estimated_size="10", setup=15,
                              teardown=15, details="This is a test event.")
         event.put()
-
+        print event.start_time
         params = self.params.copy()
         params["start_date"] = "%d/%d/%d" % (start.month, start.day, start.year)
         params["end_date"] = params["start_date"]
 
+        print params
         # That should be our one event for that day. It should complain if we try to
         # create another one.
         response = self.test_app.post("/new", params, expect_errors=True)
@@ -341,8 +374,8 @@ class NewHandlerTest(BaseTest):
         self.assertEqual(200, response.status_int)
 
         # If we schedule it on a weekend, however, we should have no such problems.
-        days_to_weekend = 6 - datetime.datetime.today().weekday()
-        start = datetime.datetime.now() + datetime.timedelta(days=days_to_weekend)
+        days_to_weekend = 6 - limit.weekday()
+        start = limit + datetime.timedelta(days=days_to_weekend)
         self.assertGreater(start.weekday(), 4)
 
         event.start_time = start
@@ -649,7 +682,7 @@ class EditHandlerTest(BaseTest):
 
     def test_second_member_requirement(self):
         params = self.params.copy()
-        date = datetime.date.today() + datetime.timedelta(days=2)
+        date = local_today() + datetime.timedelta(days=3)
         # Make it last 24 hours or more.
         params["end_date"] = "%d/%d/%d" % (date.month, date.day, date.year)
 

@@ -14,12 +14,18 @@
 
     <div id="primary">
         <h3>Pending Events</h3>
+        {% if is_admin %}
+            <div id="disclaimer" class="alert alert-danger">
+                Hey admins, you can approve events until <b>{{ fiveweeks_limit }}</b>
+            </div>
+        {% endif %}
         {% regroup events by start_date as grouped_events %}
         {% for events in grouped_events %}
             {% ifchanged events.grouper|date:"F" %}
                 <h3 class="month-divider">{{ events.grouper|date:"F Y" }}</h3>
             {% endifchanged %}
-            <h4 class="date-divider">{% ifequal events.grouper today.date %}<span style="text-decoration:underline;">Today</span> - {% endifequal %}
+            <h4 class="date-divider">{% ifequal events.grouper today.date %}
+                <span style="text-decoration:underline;">Today</span> - {% endifequal %}
                 {% ifequal events.grouper tomorrow.date %}<span style="text-decoration:underline;">Tomorrow</span>
                     - {% endifequal %}{{ events.grouper|date:"l, F j"}}</h4>
             <table>

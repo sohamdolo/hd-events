@@ -3,6 +3,7 @@
 {% block content %}
 
 <div id="primary">
+    <span style="color: red; font-weight: bold">{{ error_message }}</span>
   <h3>{{event.name|safe}}</h3>
   {% if not event.is_past %}<p>
     <form method="post" style="display: inline;">
