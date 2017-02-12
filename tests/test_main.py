@@ -655,7 +655,7 @@ class EditHandlerTest(BaseTest):
     """ Tests that it gives us a page that seems correct. """
 
     def test_get(self):
-        response = self.test_app.get("/event/%d" % (self.event.key().id()))
+        response = self.test_app.get("/edit/%d" % (self.event.key().id()))
         self.assertEqual(200, response.status_int)
 
 
@@ -738,6 +738,25 @@ class EditHandlerTest(BaseTest):
                                       self.params)
         self.assertEqual(200, response.status_int)
 
+
+class ViewHandlerTest(BaseTest):
+    def setUp(self):
+        super(ViewHandlerTest, self).setUp()
+
+        # Make an event for us to edit.
+        event_start = datetime.datetime.now() + datetime.timedelta(days=1)
+        event_end = datetime.datetime.now() + datetime.timedelta(days=1, hours=2)
+        self.event = models.Event(name="Test Event", start_time=event_start,
+                                  end_time=event_end, type="Meetup",
+                                  estimated_size="10", setup=15, teardown=15,
+                                  details="This is a test event.")
+        self.event.put()
+
+    """ Tests that it gives us a page that seems correct. """
+    def test_get(self):
+        response = self.test_app.get("/event/%d" % (self.event.key().id()))
+        self.assertEqual(200, response.status_int)
+
     def test_admin_can_approve_own_event(self):
         # Login as admin.
         self.testbed.setup_env(user_is_admin="1", overwrite=True)
@@ -757,9 +776,30 @@ class EditHandlerTest(BaseTest):
         self.assertEqual(200, response.status_int)
         self.assertNotIn('type="submit" name="state" value="Approve"', response.body)
 
+    def test_admin_see_wifi_pwd(self):
+        # Login as admin.
+        self.testbed.setup_env(user_is_admin="1", overwrite=True)
+        response = self.test_app.get("/event/%d" % (self.event.key().id()))
+        self.assertEqual(200, response.status_int)
+        self.assertIn('Wifi password:', response.body)
+
+    def test_owner_see_wifi_pwd(self):
+        # Login as admin.
+        response = self.test_app.get("/event/%d" % (self.event.key().id()))
+        self.assertEqual(200, response.status_int)
+        self.assertIn('Wifi password:', response.body)
+
+    def test_other_do_not_see_wifi_pwd(self):
+        # Login as admin.
+        self.testbed.setup_env(user_email="other.testerson@gmail.com",
+                               user_is_admin="0", overwrite=True)
+        response = self.test_app.get("/event/%d" % (self.event.key().id()))
+        self.assertEqual(200, response.status_int)
+        self.assertNotIn('Wifi password:', response.body)
+
+
+
 """ Tests for the ExpireSuspended cron job. """
-
-
 class ExpireSuspendedCronHandlerTest(BaseTest):
     def setUp(self):
         super(ExpireSuspendedCronHandlerTest, self).setUp()

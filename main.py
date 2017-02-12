@@ -798,6 +798,8 @@ class EditHandler(webapp2.RequestHandler):
 
         event = Event.get_by_id(int(id))
         access_rights = UserRights(event)
+        wait_days = _get_user_wait_time()
+
         if access_rights.can_edit:
             try:
                 event_times, _ = _validate_event(self, editing_event_id=int(id))
@@ -897,6 +899,7 @@ class EditHandler(webapp2.RequestHandler):
 class EventHandler(webapp2.RequestHandler):
     def get(self, id):
         event = Event.get_by_id(int(id))
+
         if self.request.path.endswith('json'):
             self.response.headers['content-type'] = 'application/json'
             self.response.out.write(json.dumps(event.to_dict()))
@@ -908,12 +911,17 @@ class EventHandler(webapp2.RequestHandler):
             else:
                 login_url = users.create_login_url('/')
 
+            logger.info(event)
+            # check if user can see wifi password
+            display_wifi_password = False
+            if access_rights.is_admin or event.member == user:
+                display_wifi_password = True
+
             event.details = db.Text(event.details.replace('\n', '<br/>'))
             show_all_nav = user
             event.notes = db.Text(event.notes.replace('\n', '<br/>'))
 
             wait_days = _get_user_wait_time()
-
             self.response.out.write(template.render('templates/event.html', locals()))
 
     def post(self, id):
