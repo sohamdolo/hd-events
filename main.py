@@ -899,7 +899,7 @@ class EditHandler(webapp2.RequestHandler):
 class EventHandler(webapp2.RequestHandler):
     def get(self, id):
         event = Event.get_by_id(int(id))
-
+        access_rights = None
         if self.request.path.endswith('json'):
             self.response.headers['content-type'] = 'application/json'
             self.response.out.write(json.dumps(event.to_dict()))
@@ -914,7 +914,7 @@ class EventHandler(webapp2.RequestHandler):
             logger.info(event)
             # check if user can see wifi password
             display_wifi_password = False
-            if access_rights.is_admin or event.member == user:
+            if access_rights and access_rights.is_admin or event.member == user:
                 display_wifi_password = True
 
             event.details = db.Text(event.details.replace('\n', '<br/>'))
