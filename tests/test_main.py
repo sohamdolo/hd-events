@@ -155,15 +155,31 @@ class WifiHandlerTest(BaseTest):
         test get not allowed
         :return:
         """
-        response = self.test_app.get("/check/wifi", expect_errors=True)
+        response = self.test_app.get("/check/event", expect_errors=True)
         self.assertEqual(405, response.status_int)
+
+    def test_get_wifilogin(self):
+        """
+        test get wifilogin
+        :return:
+        """
+        response = self.test_app.get("/wifilogin", expect_errors=True)
+        self.assertEqual(401, response.status_int)
+
+    def test_get_wifilogin_params(self):
+        """
+        test get wifilogin
+        :return:
+        """
+        response = self.test_app.get("/wifilogin?user_continue_url=ewj&base_grant_url=shaj", expect_errors=False)
+        self.assertEqual(200, response.status_int)
 
     def test_post(self):
         """
         test get not allowed
         :return:
         """
-        response = self.test_app.post("/check/wifi", params={"event": "euwi"})
+        response = self.test_app.post("/check/event", params={"event": "euwi"})
         self.assertEqual(200, response.status_int)
 
     def test_post_no_param(self):
@@ -171,14 +187,12 @@ class WifiHandlerTest(BaseTest):
         test post without params not allowed
         :return:
         """
-        response = self.test_app.post("/check/wifi", params={}, expect_errors=True)
+        response = self.test_app.post("/check/event", params={}, expect_errors=True)
         self.assertEqual(401, response.status_int)
 
 
 
 """ Tests that the new event handler works properly. """
-
-
 class NewHandlerTest(BaseTest):
     """ Tests that it gives us a page that seems correct. """
 

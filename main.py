@@ -1386,7 +1386,9 @@ class WifiLoginHandler(webapp2.RequestHandler):
         """
         base_grant_url = self.request.get('base_grant_url', None)
         user_continue_url = self.request.get('user_continue_url', None)
+        client_mac = self.request.get('client_mac', None)
 
+        logger.info('Start Connection to HD-Events - Client with MAC %s' % client_mac)
         if not base_grant_url or not user_continue_url:
             logger.error("access refused, missing parameters")
             data = {
@@ -1403,8 +1405,11 @@ class WifiLoginHandler(webapp2.RequestHandler):
         Handler that validates the password entered on the login and grant access to the wifi.
 
         """
+        client_mac = self.request.get('client_mac', None)
         base_grant_url = self.request.get('base_grant_url', None)
         user_continue_url = self.request.get('user_continue_url', None)
+
+        logger.info("Starting Authentication for client with  MAC -- %s" % client_mac)
 
         if base_grant_url and user_continue_url:
             base_grant_url = cgi.escape(base_grant_url)
@@ -1418,13 +1423,13 @@ class WifiLoginHandler(webapp2.RequestHandler):
             self.response.write(template.render('templates/wifi_login_error.html', data))
             return
 
-        logger.debug("Grant url received is: %s" % base_grant_url)
-        logger.debug("Continue url received is: %s" % user_continue_url)
+        logger.info("Grant url received is: %s" % base_grant_url)
+        logger.info("Continue url received is: %s" % user_continue_url)
 
         password = self.request.get('wifi', None)
         if password:
             password = cgi.escape(password)
-            logger.debug("password typed is: %s" % password)
+            logger.info("password typed is: %s" % password)
         else:
             logger.error("access try again, missing password")
             data = {'error': "The password is missing. Please try again!"}
@@ -1433,19 +1438,24 @@ class WifiLoginHandler(webapp2.RequestHandler):
             return
 
         events_list = Event.get_by_wifi_password(password)
-        logger.debug(events_list)
         if events_list:
             now = local_now()
-            logger.debug(now)
             for event in events_list:
-                logger.debug(event.name)
-                start_time = event.start_time - timedelta(minutes=15)
-                end_time = event.end_time + timedelta(minutes=15)
-                logger.debug(start_time)
-                logger.debug(end_time)
-                if start_time <= now <= end_time:
-                    # user can access wifi for x hours
-                    logger.debug("access granted")
+                logger.info("Event is %s" % event.name)
+                start_time = event.start_time - timedelta(minutes=10) - timedelta(minutes=event.setup)
+                end_time = event.end_time + timedelta(minutes=10) + timedelta(minutes=event.teardown)
+                logger.info("Authorized login from %s to %s" % (start_time, end_time))
+
+                if start_time <= now < end_time:
+                    # event started
+                    session_duration = end_time - now
+                    session_duration = int(session_duration.total_seconds())
+                    logger.info("Time remaining in session: %s seconds" % session_duration)
+
+                    # user can access wifi for 2 hours and then need to login again
+                    # append grant url with duration
+                    grant_url = "%s&duration=%s" % (grant_url, 7200)
+                    logger.info("Access granted to %s for 2 hours" % client_mac)
                     self.response.write(template.render('templates/wifi_login_auth.html', locals()))
                     return
                 else:
@@ -1475,14 +1485,13 @@ class CheckWifiHandler(webapp2.RequestHandler):
     """
 
     """
-
     def post(self):
         """
         handler that check if the given password is valid and return the duration of the event
         :return:
         """
         given_password = self.request.get('event', None)
-        event_validation = {'valid': False, 'duration_session': 0, 'start_time': 0}
+        event_validation = {'valid': False}
 
         if not given_password:
             self.response.set_status(401)
@@ -1495,17 +1504,25 @@ class CheckWifiHandler(webapp2.RequestHandler):
             now_time = local_now()
             for event in events_list:
                 logging.info("Found event %s with correct password" % event.name)
-                start_time = event.start_time - timedelta(minutes=30)
-                end_time = event.end_time + timedelta(minutes=30)
-                duration = (end_time - now_time).total_seconds()
+                start_time = event.start_time - timedelta(minutes=10) - timedelta(minutes=event.setup)
+                end_time = event.end_time + timedelta(minutes=10) + timedelta(minutes=event.teardown)
+                session_duration = end_time - now_time
+                session_duration = int(session_duration.total_seconds())
+                logger.info("Time remaining in session: %s seconds" % session_duration)
+                if session_duration >= 21600:
+                    logger.warning("Event duration is more than 6 hours")
 
-                if start_time <= now_time <= end_time:
-                    logging.info("Valid event started at %s, session allowed for %s sec" % (event.start_time, duration))
+                if start_time <= now_time < end_time:
+                    logging.info("Valid event started at %s, session allowed for %s sec" % (event.start_time, session_duration))
                     event_validation['valid'] = True
-                    event_validation['start_time'] = str(event.start_time)
-                    event_validation['duration_session'] = duration
+                    event_validation['event_start_time'] = str(event.start_time)
+                    event_validation['event_end_time'] = str(event.end_time)
+                    event_validation['session_start_time'] = str(start_time)
+                    event_validation['session_end_time'] = str(end_time)
+                    event_validation['duration_session'] = session_duration
                 else:
                     logging.info("Event not valid")
+
         logging.info(event_validation)
         self.response.write(json.dumps(event_validation))
         return
@@ -1535,5 +1552,5 @@ app = webapp2.WSGIApplication([
     ('/bulk_action', BulkActionHandler),
     ('/bulk_action_check', BulkActionCheckHandler),
     ('/wifilogin', WifiLoginHandler),
-    ('/check/wifi', CheckWifiHandler)
+    ('/check/event', CheckWifiHandler)
 ], debug=True)

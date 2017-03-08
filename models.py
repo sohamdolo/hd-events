@@ -14,7 +14,7 @@ from config import Config
 ROOM_OPTIONS = (
     ('Maker Space', 10),
     ('Classroom', 40),
-    ('Quiet Room', 8),
+    ('Edison Room', 8),
     # ('Flex Room', 10),
     ('Large Event Room', 80),
     ('Main Space', 100),
