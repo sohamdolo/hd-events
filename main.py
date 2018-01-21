@@ -2,7 +2,6 @@ import cPickle as pickle
 import cgi
 import json
 import logging
-import re
 import urllib
 from datetime import datetime, timedelta
 
@@ -15,7 +14,6 @@ from google.appengine.ext.webapp import util, template
 from webapp2_extras import jinja2
 
 import keymaster
-from config import Config
 from icalendar import Calendar, Event as CalendarEvent
 from models import Event, Feedback, HDLog, ROOM_OPTIONS, PENDING_LIFETIME
 from notices import *
@@ -31,6 +29,10 @@ logger.setLevel(logging.DEBUG)
 def slugify(str):
     str = unicodedata.normalize('NFKD', str.lower()).encode('ascii', 'ignore')
     return re.sub(r'\W+', '-', str)
+
+
+def event_uid(event):
+    return '%s-%s' % (event.key().id(), slugify(event.name))
 
 
 def event_path(event):
@@ -174,7 +176,7 @@ def _check_user_can_create(event_times, ignore_admin=False, editing=None):
         # If we have extraneous events, it means that the rule was already violated,
         # or that it will be violated just by adding recurring events.
         if (len(before_event) > conf.USER_MAX_FOUR_WEEKS or \
-                        len(after_event) > conf.USER_MAX_FOUR_WEEKS):
+                len(after_event) > conf.USER_MAX_FOUR_WEEKS):
             raise ValueError("You may only have %d events within a 4-week period." % \
                              (conf.USER_MAX_FOUR_WEEKS))
 
@@ -287,7 +289,6 @@ def _validate_event(handler, editing_event_id=0, ignore_admin=False, recurring=F
     else:
         repetitions = 1
 
-
     event_times = [(start_time, end_time)]
     event_length = end_time - start_time
     logging.debug("Length of event: %s" % (event_length))
@@ -369,7 +370,7 @@ def _validate_event(handler, editing_event_id=0, ignore_admin=False, recurring=F
 
         if conflicts:
             if ("Deck" in handler.request.get_all('rooms') or \
-                            "Savanna" in handler.request.get_all('rooms')):
+                    "Savanna" in handler.request.get_all('rooms')):
                 raise ValueError('Room conflict detected <small>(Note: Deck &amp;' \
                                  ' Savanna share the same area, two events cannot take' \
                                  ' place at the same time in these rooms.)</small>')
@@ -427,7 +428,7 @@ def _check_one_event_per_day(start_time, editing=None, ignore_admin=False):
 
     if editing:
         if (editing.start_time >= earliest_start and \
-                        editing.start_time <= latest_start):
+                editing.start_time <= latest_start):
             # In this case, our old event is going to show up in the query and cause
             # it to register one too many events.
             logging.debug("Removing old event from event count.")
@@ -689,25 +690,28 @@ class ExportHandler(webapp2.RequestHandler):
 
         csv_file = StringIO.StringIO()
         events = Event.get_recent_past_and_future()
-        fieldnames = ['event_name', 'start', 'end', 'status', 'description', 'category', 'organizer', 'url', 'rooms', 'cost', 'featured_image']
+        fieldnames = ['uid', 'event_name', 'start', 'end', 'status', 'description', 'category', 'organizer', 'url',
+                      'rooms', 'cost', 'featured_image']
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-
         writer.writeheader()
 
         for event in events:
             csv_data = dict()
-            csv_data['event_name'] = event.name
+            csv_data['uid'] = event_uid(event)
+            csv_data['event_name'] = event.name.encode('utf-8')
             if event.start_time:
-                csv_data['start'] = event.start_time.replace(tzinfo=pytz.timezone('US/Pacific'))
+                csv_data['start'] = event.start_time.strftime("%Y-%m-%d %H:%M")
             if event.end_time:
-                csv_data['end'] = event.end_time.replace(tzinfo=pytz.timezone('US/Pacific'))
+                csv_data['end'] = event.end_time.strftime("%Y-%m-%d %H:%M")
             csv_data['status'] = event.status
-            csv_data['organizer'] = event.owner()
+            csv_data['organizer'] = event.owner().encode('utf-8')
             csv_data['category'] = event.type
             csv_data['url'] = "https://events.hackerdojo.com%s" % event_path(event)
             csv_data['rooms'] = event.roomlist()
-            csv_data['cost'] = event.fee
-
+            if event.fee and event.fee > 0:
+                csv_data['cost'] = event.fee
+            else:
+                csv_data['cost'] = "Free"
             description = ""
             if event.details:
                 description = "%s \n" % event.details
@@ -718,7 +722,7 @@ class ExportHandler(webapp2.RequestHandler):
                 description = "%s Contact Name: %s\n" % (description, event.contact_name)
             if event.contact_phone:
                 description = "%s Contact Phone: %s\n" % (description, event.contact_phone)
-            csv_data['description'] = description
+            csv_data['description'] = description.encode('utf-8')
             writer.writerow(csv_data)
 
         contents = csv_file.getvalue()
@@ -727,31 +731,30 @@ class ExportHandler(webapp2.RequestHandler):
 
     def export_ics(self):
         events = Event.get_recent_past_and_future()
-        url_base = 'https://' + self.request.headers.get('host', 'events.hackerdojo.com')
         cal = Calendar()
         for event in events:
             iev = CalendarEvent()
             iev.add('summary',
                     event.name if event.status == 'approved' else event.name + ' (%s)' % event.status.upper())
             # make verbose description with empty fields where information is missing
-            ev_desc = '__Status: %s\n__Member: %s\n__Type: %s\n__Estimated size: %s\n__Info URL: %s\n__Fee: %s\n__Contact: %s, %s\n__Rooms: %s\n\n__Details: %s\n\n__Notes: %s' % (
-                event.status,
-                event.owner(),
+            ev_desc = '%s\n %s organized by %s\n__Estimated size: %s\n__Rooms: %s\n__Fee: %s\n__Contact: %s - %s\n__Info URL: %s\n\n__Notes: %s' % (
+                event.details,
                 event.type,
+                event.owner(),
                 event.estimated_size,
-                event.url,
+                event.roomlist(),
                 event.fee,
                 event.contact_name,
                 event.contact_phone,
-                event.roomlist(),
-                event.details,
+                event.url,
                 event.notes)
             # then delete the empty fields with a regex
             ev_desc = re.sub(re.compile(r'^__.*?:[ ,]*$\n*', re.M), '', ev_desc)
             ev_desc = re.sub(re.compile(r'^__', re.M), '', ev_desc)
-            ev_url = url_base + event_path(event)
+            ev_url = "https://events.hackerdojo.com%s" % event_path(event)
             iev.add('description', ev_desc + '\n--\n' + ev_url)
             iev.add('url', ev_url)
+            iev.add('uid', event_uid(event))
             if event.start_time:
                 iev.add('dtstart', event.start_time.replace(tzinfo=pytz.timezone('US/Pacific')))
             if event.end_time:
@@ -1527,6 +1530,7 @@ class CheckWifiHandler(webapp2.RequestHandler):
     """
 
     """
+
     def post(self):
         """
         handler that check if the given password is valid and return the duration of the event
@@ -1555,7 +1559,8 @@ class CheckWifiHandler(webapp2.RequestHandler):
                     logger.warning("Event duration is more than 6 hours")
 
                 if start_time <= now_time < end_time:
-                    logging.info("Valid event started at %s, session allowed for %s sec" % (event.start_time, session_duration))
+                    logging.info(
+                        "Valid event started at %s, session allowed for %s sec" % (event.start_time, session_duration))
                     event_validation['valid'] = True
                     event_validation['event_start_time'] = str(event.start_time)
                     event_validation['event_end_time'] = str(event.end_time)
