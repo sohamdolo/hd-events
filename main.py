@@ -683,6 +683,48 @@ class ExportHandler(webapp2.RequestHandler):
         events = map(lambda x: x.to_dict(summarize=True), events)
         return 'application/json', json.dumps(events)
 
+    def export_csv(self):
+        import csv
+        import StringIO
+
+        csv_file = StringIO.StringIO()
+        events = Event.get_recent_past_and_future()
+        fieldnames = ['event_name', 'start', 'end', 'status', 'description', 'category', 'organizer', 'url', 'rooms', 'cost', 'featured_image']
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+
+        writer.writeheader()
+
+        for event in events:
+            csv_data = dict()
+            csv_data['event_name'] = event.name
+            if event.start_time:
+                csv_data['start'] = event.start_time.replace(tzinfo=pytz.timezone('US/Pacific'))
+            if event.end_time:
+                csv_data['end'] = event.end_time.replace(tzinfo=pytz.timezone('US/Pacific'))
+            csv_data['status'] = event.status
+            csv_data['organizer'] = event.owner()
+            csv_data['category'] = event.type
+            csv_data['url'] = "https://events.hackerdojo.com%s" % event_path(event)
+            csv_data['rooms'] = event.roomlist()
+            csv_data['cost'] = event.fee
+
+            description = ""
+            if event.details:
+                description = "%s \n" % event.details
+            if event.notes:
+                description = "%s Notes: %s\n" % (description, event.estimated_size)
+            description = "%s Event size: %s\n" % (description, event.estimated_size)
+            if event.contact_name:
+                description = "%s Contact Name: %s\n" % (description, event.contact_name)
+            if event.contact_phone:
+                description = "%s Contact Phone: %s\n" % (description, event.contact_phone)
+            csv_data['description'] = description
+            writer.writerow(csv_data)
+
+        contents = csv_file.getvalue()
+        csv_file.close()
+        return 'text/csv', contents
+
     def export_ics(self):
         events = Event.get_recent_past_and_future()
         url_base = 'https://' + self.request.headers.get('host', 'events.hackerdojo.com')
