@@ -255,7 +255,8 @@ def _validate_event(handler, editing_event_id=0, ignore_admin=False, recurring=F
         handler.request.get('end_time_hour'),
         handler.request.get('end_time_minute'),
         handler.request.get('end_time_ampm')), '%m/%d/%Y %I:%M %p')
-
+    logger.debug(start_time)
+    logger.debug(end_time)
     user = users.get_current_user()
     user_status = UserRights()
 
@@ -674,7 +675,7 @@ class ExportHandler(webapp2.RequestHandler):
         self.response.out.write(body)
 
     def export_json(self):
-        events = Event.get_recent_past_and_future()
+        events = Event.get_recent_ongoing_and_future()
         for k in self.request.GET:
             if self.request.GET[k] and k in ['member']:
                 value = users.User(urllib.unquote(self.request.GET[k]))
@@ -689,16 +690,17 @@ class ExportHandler(webapp2.RequestHandler):
         import StringIO
 
         csv_file = StringIO.StringIO()
-        events = Event.get_recent_past_and_future()
+        events = Event.get_recent_ongoing_and_future()
         fieldnames = ['uid', 'event_name', 'start', 'end', 'status', 'description', 'category', 'organizer', 'url',
-                      'rooms', 'cost', 'featured_image']
+                      'rooms', 'cost', 'featured_image', 'event_size', 'contact_name', 'contact_phone', 'notes', 'external_url']
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
 
         for event in events:
             csv_data = dict()
             csv_data['uid'] = event_uid(event)
-            csv_data['event_name'] = event.name.encode('utf-8')
+            event_name = event.name if event.status == 'approved' else event.name + ' (%s)' % event.status.upper()
+            csv_data['event_name'] = event_name.encode('utf-8')
             if event.start_time:
                 csv_data['start'] = event.start_time.strftime("%Y-%m-%d %H:%M")
             if event.end_time:
@@ -712,17 +714,20 @@ class ExportHandler(webapp2.RequestHandler):
                 csv_data['cost'] = event.fee
             else:
                 csv_data['cost'] = "Free"
-            description = ""
-            if event.details:
-                description = "%s \n" % event.details
-            if event.notes:
-                description = "%s Notes: %s\n" % (description, event.estimated_size)
-            description = "%s Event size: %s\n" % (description, event.estimated_size)
+
+            if event.estimated_size:
+                csv_data['event_size'] = event.estimated_size
             if event.contact_name:
-                description = "%s Contact Name: %s\n" % (description, event.contact_name)
+                csv_data['contact_name'] = event.contact_name
             if event.contact_phone:
-                description = "%s Contact Phone: %s\n" % (description, event.contact_phone)
-            csv_data['description'] = description.encode('utf-8')
+                csv_data['contact_phone'] = event.contact_phone
+            if event.notes:
+                csv_data['notes'] = event.notes.encode('utf-8')
+            if event.details:
+                csv_data['description'] = event.details.encode('utf-8')
+            if event.url:
+                csv_data['external_url'] = event.url
+
             writer.writerow(csv_data)
 
         contents = csv_file.getvalue()
@@ -730,23 +735,24 @@ class ExportHandler(webapp2.RequestHandler):
         return 'text/csv', contents
 
     def export_ics(self):
-        events = Event.get_recent_past_and_future()
+        events = Event.get_recent_ongoing_and_future()
         cal = Calendar()
         for event in events:
             iev = CalendarEvent()
             iev.add('summary',
                     event.name if event.status == 'approved' else event.name + ' (%s)' % event.status.upper())
             # make verbose description with empty fields where information is missing
-            ev_desc = '%s\n %s organized by %s\n__Estimated size: %s\n__Rooms: %s\n__Fee: %s\n__Contact: %s - %s\n__Info URL: %s\n\n__Notes: %s' % (
-                event.details,
-                event.type,
+            ev_desc = '__Status: %s\n__Member: %s\n__Type: %s\n__Estimated size: %s\n__Info URL: %s\n__Fee: %s\n__Contact: %s, %s\n__Rooms: %s\n\n__Details: %s\n\n__Notes: %s' % (
+                event.status,
                 event.owner(),
+                event.type,
                 event.estimated_size,
-                event.roomlist(),
+                event.url,
                 event.fee,
                 event.contact_name,
                 event.contact_phone,
-                event.url,
+                event.roomlist(),
+                event.details,
                 event.notes)
             # then delete the empty fields with a regex
             ev_desc = re.sub(re.compile(r'^__.*?:[ ,]*$\n*', re.M), '', ev_desc)
@@ -755,6 +761,7 @@ class ExportHandler(webapp2.RequestHandler):
             iev.add('description', ev_desc + '\n--\n' + ev_url)
             iev.add('url', ev_url)
             iev.add('uid', event_uid(event))
+            iev.add('organizer', event.owner())
             if event.start_time:
                 iev.add('dtstart', event.start_time.replace(tzinfo=pytz.timezone('US/Pacific')))
             if event.end_time:
@@ -763,7 +770,7 @@ class ExportHandler(webapp2.RequestHandler):
         return 'text/calendar', cal.as_string()
 
     def export_large_ics(self):
-        events = Event.get_recent_past_and_future()
+        events = Event.get_recent_ongoing_and_future()
         url_base = 'https://' + self.request.headers.get('host', 'events.hackerdojo.com')
         cal = Calendar()
         for event in events:
@@ -788,6 +795,8 @@ class ExportHandler(webapp2.RequestHandler):
             ev_url = url_base + event_path(event)
             iev.add('description', ev_desc + '\n--\n' + ev_url)
             iev.add('url', ev_url)
+            iev.add('uid', event_uid(event))
+            iev.add('organizer', event.owner())
             if event.start_time:
                 iev.add('dtstart', event.start_time.replace(tzinfo=pytz.timezone('US/Pacific')))
             if event.end_time:
@@ -967,6 +976,8 @@ class EventHandler(webapp2.RequestHandler):
             event.notes = db.Text(event.notes.replace('\n', '<br/>'))
 
             wait_days = _get_user_wait_time()
+            logger.debug(event.start_time)
+            logger.debug(event.end_time)
             self.response.out.write(template.render('templates/event.html', locals()))
 
     def post(self, id):
@@ -1200,6 +1211,7 @@ class NewHandler(webapp2.RequestHandler):
             # matter which start and end times we use.
             first_start = event_times[0][0]
             first_end = event_times[0][1]
+
             other_member = _get_other_member(self, first_start, first_end)
         except ValueError, e:
             error = str(e)
