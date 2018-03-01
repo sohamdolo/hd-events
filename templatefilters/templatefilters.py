@@ -1,13 +1,16 @@
 from google.appengine.ext import webapp
 register = webapp.template.create_template_register()
 
+
 @register.filter
 def strip_spaces(string):
     return string.replace(" ", "")
 
+
 @register.filter
 def american_date(element):
     return element.strftime('%m/%d/%Y')
+
 
 @register.filter
 def check_filter(the_list, item):
@@ -16,18 +19,22 @@ def check_filter(the_list, item):
     else:
         cb = ""
     return cb
-    
+
+
 @register.filter
 def select_hour(event, item):
     return select_time(event,item,'hour')
+
 
 @register.filter
 def select_minute(event, item):
     return select_time(event,item,'minute')
 
+
 @register.filter
 def select_ampm(event, item):
     return select_time(event,item,'ampm')
+
 
 # event = event timestamp
 # item = UI element value (e.g., the specific hour or minute to compare)
@@ -46,9 +53,10 @@ def select_time(event,item,element):
             st = "selected='selected'"
     return st
 
+
 @register.filter
-def select(target,val):
+def select(target, val):
     st = "value=%s" % val
-    if (target==val):
+    if target == val:
         st += " selected=selected"
     return st

@@ -1511,10 +1511,11 @@ class WifiLoginHandler(webapp2.RequestHandler):
 
                     # user can access wifi for 2 hours and then need to login again
                     # append grant url with duration
-                    grant_url = "%s&duration=%s" % (grant_url, 7200)
-                    logger.info("Access granted to %s for 2 hours" % client_mac)
-                    self.response.write(template.render('templates/wifi_login_auth.html', locals()))
-                    return
+                    grant_url = "%s&duration=%s" % (grant_url, session_duration)
+                    logger.info("Access granted to %s for %s seconds" % (client_mac, session_duration))
+                    return self.redirect(str(grant_url))
+                    # self.response.write(template.render('templates/wifi_login_auth.html', locals()))
+                    # return
                 else:
                     logger.debug("access refused")
                     data = {
